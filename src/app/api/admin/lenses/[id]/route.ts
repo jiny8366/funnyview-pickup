@@ -50,6 +50,10 @@ export async function PATCH(
     'material',
     'sphereMin',
     'sphereMax',
+    'mfdsPermitNo',
+    'mfdsClassificationCode',
+    'mfdsProductName',
+    'manufacturer',
     'isActive',
   ] as const;
 

@@ -50,6 +50,10 @@ export default async function EditProductPage({
           material: row.material ?? '',
           sphereMin: row.sphereMin ?? '',
           sphereMax: row.sphereMax ?? '',
+          mfdsPermitNo: row.mfdsPermitNo ?? '',
+          mfdsClassificationCode: row.mfdsClassificationCode ?? '',
+          mfdsProductName: row.mfdsProductName ?? '',
+          manufacturer: row.manufacturer ?? '',
           isActive: row.isActive,
           description: row.description,
         }}

@@ -47,6 +47,10 @@ export async function POST(req: Request) {
     material,
     sphereMin,
     sphereMax,
+    mfdsPermitNo,
+    mfdsClassificationCode,
+    mfdsProductName,
+    manufacturer,
   } = body ?? {};
 
   if (!productCode || !brand || !name || !lensType || !replacementCycle || price == null) {
@@ -72,6 +76,10 @@ export async function POST(req: Request) {
       material: material ?? null,
       sphereMin: sphereMin != null && sphereMin !== '' ? String(sphereMin) : null,
       sphereMax: sphereMax != null && sphereMax !== '' ? String(sphereMax) : null,
+      mfdsPermitNo: mfdsPermitNo || null,
+      mfdsClassificationCode: mfdsClassificationCode || null,
+      mfdsProductName: mfdsProductName || null,
+      manufacturer: manufacturer || null,
     })
     .returning();
 

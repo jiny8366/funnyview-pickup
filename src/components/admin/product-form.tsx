@@ -45,6 +45,11 @@ interface FormState {
   material: string;
   sphereMin: string;
   sphereMax: string;
+  // 식약처 UDI 참조 (수기 입력 또는 UDI 적재 시 자동 채움)
+  mfdsPermitNo: string;
+  mfdsClassificationCode: string;
+  mfdsProductName: string;
+  manufacturer: string;
   isActive: boolean;
 }
 
@@ -64,6 +69,10 @@ const EMPTY: FormState = {
   material: '',
   sphereMin: '',
   sphereMax: '',
+  mfdsPermitNo: '',
+  mfdsClassificationCode: '',
+  mfdsProductName: '',
+  manufacturer: '',
   isActive: true,
 };
 
@@ -304,6 +313,55 @@ export function ProductForm({
                 onChange={(e) => update('sphereMax', e.target.value)}
                 placeholder="+6.00"
                 className="input"
+              />
+            </Field>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* 식약처 UDI 참조 */}
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>식약처 UDI 참조</CardTitle>
+            <CardDescription>
+              비워두면 됩니다 — 추후 식약처 UDI 일괄 갱신 시 자동으로 채워집니다.
+              수기 입력하면 즉시 영수증·세금계산서 표시에 사용됩니다.
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="식약처 등록 품목명">
+              <input
+                value={form.mfdsProductName}
+                onChange={(e) => update('mfdsProductName', e.target.value)}
+                placeholder="예: 존슨앤드존슨비전케어 원데이아큐브오아시스"
+                className="input"
+              />
+            </Field>
+            <Field label="제조원 / 수입원">
+              <input
+                value={form.manufacturer}
+                onChange={(e) => update('manufacturer', e.target.value)}
+                placeholder="예: Johnson & Johnson Vision"
+                className="input"
+              />
+            </Field>
+            <Field label="품목 허가번호">
+              <input
+                value={form.mfdsPermitNo}
+                onChange={(e) => update('mfdsPermitNo', e.target.value)}
+                placeholder="예: 제조허가 21-1234 또는 수입허가 ..."
+                className="input font-mono"
+              />
+            </Field>
+            <Field label="분류번호">
+              <input
+                value={form.mfdsClassificationCode}
+                onChange={(e) => update('mfdsClassificationCode', e.target.value)}
+                placeholder="A07020 (콘택트렌즈)"
+                className="input font-mono"
               />
             </Field>
           </div>

@@ -51,6 +51,13 @@ export const lenses = pgTable(
     price: integer('price').notNull(), // 판매가 (원)
     cost: integer('cost'), // 원가 (영업이익 계산)
 
+    // 식약처 UDI 참조 (1회/분기 일괄 적재, 런타임 호출 없음)
+    mfdsPermitNo: text('mfds_permit_no'), // 품목허가번호 (예: '제조허가 21-1234')
+    mfdsClassificationCode: text('mfds_classification_code'), // 분류번호 (A07020)
+    mfdsProductName: text('mfds_product_name'), // 식약처 등록 품목명 (법적 표시용)
+    manufacturer: text('manufacturer'), // 제조원
+    udiSyncedAt: timestamp('udi_synced_at', { withTimezone: true }), // 마지막 UDI 적재 시각
+
     imageUrl: text('image_url'),
     description: text('description'),
     isActive: boolean('is_active').default(true).notNull(),
@@ -90,6 +97,10 @@ export const lensVariants = pgTable(
     axis: integer('axis'), // 축
     addPower: numeric('add_power', { precision: 4, scale: 2 }), // 가입도
 
+    // UDI-DI (GTIN-13) — 도수별 SKU 의 식약처 표준코드
+    // lens_barcodes 와 의도된 비정규화: 입출고 스캔 시 JOIN 회피 + admin UI 표시 용이
+    udiDi: text('udi_di'),
+
     // 가격 오버라이드 (도수별 가격이 다른 경우)
     priceOverride: integer('price_override'),
 
@@ -104,6 +115,7 @@ export const lensVariants = pgTable(
   (t) => ({
     // SKU 자체가 유일하므로 (lensId, sph, cyl, axis, add) 결정적 생성을 통해 중복 방지.
     skuUnique: uniqueIndex('lens_variants_sku_unique').on(t.sku),
+    udiDiUnique: uniqueIndex('lens_variants_udi_di_unique').on(t.udiDi),
     lensIdx: index('lens_variants_lens_idx').on(t.lensId),
     sphereIdx: index('lens_variants_sphere_idx').on(
       t.lensId,
