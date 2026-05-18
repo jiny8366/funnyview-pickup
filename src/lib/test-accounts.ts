@@ -12,7 +12,7 @@ export interface TestAccount {
 
 const PW = 'pickup1234!';
 
-export const TEST_ACCOUNTS: Record<'admin' | 'warehouse' | 'store', TestAccount[]> = {
+export const TEST_ACCOUNTS: Record<'admin' | 'warehouse' | 'store' | 'customer', TestAccount[]> = {
   admin: [
     {
       phone: '01000000000',
@@ -47,6 +47,20 @@ export const TEST_ACCOUNTS: Record<'admin' | 'warehouse' | 'store', TestAccount[
       password: PW,
       label: '판교 지점 직원',
       hint: '판교 지점 픽업 처리',
+    },
+  ],
+  customer: [
+    {
+      phone: '01099990001',
+      password: PW,
+      label: '데모 고객 (성인)',
+      hint: '주문 → 픽업 흐름 테스트',
+    },
+    {
+      phone: '01099990002',
+      password: PW,
+      label: '데모 고객 (시니어)',
+      hint: '다초점/가입도 주문 테스트',
     },
   ],
 };

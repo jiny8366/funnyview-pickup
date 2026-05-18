@@ -4,8 +4,10 @@ import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { SocialButtons } from '@/components/auth/social-buttons';
+import { TestAccountsBox } from '@/components/auth/test-accounts-box';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TEST_ACCOUNTS, showTestAccounts } from '@/lib/test-accounts';
 
 export default function CustomerLoginPage() {
   return (
@@ -118,6 +120,16 @@ function CustomerLoginInner() {
           </Link>{' '}
           로그인
         </div>
+
+        {showTestAccounts() && (
+          <TestAccountsBox
+            accounts={TEST_ACCOUNTS.customer}
+            onFill={(a) => {
+              setPhone(a.phone);
+              setPassword(a.password);
+            }}
+          />
+        )}
       </div>
     </main>
   );

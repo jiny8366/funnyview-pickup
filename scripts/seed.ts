@@ -14,6 +14,7 @@ import { hash } from 'bcryptjs';
 import { eq, isNull } from 'drizzle-orm';
 import { db } from '../src/db/client';
 import {
+  customers,
   homeSections,
   inventory,
   inventoryMovements,
@@ -30,7 +31,7 @@ const PASSWORD_DEFAULT = 'pickup1234!';
 
 async function ensureUser(
   phone: string,
-  role: 'warehouse_staff' | 'store_staff' | 'admin',
+  role: 'warehouse_staff' | 'store_staff' | 'admin' | 'customer',
   storeId?: string,
 ) {
   const existing = await db.select({ id: users.id }).from(users).where(eq(users.phone, phone)).limit(1);
@@ -41,6 +42,31 @@ async function ensureUser(
     .values({ phone, passwordHash, role, storeId: storeId ?? null })
     .returning({ id: users.id });
   return u.id;
+}
+
+async function ensureCustomer(
+  phone: string,
+  name: string,
+  opts?: { birthDate?: string; gender?: 'male' | 'female' | 'other' },
+) {
+  const userId = await ensureUser(phone, 'customer');
+  const existing = await db
+    .select({ id: customers.id })
+    .from(customers)
+    .where(eq(customers.userId, userId))
+    .limit(1);
+  if (existing[0]) return { userId, customerId: existing[0].id };
+  const [c] = await db
+    .insert(customers)
+    .values({
+      userId,
+      name,
+      phone,
+      birthDate: opts?.birthDate ?? null,
+      gender: opts?.gender ?? null,
+    })
+    .returning({ id: customers.id });
+  return { userId, customerId: c.id };
 }
 
 async function ensureStore(code: string, name: string, phone: string, addressLine1: string, lat: number, lng: number) {
@@ -163,7 +189,19 @@ async function main() {
   const staff1 = await ensureUser('01000000002', 'store_staff', store1);
   const staff2 = await ensureUser('01000000003', 'store_staff', store2);
   const staff3 = await ensureUser('01000000004', 'store_staff', store3);
+
+  // Demo customers (phone+password 로그인 가능 — 일반 고객은 소셜 로그인 권장)
+  const customer1 = await ensureCustomer('01099990001', '데모 고객 (성인)', {
+    birthDate: '1990-01-01',
+    gender: 'female',
+  });
+  const customer2 = await ensureCustomer('01099990002', '데모 고객 (시니어)', {
+    birthDate: '1970-05-15',
+    gender: 'male',
+  });
+
   console.log('[seed] users:', { admin, warehouse, staff1, staff2, staff3 });
+  console.log('[seed] customers:', customer1, customer2);
 
   // 3) Lenses
   const acuOas = await ensureLens({
@@ -271,7 +309,9 @@ async function main() {
   console.log('  강남 본점 직원     : 01000000002  /login/store');
   console.log('  홍대 지점 직원     : 01000000003  /login/store');
   console.log('  판교 지점 직원     : 01000000004  /login/store');
-  console.log('  고객              : /register 또는 소셜 로그인');
+  console.log('  데모 고객 (성인)   : 01099990001  /login');
+  console.log('  데모 고객 (시니어) : 01099990002  /login');
+  console.log('  (그 외 고객은 /register 또는 소셜 로그인)');
   process.exit(0);
 }
 
