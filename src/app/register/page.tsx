@@ -1,8 +1,9 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { TERMS } from '@/lib/terms';
 
 interface FormState {
   email: string;
@@ -24,6 +25,10 @@ interface FormState {
   refundBank: string;
   refundAccount: string;
   phoneVerified: boolean;
+  agreeService: boolean;
+  agreePrivacy: boolean;
+  agreeSms: boolean;
+  agreeEmail: boolean;
 }
 
 const EMPTY: FormState = {
@@ -46,6 +51,10 @@ const EMPTY: FormState = {
   refundBank: '',
   refundAccount: '',
   phoneVerified: false,
+  agreeService: false,
+  agreePrivacy: false,
+  agreeSms: false,
+  agreeEmail: false,
 };
 
 const LANDLINE_PREFIXES = ['02', '031', '032', '033', '041', '042', '043', '044', '051', '052', '053', '054', '055', '061', '062', '063', '064', '070'];
@@ -75,6 +84,10 @@ export default function RegisterPage() {
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    if (!f.agreeService || !f.agreePrivacy) {
+      setError('필수 약관에 동의해주세요');
+      return;
+    }
     if (!f.phoneVerified) {
       setError('휴대폰 인증을 진행해주세요');
       return;
@@ -357,6 +370,28 @@ export default function RegisterPage() {
           </Section>
         </div>
 
+        {/* 약관 동의 */}
+        <TermsAgreement
+          values={{
+            service: f.agreeService,
+            privacy: f.agreePrivacy,
+            sms: f.agreeSms,
+            email: f.agreeEmail,
+          }}
+          onChange={(k, v) => {
+            if (k === 'service') update('agreeService', v);
+            if (k === 'privacy') update('agreePrivacy', v);
+            if (k === 'sms') update('agreeSms', v);
+            if (k === 'email') update('agreeEmail', v);
+          }}
+          onAll={(v) => {
+            update('agreeService', v);
+            update('agreePrivacy', v);
+            update('agreeSms', v);
+            update('agreeEmail', v);
+          }}
+        />
+
         {error && (
           <p className="text-center text-sm text-red-600">{error}</p>
         )}
@@ -374,11 +409,111 @@ export default function RegisterPage() {
             disabled={submitting}
             className="h-12 min-w-[140px] rounded bg-black px-6 text-sm font-semibold text-white hover:bg-gray-800 disabled:bg-gray-400"
           >
-            {submitting ? '가입 중...' : '가입하기'}
+            {submitting ? '가입 중...' : '회원가입'}
           </button>
         </div>
       </form>
     </main>
+  );
+}
+
+function TermsAgreement({
+  values,
+  onChange,
+  onAll,
+}: {
+  values: { service: boolean; privacy: boolean; sms: boolean; email: boolean };
+  onChange: (k: 'service' | 'privacy' | 'sms' | 'email', v: boolean) => void;
+  onAll: (v: boolean) => void;
+}) {
+  const service = TERMS.find((t) => t.key === 'service')!;
+  const privacy = TERMS.find((t) => t.key === 'privacy')!;
+  const marketing = TERMS.find((t) => t.key === 'marketing_sms')!;
+
+  const allChecked = values.service && values.privacy && values.sms && values.email;
+
+  return (
+    <div className="rounded-md bg-gray-100 p-5">
+      <h2 className="text-lg font-bold text-gray-900">전체 동의</h2>
+
+      <label className="mt-4 flex cursor-pointer items-start gap-3 rounded bg-white p-4">
+        <input
+          type="checkbox"
+          checked={allChecked}
+          onChange={(e) => onAll(e.target.checked)}
+          className="mt-0.5 h-5 w-5 shrink-0 cursor-pointer accent-black"
+        />
+        <span className="text-sm font-semibold text-gray-900">
+          이용약관 및 개인정보수집 및 이용, 쇼핑정보 수신(선택)에 모두 동의합니다.
+        </span>
+      </label>
+
+      {/* [필수] 이용약관 */}
+      <div className="mt-6">
+        <h3 className="text-sm font-semibold text-gray-900">{service.title}</h3>
+        <pre className="mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap rounded border border-gray-200 bg-white p-4 font-sans text-xs leading-relaxed text-gray-700">
+{service.body}
+        </pre>
+        <label className="mt-2 inline-flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+          {service.prompt}
+          <input
+            type="checkbox"
+            checked={values.service}
+            onChange={(e) => onChange('service', e.target.checked)}
+            className="h-4 w-4 cursor-pointer accent-black"
+          />
+          <span>동의함</span>
+        </label>
+      </div>
+
+      {/* [필수] 개인정보 수집 및 이용 */}
+      <div className="mt-6">
+        <h3 className="text-sm font-semibold text-gray-900">{privacy.title}</h3>
+        <pre className="mt-2 max-h-56 overflow-y-auto whitespace-pre-wrap rounded border border-gray-200 bg-white p-4 font-sans text-xs leading-relaxed text-gray-700">
+{privacy.body}
+        </pre>
+        <label className="mt-2 inline-flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+          {privacy.prompt}
+          <input
+            type="checkbox"
+            checked={values.privacy}
+            onChange={(e) => onChange('privacy', e.target.checked)}
+            className="h-4 w-4 cursor-pointer accent-black"
+          />
+          <span>동의함</span>
+        </label>
+      </div>
+
+      {/* [선택] 쇼핑정보 수신 */}
+      <div className="mt-6">
+        <h3 className="text-sm font-semibold text-gray-900">{marketing.title}</h3>
+        <pre className="mt-2 max-h-40 overflow-y-auto whitespace-pre-wrap rounded border border-gray-200 bg-white p-4 font-sans text-xs leading-relaxed text-gray-700">
+{marketing.body}
+        </pre>
+        <div className="mt-2 space-y-1.5">
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+            <span className="min-w-[180px]">SMS 수신을 동의하십니까?</span>
+            <input
+              type="checkbox"
+              checked={values.sms}
+              onChange={(e) => onChange('sms', e.target.checked)}
+              className="h-4 w-4 cursor-pointer accent-black"
+            />
+            <span>동의함</span>
+          </label>
+          <label className="flex cursor-pointer items-center gap-2 text-sm text-gray-700">
+            <span className="min-w-[180px]">이메일 수신을 동의하십니까?</span>
+            <input
+              type="checkbox"
+              checked={values.email}
+              onChange={(e) => onChange('email', e.target.checked)}
+              className="h-4 w-4 cursor-pointer accent-black"
+            />
+            <span>동의함</span>
+          </label>
+        </div>
+      </div>
+    </div>
   );
 }
 
