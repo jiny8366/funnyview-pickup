@@ -3,8 +3,10 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
+import { TestAccountsBox } from '@/components/auth/test-accounts-box';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import { TEST_ACCOUNTS, showTestAccounts } from '@/lib/test-accounts';
 
 export default function AdminLoginPage() {
   return (
@@ -75,6 +77,15 @@ function AdminLoginInner() {
             처음으로
           </Link>
         </div>
+        {showTestAccounts() && (
+          <TestAccountsBox
+            accounts={TEST_ACCOUNTS.admin}
+            onFill={(a) => {
+              setPhone(a.phone);
+              setPassword(a.password);
+            }}
+          />
+        )}
       </div>
     </main>
   );
