@@ -20,6 +20,7 @@ export const users = pgTable(
   'users',
   {
     id: uuid('id').primaryKey().defaultRandom(),
+    username: text('username'), // 영문 소문자/숫자 4-16자 (선택적 — phone 만으로도 가입 가능)
     email: text('email'),
     phone: text('phone'), // OAuth 가입 직후엔 NULL 가능 (온보딩에서 수집)
     passwordHash: text('password_hash'),
@@ -42,6 +43,9 @@ export const users = pgTable(
     emailIdx: uniqueIndex('users_email_idx')
       .on(t.email)
       .where(sql`email IS NOT NULL AND deleted_at IS NULL`),
+    usernameIdx: uniqueIndex('users_username_idx')
+      .on(t.username)
+      .where(sql`username IS NOT NULL AND deleted_at IS NULL`),
     roleIdx: index('users_role_idx').on(t.role),
   }),
 );

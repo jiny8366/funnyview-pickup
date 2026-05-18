@@ -4,6 +4,7 @@ import {
   date,
   index,
   integer,
+  jsonb,
   numeric,
   pgTable,
   text,
@@ -35,6 +36,15 @@ export const customers = pgTable(
     postalCode: text('postal_code'),
     addressLine1: text('address_line1'),
     addressLine2: text('address_line2'),
+
+    // 일반전화 (선택)
+    landlinePhone: text('landline_phone'),
+
+    // 회원 구분 — 'individual' | 'business' (사업자 회원 추후)
+    memberType: text('member_type').default('individual').notNull(),
+
+    // 환불 계좌 (선택) — { holder, bank, account }
+    refundBank: jsonb('refund_bank'),
 
     // 추천인
     referrerCode: text('referrer_code'), // 본인의 추천코드 (지인 공유용)

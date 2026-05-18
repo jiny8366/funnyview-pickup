@@ -3,10 +3,8 @@
 import { Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
-import { SocialButtons } from '@/components/auth/social-buttons';
 import { TestAccountsBox } from '@/components/auth/test-accounts-box';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { TEST_ACCOUNTS, showTestAccounts } from '@/lib/test-accounts';
 
 export default function CustomerLoginPage() {
@@ -22,8 +20,9 @@ function CustomerLoginInner() {
   const search = useSearchParams();
   const next = search.get('next') ?? '/customer';
 
-  const [phone, setPhone] = useState('');
-  const [password, setPassword] = useState('');
+  const [id, setId] = useState('');
+  const [pw, setPw] = useState('');
+  const [secure, setSecure] = useState(true);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -35,7 +34,7 @@ function CustomerLoginInner() {
       const res = await fetch('/api/auth/login', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ phone, password, expectedRole: 'customer' }),
+        body: JSON.stringify({ phone: id, password: pw, expectedRole: 'customer' }),
       });
       if (!res.ok) {
         const body = await res.json().catch(() => ({}));
@@ -52,90 +51,128 @@ function CustomerLoginInner() {
   }
 
   return (
-    <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
-      <div className="space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
-        <header>
-          <h1 className="text-xl font-bold">고객 로그인</h1>
-          <p className="mt-1 text-sm text-gray-500">Funnyview Pickup</p>
-        </header>
+    <main className="mx-auto w-full max-w-2xl px-6 py-8 md:py-16">
+      <Breadcrumb items={[{ href: '/', label: '홈' }, { label: '로그인' }]} />
 
-        <SocialButtons returnTo={next} />
+      <h1 className="mt-8 text-center text-2xl font-bold text-gray-900">로그인</h1>
 
-        <div className="relative">
-          <div className="absolute inset-0 flex items-center">
-            <div className="w-full border-t border-gray-200" />
+      <form onSubmit={onSubmit} className="mt-10 space-y-3">
+        <input
+          type="text"
+          autoComplete="username"
+          value={id}
+          onChange={(e) => setId(e.target.value)}
+          placeholder="아이디"
+          required
+          autoFocus
+          className="cafe-input"
+        />
+        <input
+          type="password"
+          autoComplete="current-password"
+          value={pw}
+          onChange={(e) => setPw(e.target.value)}
+          placeholder="비밀번호"
+          required
+          className="cafe-input"
+        />
+
+        <div className="flex items-center justify-between pt-1 text-xs">
+          <label className="inline-flex cursor-pointer items-center gap-1.5 text-gray-700">
+            <span className={secure ? 'text-red-600' : 'text-gray-400'}>🔒</span>
+            <input
+              type="checkbox"
+              checked={secure}
+              onChange={(e) => setSecure(e.target.checked)}
+              className="sr-only"
+            />
+            보안접속
+          </label>
+          <div className="flex items-center gap-3 text-gray-600">
+            <button type="button" className="hover:text-gray-900" onClick={() => alert('아이디 찾기 — 추후 활성화')}>
+              아이디찾기
+            </button>
+            <span className="text-gray-300">|</span>
+            <button type="button" className="hover:text-gray-900" onClick={() => alert('비밀번호 찾기 — 추후 활성화')}>
+              비밀번호찾기
+            </button>
+            <span className="text-gray-300">|</span>
+            <Link href="/register" className="hover:text-gray-900">
+              회원가입
+            </Link>
           </div>
-          <div className="relative flex justify-center text-xs">
-            <span className="bg-white px-2 text-gray-400">또는 전화번호로</span>
-          </div>
         </div>
 
-        <form onSubmit={onSubmit} className="space-y-4">
-          <Input
-            label="아이디 또는 휴대전화번호"
-            name="phone"
-            autoComplete="username"
-            enterKeyHint="next"
-            value={phone}
-            onChange={(e) => setPhone(e.target.value)}
-            required
-            autoFocus
-          />
-          <Input
-            label="비밀번호"
-            name="password"
-            type="password"
-            autoComplete="current-password"
-            enterKeyHint="go"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            required
-          />
-          {error && <p className="text-sm text-red-600">{error}</p>}
-          <Button type="submit" className="w-full" disabled={loading}>
-            {loading ? '로그인 중...' : '로그인'}
-          </Button>
-        </form>
+        {error && <p className="text-center text-sm text-red-600">{error}</p>}
 
-        <div className="flex justify-between text-sm">
-          <Link href="/register" className="text-brand-600 hover:underline">
-            회원가입
-          </Link>
-          <Link href="/" className="text-gray-500 hover:underline">
-            처음으로
-          </Link>
-        </div>
+        <button
+          type="submit"
+          disabled={loading}
+          className="mt-2 h-14 w-full rounded-md bg-black text-base font-semibold text-white transition hover:bg-gray-800 disabled:bg-gray-400"
+        >
+          {loading ? '로그인 중...' : '로그인'}
+        </button>
+      </form>
 
-        <div className="border-t pt-4 text-center text-xs text-gray-400">
-          픽업서비스 직원은{' '}
-          <Link href="/login/warehouse" className="underline">
-            업체용
-          </Link>{' '}
-          ·{' '}
-          <Link href="/login/store" className="underline">
-            가맹점용
-          </Link>{' '}
-          로그인
-        </div>
+      <SocialIconButtons returnTo={next} />
 
-        {showTestAccounts() && (
-          <TestAccountsBox
-            accounts={TEST_ACCOUNTS.customer}
-            onFill={(a) => {
-              setPhone(a.phone);
-              setPassword(a.password);
-            }}
-          />
-        )}
-      </div>
+      {showTestAccounts() && (
+        <TestAccountsBox
+          accounts={TEST_ACCOUNTS.customer}
+          onFill={(a) => {
+            setId(a.phone);
+            setPw(a.password);
+          }}
+        />
+      )}
     </main>
+  );
+}
+
+function SocialIconButtons({ returnTo }: { returnTo?: string }) {
+  const query = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
+  return (
+    <div className="mt-10 flex items-center justify-center gap-4">
+      <SocialIcon href={`/api/auth/oauth/naver/start${query}`} bg="bg-[#03C75A]" label="네이버">
+        <span className="text-lg font-bold text-white">N</span>
+      </SocialIcon>
+      <SocialIcon href={`/api/auth/oauth/kakao/start${query}`} bg="bg-[#FEE500]" label="카카오">
+        <span className="text-lg">💬</span>
+      </SocialIcon>
+      <SocialIcon href={`/api/auth/oauth/google/start${query}`} bg="bg-black" label="Apple/Google">
+        <span className="text-lg text-white"></span>
+      </SocialIcon>
+    </div>
+  );
+}
+
+function SocialIcon({
+  href,
+  bg,
+  label,
+  children,
+}: {
+  href: string;
+  bg: string;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <a
+      href={href}
+      aria-label={label}
+      title={label}
+      className={`grid h-14 w-14 place-items-center rounded-full ${bg} transition hover:opacity-90`}
+    >
+      {children}
+    </a>
   );
 }
 
 function errorMessage(code?: string): string {
   switch (code) {
     case 'INVALID_CREDENTIALS':
-      return '전화번호 또는 비밀번호가 올바르지 않습니다';
+      return '아이디 또는 비밀번호가 올바르지 않습니다';
     case 'ROLE_MISMATCH':
       return '고객 계정으로 로그인해주세요';
     case 'INACTIVE_USER':

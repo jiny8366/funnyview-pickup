@@ -98,6 +98,14 @@ input:-webkit-autofill:active {
   .input {
     @apply h-10 w-full rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 transition focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100 placeholder:text-gray-400 disabled:bg-gray-50 disabled:text-gray-400;
   }
+  /* 카페24 스타일 큰 입력 박스 (로그인/회원가입) */
+  .cafe-input {
+    @apply h-14 w-full rounded-md border border-gray-200 bg-white px-4 text-base font-medium text-gray-900 transition focus:border-gray-400 focus:outline-none focus:ring-1 focus:ring-gray-300 placeholder:font-normal placeholder:text-gray-400;
+  }
+  /* 작은 입력 박스 (회원가입 폼 등) */
+  .cafe-input-sm {
+    @apply h-9 w-full rounded border border-gray-300 bg-white px-2.5 text-sm text-gray-900 transition focus:border-gray-500 focus:outline-none placeholder:text-gray-400;
+  }
 }
 
 /* prefers-reduced-motion 존중 */

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { and, eq, isNull } from 'drizzle-orm';
+import { and, eq, isNull, or } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/client';
 import { users } from '@/db/schema';
@@ -9,7 +9,7 @@ import { setSessionCookie } from '@/lib/auth/session';
 export const dynamic = 'force-dynamic';
 
 const loginSchema = z.object({
-  phone: z.string().min(8),
+  phone: z.string().min(1), // 아이디 또는 휴대전화번호
   password: z.string().min(1),
   expectedRole: z
     .enum(['customer', 'warehouse_staff', 'store_staff', 'admin'])
@@ -21,8 +21,9 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
   }
-  const { phone, password, expectedRole } = parsed.data;
+  const { phone: identifier, password, expectedRole } = parsed.data;
 
+  // username 또는 phone 매칭
   const rows = await db
     .select({
       id: users.id,
@@ -32,7 +33,12 @@ export async function POST(req: Request) {
       isActive: users.isActive,
     })
     .from(users)
-    .where(and(eq(users.phone, phone), isNull(users.deletedAt)))
+    .where(
+      and(
+        or(eq(users.phone, identifier), eq(users.username, identifier)),
+        isNull(users.deletedAt),
+      ),
+    )
     .limit(1);
 
   const user = rows[0];

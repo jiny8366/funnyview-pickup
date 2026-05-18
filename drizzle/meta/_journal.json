@@ -43,6 +43,13 @@
       "when": 1779082065798,
       "tag": "0005_low_imperial_guard",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1779116602692,
+      "tag": "0006_clammy_nighthawk",
+      "breakpoints": true
     }
   ]
 }
