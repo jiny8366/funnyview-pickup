@@ -28,6 +28,7 @@ import * as path from 'path';
 import { eq } from 'drizzle-orm';
 import { db } from '../src/db/client';
 import { stores } from '../src/db/schema';
+import { geocodeAddress } from '../src/lib/geo/kakao';
 
 const DIR = process.env.JINYS_DIR || path.join(os.homedir(), 'jinys-pages');
 const DRY_RUN = process.env.DRY_RUN === '1';
@@ -146,14 +147,41 @@ async function main() {
     return;
   }
 
+  // Geocoding — KAKAO_REST_API_KEY 가 있을 때만 좌표 채움
+  const useGeocoding = !!process.env.KAKAO_REST_API_KEY;
+  if (useGeocoding) {
+    console.log('[import-jinys] geocoding 활성화 (KAKAO_REST_API_KEY 감지)');
+  } else {
+    console.log('[import-jinys] KAKAO_REST_API_KEY 미설정 — 좌표 없이 import (추후 좌표 갱신 가능)');
+  }
+
   // DB upsert (code 기준 — J001 ~ J069)
   let inserted = 0;
   let updated = 0;
+  let geocoded = 0;
+  let geoFailed = 0;
 
   for (let i = 0; i < unique.length; i++) {
     const s = unique[i];
     const code = `J${String(i + 1).padStart(3, '0')}`;
     const normalized = normalizeName(s.name);
+
+    let latitude: string | null = null;
+    let longitude: string | null = null;
+
+    if (useGeocoding) {
+      const geo = await geocodeAddress(s.address);
+      if (geo) {
+        latitude = String(geo.latitude);
+        longitude = String(geo.longitude);
+        geocoded++;
+      } else {
+        geoFailed++;
+        console.log(`  ⚠ geocode 실패: ${s.address}`);
+      }
+      // 카카오 API 제한 회피 — 100ms 텀
+      await new Promise((r) => setTimeout(r, 100));
+    }
 
     const existing = await db
       .select({ id: stores.id })
@@ -162,14 +190,20 @@ async function main() {
       .limit(1);
 
     if (existing[0]) {
+      const updateSet: Record<string, unknown> = {
+        name: normalized,
+        phone: s.phone,
+        addressLine1: s.address,
+        updatedAt: new Date(),
+      };
+      // 좌표는 있을 때만 갱신 (이미 정확한 좌표가 있는 매장 보호)
+      if (latitude && longitude) {
+        updateSet.latitude = latitude;
+        updateSet.longitude = longitude;
+      }
       await db
         .update(stores)
-        .set({
-          name: normalized,
-          phone: s.phone,
-          addressLine1: s.address,
-          updatedAt: new Date(),
-        })
+        .set(updateSet)
         .where(eq(stores.id, existing[0].id));
       updated++;
     } else {
@@ -178,6 +212,8 @@ async function main() {
         name: normalized,
         phone: s.phone,
         addressLine1: s.address,
+        latitude,
+        longitude,
         commissionRate: '10.00',
         businessNumber: '',
         representativeName: '',
@@ -185,9 +221,17 @@ async function main() {
       });
       inserted++;
     }
+
+    // 진행률 표시
+    if ((i + 1) % 10 === 0 || i === unique.length - 1) {
+      console.log(`  진행: ${i + 1}/${unique.length}`);
+    }
   }
 
   console.log(`[import-jinys] inserted: ${inserted}, updated: ${updated}`);
+  if (useGeocoding) {
+    console.log(`[import-jinys] geocoded: ${geocoded}, failed: ${geoFailed}`);
+  }
   console.log('[import-jinys] 완료. /stores 페이지에서 확인 가능.');
   process.exit(0);
 }
