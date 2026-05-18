@@ -78,7 +78,6 @@ function CustomerLoginInner() {
             inputMode="numeric"
             autoComplete="tel"
             enterKeyHint="next"
-            placeholder="01012345678"
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
             required

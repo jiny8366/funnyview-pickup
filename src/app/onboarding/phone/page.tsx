@@ -55,7 +55,6 @@ function OnboardingPhoneInner() {
           <Input
             label="휴대전화번호"
             inputMode="numeric"
-            placeholder="01012345678"
             value={phone}
             onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
             required

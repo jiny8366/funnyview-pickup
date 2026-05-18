@@ -95,7 +95,6 @@ export default function CustomerRegisterPage() {
             inputMode="numeric"
             autoComplete="tel"
             enterKeyHint="next"
-            placeholder="01012345678"
             value={form.phone}
             onChange={(e) => update('phone', e.target.value.replace(/\D/g, ''))}
             hint="아이디로 사용됩니다"
