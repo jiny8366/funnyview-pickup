@@ -104,6 +104,13 @@ async function ensureLens(input: {
   cost: number;
   sphereMin: string;
   sphereMax: string;
+  // 카페24 카드 옵션 (선택)
+  colorName?: string;
+  colorHex?: string;
+  colorPreviewUrl?: string;
+  seriesCode?: string;
+  imageUrl?: string;
+  isNew?: boolean;
 }) {
   const existing = await db.select({ id: lenses.id }).from(lenses).where(eq(lenses.productCode, input.productCode)).limit(1);
   if (existing[0]) return existing[0].id;
@@ -124,6 +131,12 @@ async function ensureLens(input: {
       sphereMin: input.sphereMin,
       sphereMax: input.sphereMax,
       sphereStep: '0.25',
+      colorName: input.colorName ?? null,
+      colorHex: input.colorHex ?? null,
+      colorPreviewUrl: input.colorPreviewUrl ?? null,
+      seriesCode: input.seriesCode ?? null,
+      imageUrl: input.imageUrl ?? null,
+      isNew: input.isNew ?? false,
     })
     .returning({ id: lenses.id });
   return l.id;
@@ -267,8 +280,78 @@ async function main() {
     cost: 12000,
     sphereMin: '-8.00',
     sphereMax: '0.00',
+    colorName: '초코',
+    colorHex: '#8B5A2B',
   });
+
+  // 카페24 스타일 샘플 3개 (같은 시리즈 'CHRISTIN-1DAY' — '+N가지 컬러' 표시)
+  const series = 'CHRISTIN-1DAY';
+  const sampleBrown = await ensureLens({
+    productCode: 'CHR-OO-1D-BR',
+    brand: '크리스틴',
+    name: '원앤온리 원데이',
+    lensType: 'color',
+    replacementCycle: '1day',
+    baseCurve: '8.60',
+    diameter: '13.00',
+    waterContent: '38.00',
+    piecesPerBox: 10,
+    price: 19000,
+    cost: 9000,
+    sphereMin: '-8.00',
+    sphereMax: '0.00',
+    colorName: '브라운',
+    colorHex: '#6B4423',
+    seriesCode: series,
+    imageUrl: 'https://picsum.photos/seed/christin-brown/600/750',
+  });
+  const sampleDrip = await ensureLens({
+    productCode: 'CHR-VEN-1D-DRIP',
+    brand: '크리스틴',
+    name: '빈 원데이',
+    lensType: 'color',
+    replacementCycle: '1day',
+    baseCurve: '8.60',
+    diameter: '13.20',
+    waterContent: '38.00',
+    piecesPerBox: 10,
+    price: 19000,
+    cost: 9000,
+    sphereMin: '-8.00',
+    sphereMax: '0.00',
+    colorName: '드립 브라운',
+    colorHex: '#8B6F47',
+    seriesCode: series,
+    imageUrl: 'https://picsum.photos/seed/christin-drip/600/750',
+    isNew: true,
+  });
+  const sampleBlack = await ensureLens({
+    productCode: 'CHR-QUI-1D-GB',
+    brand: '크리스틴',
+    name: '콰이어트 원데이',
+    lensType: 'color',
+    replacementCycle: '1day',
+    baseCurve: '8.60',
+    diameter: '13.40',
+    waterContent: '38.00',
+    piecesPerBox: 10,
+    price: 19000,
+    cost: 9000,
+    sphereMin: '-8.00',
+    sphereMax: '0.00',
+    colorName: '글로우 블랙',
+    colorHex: '#2C2C2C',
+    seriesCode: series,
+    imageUrl: 'https://picsum.photos/seed/christin-black/600/750',
+    isNew: true,
+  });
+
   console.log('[seed] lenses created');
+  console.log('[seed] sample products (카페24 카드):', {
+    sampleBrown,
+    sampleDrip,
+    sampleBlack,
+  });
 
   // 4) Variants
   const sphericalRange = [-1.0, -1.5, -2.0, -2.5, -3.0, -3.5, -4.0, -4.5, -5.0];

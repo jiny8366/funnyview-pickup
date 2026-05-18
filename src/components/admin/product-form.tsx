@@ -50,6 +50,11 @@ interface FormState {
   mfdsClassificationCode: string;
   mfdsProductName: string;
   manufacturer: string;
+  colorName: string;
+  colorHex: string;
+  colorPreviewUrl: string;
+  seriesCode: string;
+  isNew: boolean;
   isActive: boolean;
 }
 
@@ -73,6 +78,11 @@ const EMPTY: FormState = {
   mfdsClassificationCode: '',
   mfdsProductName: '',
   manufacturer: '',
+  colorName: '',
+  colorHex: '',
+  colorPreviewUrl: '',
+  seriesCode: '',
+  isNew: false,
   isActive: true,
 };
 
@@ -314,6 +324,81 @@ export function ProductForm({
                 placeholder="+6.00"
                 className="input"
               />
+            </Field>
+          </div>
+        </CardBody>
+      </Card>
+
+      {/* 쇼핑몰 카드 표시 */}
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>쇼핑몰 카드 표시</CardTitle>
+            <CardDescription>
+              홈 화면 / 카테고리 페이지의 상품 카드 디자인 (카페24 스타일).
+            </CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <div className="grid gap-4 md:grid-cols-2">
+            <Field label="컬러명 (카드 표시)">
+              <input
+                value={form.colorName}
+                onChange={(e) => update('colorName', e.target.value)}
+                placeholder="예: 브라운, 글로우 블랙, 초코"
+                className="input"
+              />
+            </Field>
+            <Field label="시리즈 코드 (선택)">
+              <input
+                value={form.seriesCode}
+                onChange={(e) => update('seriesCode', e.target.value)}
+                placeholder="예: CHRISTIN-1DAY (같은 시리즈 컬러 묶음)"
+                className="input font-mono"
+              />
+            </Field>
+            <Field label="컬러 미리보기 이미지 (선택, 우선)">
+              <ImagePicker
+                value={form.colorPreviewUrl}
+                onChange={(v) => update('colorPreviewUrl', v)}
+                folder="lenses/color"
+              />
+            </Field>
+            <Field label="컬러 HEX (이미지 없을 때 폴백)">
+              <div className="flex items-center gap-2">
+                <input
+                  type="color"
+                  value={form.colorHex || '#8B5A2B'}
+                  onChange={(e) => update('colorHex', e.target.value)}
+                  className="h-10 w-12 cursor-pointer rounded border border-gray-300"
+                />
+                <input
+                  value={form.colorHex}
+                  onChange={(e) => update('colorHex', e.target.value)}
+                  placeholder="#8B5A2B"
+                  className="input flex-1 font-mono"
+                />
+                {form.colorHex && (
+                  <button
+                    type="button"
+                    onClick={() => update('colorHex', '')}
+                    className="text-xs text-gray-400 hover:text-gray-900"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
+            </Field>
+            <Field label="NEW 뱃지">
+              <label className="flex h-10 cursor-pointer items-center gap-2 rounded-lg border border-gray-300 bg-white px-3 text-sm">
+                <input
+                  type="checkbox"
+                  checked={form.isNew}
+                  onChange={(e) => update('isNew', e.target.checked)}
+                  className="h-4 w-4"
+                />
+                카드 우상단에 NEW 뱃지 표시
+              </label>
             </Field>
           </div>
         </CardBody>

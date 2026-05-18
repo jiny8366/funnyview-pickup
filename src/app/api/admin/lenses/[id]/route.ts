@@ -54,6 +54,11 @@ export async function PATCH(
     'mfdsClassificationCode',
     'mfdsProductName',
     'manufacturer',
+    'colorName',
+    'colorHex',
+    'colorPreviewUrl',
+    'seriesCode',
+    'isNew',
     'isActive',
   ] as const;
 

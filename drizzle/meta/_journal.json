@@ -50,6 +50,13 @@
       "when": 1779116602692,
       "tag": "0006_clammy_nighthawk",
       "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1779119778900,
+      "tag": "0007_clumsy_dreaming_celestial",
+      "breakpoints": true
     }
   ]
 }

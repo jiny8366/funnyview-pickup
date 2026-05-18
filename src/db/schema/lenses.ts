@@ -60,6 +60,14 @@ export const lenses = pgTable(
 
     imageUrl: text('image_url'),
     description: text('description'),
+
+    // 카페24 스타일 상품 카드 표시
+    colorName: text('color_name'), // '브라운', '글로우 블랙' 등
+    colorHex: text('color_hex'), // CSS 색상 (#8B5A2B 등) — 미리보기 원
+    colorPreviewUrl: text('color_preview_url'), // 실제 렌즈 컬러 이미지 (URL 우선)
+    seriesCode: text('series_code'), // 시리즈 그룹화 ('CHRISTIN-1DAY' 등 — 컬러 묶음)
+    isNew: boolean('is_new').default(false).notNull(), // NEW 뱃지 표시
+
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
@@ -75,6 +83,7 @@ export const lenses = pgTable(
     ),
     brandIdx: index('lenses_brand_idx').on(t.brand),
     activeIdx: index('lenses_active_idx').on(t.isActive),
+    seriesIdx: index('lenses_series_idx').on(t.seriesCode),
   }),
 );
 

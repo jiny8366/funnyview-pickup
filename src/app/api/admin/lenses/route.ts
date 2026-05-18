@@ -51,6 +51,11 @@ export async function POST(req: Request) {
     mfdsClassificationCode,
     mfdsProductName,
     manufacturer,
+    colorName,
+    colorHex,
+    colorPreviewUrl,
+    seriesCode,
+    isNew,
   } = body ?? {};
 
   if (!productCode || !brand || !name || !lensType || !replacementCycle || price == null) {
@@ -80,6 +85,11 @@ export async function POST(req: Request) {
       mfdsClassificationCode: mfdsClassificationCode || null,
       mfdsProductName: mfdsProductName || null,
       manufacturer: manufacturer || null,
+      colorName: colorName || null,
+      colorHex: colorHex || null,
+      colorPreviewUrl: colorPreviewUrl || null,
+      seriesCode: seriesCode || null,
+      isNew: !!isNew,
     })
     .returning();
 

@@ -54,6 +54,11 @@ export default async function EditProductPage({
           mfdsClassificationCode: row.mfdsClassificationCode ?? '',
           mfdsProductName: row.mfdsProductName ?? '',
           manufacturer: row.manufacturer ?? '',
+          colorName: row.colorName ?? '',
+          colorHex: row.colorHex ?? '',
+          colorPreviewUrl: row.colorPreviewUrl ?? '',
+          seriesCode: row.seriesCode ?? '',
+          isNew: row.isNew,
           isActive: row.isActive,
           description: row.description,
         }}

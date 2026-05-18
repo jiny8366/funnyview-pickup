@@ -14,7 +14,30 @@ export interface CuratedLens {
   piecesPerBox: number;
   price: number;
   imageUrl: string | null;
+  diameter: string | null;
+  colorName: string | null;
+  colorHex: string | null;
+  colorPreviewUrl: string | null;
+  seriesCode: string | null;
+  isNew: boolean;
 }
+
+const CURATION_SELECT = {
+  id: lenses.id,
+  brand: lenses.brand,
+  name: lenses.name,
+  lensType: lenses.lensType,
+  replacementCycle: lenses.replacementCycle,
+  piecesPerBox: lenses.piecesPerBox,
+  price: lenses.price,
+  imageUrl: lenses.imageUrl,
+  diameter: lenses.diameter,
+  colorName: lenses.colorName,
+  colorHex: lenses.colorHex,
+  colorPreviewUrl: lenses.colorPreviewUrl,
+  seriesCode: lenses.seriesCode,
+  isNew: lenses.isNew,
+};
 
 const CACHE_TTL_SECONDS = 300; // 5분
 const CACHE_PREFIX = 'home:curation:';
@@ -70,6 +93,12 @@ export async function curateLenses(
         piecesPerBox: lenses.piecesPerBox,
         price: lenses.price,
         imageUrl: lenses.imageUrl,
+        diameter: lenses.diameter,
+        colorName: lenses.colorName,
+        colorHex: lenses.colorHex,
+        colorPreviewUrl: lenses.colorPreviewUrl,
+        seriesCode: lenses.seriesCode,
+        isNew: lenses.isNew,
       })
       .from(lenses)
       .where(and(eq(lenses.isActive, true), inArray(lenses.id, manualIds)))
@@ -88,6 +117,12 @@ export async function curateLenses(
         piecesPerBox: lenses.piecesPerBox,
         price: lenses.price,
         imageUrl: lenses.imageUrl,
+        diameter: lenses.diameter,
+        colorName: lenses.colorName,
+        colorHex: lenses.colorHex,
+        colorPreviewUrl: lenses.colorPreviewUrl,
+        seriesCode: lenses.seriesCode,
+        isNew: lenses.isNew,
       })
       .from(lenses)
       .where(eq(lenses.isActive, true))
@@ -107,6 +142,12 @@ export async function curateLenses(
         piecesPerBox: lenses.piecesPerBox,
         price: lenses.price,
         imageUrl: lenses.imageUrl,
+        diameter: lenses.diameter,
+        colorName: lenses.colorName,
+        colorHex: lenses.colorHex,
+        colorPreviewUrl: lenses.colorPreviewUrl,
+        seriesCode: lenses.seriesCode,
+        isNew: lenses.isNew,
         score: sql<number>`COALESCE(SUM(${orderItems.quantity}), 0)::int`,
       })
       .from(lenses)
@@ -137,6 +178,12 @@ export async function curateLenses(
         piecesPerBox: lenses.piecesPerBox,
         price: lenses.price,
         imageUrl: lenses.imageUrl,
+        diameter: lenses.diameter,
+        colorName: lenses.colorName,
+        colorHex: lenses.colorHex,
+        colorPreviewUrl: lenses.colorPreviewUrl,
+        seriesCode: lenses.seriesCode,
+        isNew: lenses.isNew,
       })
       .from(lenses)
       .leftJoin(lensVariants, eq(lensVariants.lensId, lenses.id))

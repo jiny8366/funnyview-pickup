@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
+import { ProductSection } from '@/components/product/product-section';
 import { formatKRW } from '@/lib/utils/format';
 
 interface BaseSection {
@@ -22,6 +23,12 @@ interface ProductGridSection extends BaseSection {
     replacementCycle?: string;
     piecesPerBox?: number;
     imageUrl?: string | null;
+    diameter?: string | null;
+    colorName?: string | null;
+    colorHex?: string | null;
+    colorPreviewUrl?: string | null;
+    seriesCode?: string | null;
+    isNew?: boolean;
   }>;
 }
 
@@ -171,47 +178,56 @@ function HeroSection({ section }: { section: Section }) {
 
 function ProductGridRender({ section }: { section: ProductGridSection }) {
   const ref = useImpression(section.id, section.variant);
-  const c = section.config as { layout?: 'grid' | 'carousel'; showPrice?: boolean; cardTone?: 'minimal' | 'photo' };
+  const c = section.config as {
+    subtitle?: string; // '베스트' 등
+    viewAllHref?: string;
+  };
   const items = section.lenses ?? [];
+
+  // 같은 series 내 컬러 수 (variantCount) 계산
+  const seriesCount = new Map<string, number>();
+  for (const l of items) {
+    if (l.seriesCode) {
+      seriesCount.set(l.seriesCode, (seriesCount.get(l.seriesCode) ?? 0) + 1);
+    }
+  }
+
+  const products = items.map((l) => ({
+    id: l.id,
+    productCode: l.id,
+    brand: l.brand,
+    name: l.name,
+    imageUrl: l.imageUrl ?? null,
+    colorName: l.colorName ?? null,
+    colorHex: l.colorHex ?? null,
+    colorPreviewUrl: l.colorPreviewUrl ?? null,
+    replacementCycle: l.replacementCycle ?? '1day',
+    diameter: l.diameter ?? null,
+    price: l.price,
+    isNew: l.isNew ?? false,
+    variantCount: l.seriesCode ? (seriesCount.get(l.seriesCode) ?? 1) - 1 : 0,
+  }));
+
+  if (items.length === 0) {
+    return (
+      <section ref={ref}>
+        {section.title && <h2 className="mb-3 text-2xl font-bold text-gray-900">{section.title}</h2>}
+        <div className="rounded-2xl border border-dashed border-gray-300 p-12 text-center text-sm text-gray-400">
+          등록된 상품이 없습니다
+        </div>
+      </section>
+    );
+  }
+
   return (
-    <section ref={ref}>
-      {section.title && <h2 className="mb-3 text-lg font-bold">{section.title}</h2>}
-      <div
-        className={
-          c.layout === 'carousel'
-            ? 'flex gap-3 overflow-x-auto pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-            : 'grid grid-cols-2 gap-3 md:grid-cols-4'
-        }
-      >
-        {items.map((l) => (
-          <Link
-            key={l.id}
-            href={`/customer/order?lens=${l.id}`}
-            onClick={() => reportClick(section.id, section.variant)}
-            className="block min-w-[160px] rounded-2xl border border-gray-200 bg-white p-3 transition hover:border-brand-300"
-          >
-            <div className="aspect-square overflow-hidden rounded-xl bg-gray-100">
-              {l.imageUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={l.imageUrl} alt={l.name} className="h-full w-full object-cover" />
-              ) : (
-                <div className="flex h-full w-full items-center justify-center text-gray-300">{l.brand[0]}</div>
-              )}
-            </div>
-            <div className="mt-2">
-              <div className="text-xs text-gray-500">{l.brand}</div>
-              <div className="text-sm font-medium">{l.name}</div>
-              {c.showPrice && <div className="mt-1 text-sm font-bold">{formatKRW(l.price)}</div>}
-            </div>
-          </Link>
-        ))}
-        {items.length === 0 && (
-          <div className="col-span-full rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
-            등록된 상품이 없습니다
-          </div>
-        )}
-      </div>
-    </section>
+    <div ref={ref} onClick={() => reportClick(section.id, section.variant)}>
+      <ProductSection
+        title={section.title ?? '추천 상품'}
+        subtitle={c.subtitle}
+        viewAllHref={c.viewAllHref}
+        products={products}
+      />
+    </div>
   );
 }
 
