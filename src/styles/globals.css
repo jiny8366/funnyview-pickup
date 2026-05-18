@@ -35,13 +35,31 @@ input,
 select,
 textarea {
   font-size: 16px;
+  font-weight: 500;
   color: #111827; /* gray-900 */
   background-color: #ffffff;
+  -webkit-text-fill-color: #111827; /* iOS autofill 시 회색으로 흐려지는 것 방지 */
+  caret-color: #2563eb; /* brand-600 — 깜빡이는 커서 색 */
 }
 input::placeholder,
 textarea::placeholder {
-  color: #9ca3af; /* gray-400 */
+  color: #6b7280; /* gray-500 — 입력값과 구분되되 보일 정도 */
+  font-weight: 400;
+  opacity: 1; /* Firefox 의 기본 0.54 opacity 무력화 */
 }
+
+/* Chrome/Safari autofill 시 노란 배경 + 회색 글씨 override */
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+  -webkit-text-fill-color: #111827 !important;
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  caret-color: #111827 !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
 @media (min-width: 768px) {
   input,
   select,
