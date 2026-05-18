@@ -3,6 +3,8 @@ import { asc, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import {
   customers,
+  lenses,
+  lensVariants,
   orderItems,
   orderStatusHistory,
   orders,
@@ -49,8 +51,27 @@ export async function GET(
   }
 
   const items = await db
-    .select()
+    .select({
+      id: orderItems.id,
+      eyeSide: orderItems.eyeSide,
+      quantity: orderItems.quantity,
+      unitPrice: orderItems.unitPrice,
+      lineTotal: orderItems.lineTotal,
+      lensName: orderItems.lensName,
+      lensBrand: orderItems.lensBrand,
+      sphere: orderItems.sphere,
+      cylinder: orderItems.cylinder,
+      axis: orderItems.axis,
+      addPower: orderItems.addPower,
+      skuSnapshot: orderItems.skuSnapshot,
+      // lens 마스터 (표시명 일관성)
+      replacementCycle: lenses.replacementCycle,
+      piecesPerBox: lenses.piecesPerBox,
+      lensType: lenses.lensType,
+    })
     .from(orderItems)
+    .innerJoin(lensVariants, eq(lensVariants.id, orderItems.variantId))
+    .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
     .where(eq(orderItems.orderId, row.order.id))
     .orderBy(asc(orderItems.eyeSide));
 

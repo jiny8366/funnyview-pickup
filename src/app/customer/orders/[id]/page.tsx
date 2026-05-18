@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import Link from 'next/link';
 import { StatusBadge } from '@/components/ui/badge';
-import { formatDateTime, formatKRW, formatRx } from '@/lib/utils/format';
+import { formatLensDisplayName, formatPackQuantity } from '@/lib/lens/format';
+import { formatDateTime, formatKRW } from '@/lib/utils/format';
 import type { OrderStatus } from '@/types/order';
 
 interface OrderDetail {
@@ -42,6 +43,11 @@ interface OrderDetail {
     cylinder: string | null;
     axis: number | null;
     addPower: string | null;
+    skuSnapshot: string;
+    // lens 마스터
+    replacementCycle: string;
+    piecesPerBox: number;
+    lensType: string;
   }>;
   history: Array<{
     id: string;
@@ -136,23 +142,35 @@ export default function CustomerOrderDetailPage() {
       <section className="rounded-2xl border border-gray-200 bg-white p-4 md:p-6">
         <h3 className="mb-3 font-semibold">주문 상품</h3>
         <ul className="divide-y divide-gray-100">
-          {items.map((it) => (
-            <li key={it.id} className="flex items-start justify-between py-3 text-sm">
-              <div>
-                <div className="text-xs text-gray-500">
-                  {it.lensBrand} ·{' '}
-                  <span className="font-medium text-gray-800">
-                    {it.eyeSide === 'left' ? '왼쪽 (OS)' : it.eyeSide === 'right' ? '오른쪽 (OD)' : '양안'}
-                  </span>
+          {items.map((it) => {
+            const displayName = formatLensDisplayName(
+              {
+                brand: it.lensBrand,
+                name: it.lensName,
+                replacementCycle: it.replacementCycle,
+                piecesPerBox: it.piecesPerBox,
+                lensType: it.lensType,
+              },
+              it,
+              { format: 'full' },
+            );
+            const eyeLabel =
+              it.eyeSide === 'left' ? '왼쪽 (OS)' : it.eyeSide === 'right' ? '오른쪽 (OD)' : '양안';
+            return (
+              <li key={it.id} className="flex items-start justify-between gap-3 py-3 text-sm">
+                <div className="min-w-0 flex-1">
+                  <div className="text-xs font-medium text-brand-600">{eyeLabel}</div>
+                  <div className="mt-0.5 truncate text-sm font-medium text-gray-900">
+                    {displayName}
+                  </div>
+                  <div className="mt-0.5 text-xs text-gray-500">
+                    {formatPackQuantity(it.quantity, it.piecesPerBox)}
+                  </div>
                 </div>
-                <div className="font-medium">{it.lensName}</div>
-                <div className="mt-0.5 text-xs text-gray-500">
-                  {formatRx(it)} · {it.quantity}박스
-                </div>
-              </div>
-              <div className="text-right font-medium">{formatKRW(it.lineTotal)}</div>
-            </li>
-          ))}
+                <div className="shrink-0 text-right font-medium">{formatKRW(it.lineTotal)}</div>
+              </li>
+            );
+          })}
         </ul>
         <div className="mt-4 space-y-1 border-t pt-3 text-sm">
           <div className="flex justify-between text-gray-500">

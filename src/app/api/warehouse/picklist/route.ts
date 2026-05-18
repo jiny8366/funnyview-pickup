@@ -2,7 +2,14 @@ import { NextResponse } from 'next/server';
 import { asc, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { customers, orderItems, orders, stores } from '@/db/schema';
+import {
+  customers,
+  lenses,
+  lensVariants,
+  orderItems,
+  orders,
+  stores,
+} from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 
 export const dynamic = 'force-dynamic';
@@ -46,8 +53,28 @@ export async function POST(req: Request) {
     .orderBy(asc(stores.name), asc(orders.orderNumber));
 
   const itemRows = await db
-    .select()
+    .select({
+      // order_items snapshot
+      id: orderItems.id,
+      orderId: orderItems.orderId,
+      variantId: orderItems.variantId,
+      eyeSide: orderItems.eyeSide,
+      quantity: orderItems.quantity,
+      lensName: orderItems.lensName,
+      lensBrand: orderItems.lensBrand,
+      sphere: orderItems.sphere,
+      cylinder: orderItems.cylinder,
+      axis: orderItems.axis,
+      addPower: orderItems.addPower,
+      skuSnapshot: orderItems.skuSnapshot,
+      // lens 마스터 보강 (표시명 일관성)
+      lensType: lenses.lensType,
+      replacementCycle: lenses.replacementCycle,
+      piecesPerBox: lenses.piecesPerBox,
+    })
     .from(orderItems)
+    .innerJoin(lensVariants, eq(lensVariants.id, orderItems.variantId))
+    .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
     .where(inArray(orderItems.orderId, parsed.data.orderIds))
     .orderBy(asc(orderItems.orderId), asc(orderItems.eyeSide));
 
@@ -58,10 +85,18 @@ export async function POST(req: Request) {
     itemsByOrder.set(it.orderId, arr);
   }
 
-  // SKU 합산
+  // SKU 합산 (lens 마스터 정보 포함)
   const skuTotals = new Map<
     string,
-    { sku: string; lensName: string; lensBrand: string; quantity: number; rxList: string[] }
+    {
+      sku: string;
+      lensName: string;
+      lensBrand: string;
+      replacementCycle: string;
+      piecesPerBox: number;
+      lensType: string;
+      quantity: number;
+    }
   >();
   for (const it of itemRows) {
     const key = it.skuSnapshot;
@@ -69,8 +104,10 @@ export async function POST(req: Request) {
       sku: it.skuSnapshot,
       lensName: it.lensName,
       lensBrand: it.lensBrand,
+      replacementCycle: it.replacementCycle,
+      piecesPerBox: it.piecesPerBox,
+      lensType: it.lensType,
       quantity: 0,
-      rxList: [],
     };
     acc.quantity += it.quantity;
     skuTotals.set(key, acc);

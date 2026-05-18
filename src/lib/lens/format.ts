@@ -11,7 +11,25 @@
  *   line:    ACU-OAS1D-S-300 (SKU)
  */
 
-import type { Lens, LensVariant } from '@/db/schema';
+/**
+ * 호출 측이 API 응답(plain string) 또는 DB row(enum) 어느 쪽이든
+ * 동일하게 전달할 수 있도록 string 으로 받음.
+ */
+export interface LensDisplayInfo {
+  brand: string;
+  name: string;
+  replacementCycle: string;
+  piecesPerBox: number;
+  lensType: string;
+}
+
+export interface VariantDisplayInfo {
+  sku?: string;
+  sphere: string | number | null;
+  cylinder: string | number | null;
+  axis: number | null;
+  addPower: string | number | null;
+}
 
 const CYCLE_LABEL: Record<string, string> = {
   '1day': '원데이',
@@ -62,14 +80,14 @@ export interface FormatOptions {
  * 표시명 — 계층형 슬래시 구분.
  */
 export function formatLensDisplayName(
-  lens: Pick<Lens, 'brand' | 'name' | 'replacementCycle' | 'piecesPerBox' | 'lensType'>,
-  variant: Pick<LensVariant, 'sku' | 'sphere' | 'cylinder' | 'axis' | 'addPower'>,
+  lens: LensDisplayInfo,
+  variant: VariantDisplayInfo,
   opts: FormatOptions = {},
 ): string {
   const sep = opts.separator ?? ' / ';
   const format = opts.format ?? 'full';
 
-  if (format === 'sku') return variant.sku;
+  if (format === 'sku') return variant.sku ?? '';
 
   const spec = formatLensSpec(variant);
 
@@ -97,7 +115,7 @@ export function formatLensDisplayName(
  * 도수 스펙만 — "SPH -3.00 / CYL -0.75 / AX 180 / ADD +1.50"
  */
 export function formatLensSpec(
-  variant: Pick<LensVariant, 'sphere' | 'cylinder' | 'axis' | 'addPower'>,
+  variant: Omit<VariantDisplayInfo, 'sku'>,
   separator = ' / ',
 ): string {
   const parts: string[] = [];
@@ -128,8 +146,13 @@ export function formatLensSpec(
  *   'sphRange'     → 'ACUVUE/ACU-OAS1D/-3.00~-5.00'
  */
 export function lensGroupingKey(
-  lens: Pick<Lens, 'brand' | 'productCode' | 'replacementCycle' | 'piecesPerBox'>,
-  variant: Pick<LensVariant, 'sphere'> | null,
+  lens: {
+    brand: string;
+    productCode: string;
+    replacementCycle: string;
+    piecesPerBox: number;
+  },
+  variant: { sphere: string | number | null } | null,
   axis: 'brand' | 'product' | 'cycle' | 'pack' | 'sphRange',
 ): string {
   switch (axis) {

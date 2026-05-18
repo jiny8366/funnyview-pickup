@@ -2,7 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { formatDateTime, formatRx } from '@/lib/utils/format';
+import {
+  formatLensDisplayName,
+  formatLensSpec,
+  formatPackQuantity,
+} from '@/lib/lens/format';
+import { formatDateTime } from '@/lib/utils/format';
 
 interface OrderRow {
   id: string;
@@ -27,6 +32,20 @@ interface PickItem {
   axis: number | null;
   addPower: string | null;
   skuSnapshot: string;
+  // lens 마스터 보강
+  replacementCycle: string;
+  piecesPerBox: number;
+  lensType: string;
+}
+
+interface SkuTotal {
+  sku: string;
+  lensName: string;
+  lensBrand: string;
+  replacementCycle: string;
+  piecesPerBox: number;
+  lensType: string;
+  quantity: number;
 }
 
 interface PicklistData {
@@ -41,12 +60,7 @@ interface PicklistData {
     customerPhone: string;
     items: PickItem[];
   }>;
-  skuTotals: Array<{
-    sku: string;
-    lensName: string;
-    lensBrand: string;
-    quantity: number;
-  }>;
+  skuTotals: SkuTotal[];
 }
 
 export default function WarehousePicklistPage() {
@@ -152,7 +166,7 @@ export default function WarehousePicklistPage() {
               <thead className="bg-gray-100 text-xs uppercase">
                 <tr>
                   <th className="px-3 py-2 text-left">SKU</th>
-                  <th className="px-3 py-2 text-left">렌즈</th>
+                  <th className="px-3 py-2 text-left">제품 (브랜드 / 제품명 / 주기 / 팩수)</th>
                   <th className="px-3 py-2 text-right">총 수량</th>
                 </tr>
               </thead>
@@ -161,9 +175,32 @@ export default function WarehousePicklistPage() {
                   <tr key={t.sku}>
                     <td className="px-3 py-2 font-mono text-xs">{t.sku}</td>
                     <td className="px-3 py-2">
-                      {t.lensBrand} {t.lensName}
+                      <div>
+                        {formatLensDisplayName(
+                          {
+                            brand: t.lensBrand,
+                            name: t.lensName,
+                            replacementCycle: t.replacementCycle,
+                            piecesPerBox: t.piecesPerBox,
+                            lensType: t.lensType,
+                          },
+                          {
+                            sku: t.sku,
+                            sphere: '0',
+                            cylinder: null,
+                            axis: null,
+                            addPower: null,
+                          },
+                          { format: 'full' },
+                        ).replace(/ \/ SPH \+0\.00$/, '')}
+                      </div>
                     </td>
-                    <td className="px-3 py-2 text-right font-semibold">{t.quantity}</td>
+                    <td className="px-3 py-2 text-right">
+                      <div className="font-semibold">{t.quantity}팩</div>
+                      <div className="text-xs text-gray-500">
+                        ({(t.quantity * t.piecesPerBox).toLocaleString()}매)
+                      </div>
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -183,19 +220,30 @@ export default function WarehousePicklistPage() {
                     </div>
                   </div>
                   <ul className="mt-2 divide-y divide-gray-100 text-sm">
-                    {o.items.map((it) => (
-                      <li key={it.id} className="py-2">
-                        <div className="font-medium">
-                          {it.lensBrand} {it.lensName} ·{' '}
-                          <span className="text-gray-600">
-                            {it.eyeSide === 'left' ? 'OS' : it.eyeSide === 'right' ? 'OD' : '양안'}
-                          </span>
-                        </div>
-                        <div className="text-xs text-gray-500">
-                          {formatRx(it)} · {it.quantity}박스 · SKU {it.skuSnapshot}
-                        </div>
-                      </li>
-                    ))}
+                    {o.items.map((it) => {
+                      const displayName = formatLensDisplayName(
+                        {
+                          brand: it.lensBrand,
+                          name: it.lensName,
+                          replacementCycle: it.replacementCycle,
+                          piecesPerBox: it.piecesPerBox,
+                          lensType: it.lensType,
+                        },
+                        it,
+                        { format: 'full' },
+                      );
+                      const eyeLabel =
+                        it.eyeSide === 'left' ? 'OS (좌)' : it.eyeSide === 'right' ? 'OD (우)' : '양안';
+                      return (
+                        <li key={it.id} className="py-2">
+                          <div className="font-medium">{displayName}</div>
+                          <div className="mt-0.5 text-xs text-gray-600">
+                            {eyeLabel} · {formatPackQuantity(it.quantity, it.piecesPerBox)}
+                          </div>
+                          <div className="text-[11px] font-mono text-gray-400">SKU {it.skuSnapshot}</div>
+                        </li>
+                      );
+                    })}
                   </ul>
                 </div>
               ))}

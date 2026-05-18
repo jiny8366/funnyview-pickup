@@ -4,7 +4,11 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { formatRx } from '@/lib/utils/format';
+import {
+  formatLensDisplayName,
+  formatLensSpec,
+  formatPackQuantity,
+} from '@/lib/lens/format';
 
 interface InvRow {
   inventoryId: string;
@@ -16,6 +20,9 @@ interface InvRow {
   cylinder: string | null;
   axis: number | null;
   addPower: string | null;
+  replacementCycle: string;
+  piecesPerBox: number;
+  lensType: string;
   onHand: number;
   reserved: number;
   available: number;
@@ -75,58 +82,73 @@ function WarehouseInventoryInner() {
         <table className="w-full text-sm">
           <thead className="bg-gray-50 text-xs uppercase text-gray-500">
             <tr>
-              <th className="px-3 py-2 text-left">SKU</th>
-              <th className="px-3 py-2 text-left">렌즈</th>
+              <th className="px-3 py-2 text-left">제품 (브랜드 / 제품명 / 주기 / 팩수)</th>
               <th className="px-3 py-2 text-left">도수</th>
-              <th className="px-3 py-2 text-right">현재고</th>
+              <th className="px-3 py-2 text-right">현재고 (팩)</th>
               <th className="px-3 py-2 text-right">예약</th>
               <th className="px-3 py-2 text-right">가용</th>
               <th className="px-3 py-2 text-right">안전</th>
-              <th className="px-3 py-2 text-right">입고/조정</th>
+              <th className="px-3 py-2 text-right">조정</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
-            {rows?.map((r) => (
-              <tr key={r.variantId} className={r.isLow ? 'bg-red-50' : ''}>
-                <td className="px-3 py-2 font-mono text-xs">{r.sku}</td>
-                <td className="px-3 py-2">
-                  {r.brand} {r.lensName}
-                </td>
-                <td className="px-3 py-2 text-xs text-gray-500">
-                  {formatRx(r)}
-                </td>
-                <td className="px-3 py-2 text-right">{r.onHand}</td>
-                <td className="px-3 py-2 text-right text-gray-500">{r.reserved}</td>
-                <td className={`px-3 py-2 text-right font-semibold ${r.isLow ? 'text-red-700' : ''}`}>
-                  {r.available}
-                </td>
-                <td className="px-3 py-2 text-right text-xs text-gray-500">{r.safetyStock}</td>
-                <td className="px-3 py-2 text-right">
-                  {editing === r.variantId ? (
-                    <div className="flex items-center justify-end gap-1">
-                      <Input
-                        className="w-20"
-                        value={delta}
-                        onChange={(e) => setDelta(e.target.value.replace(/[^\-0-9]/g, ''))}
-                        inputMode="numeric"
-                      />
-                      <Button size="sm" onClick={() => adjust(r.variantId)}>
-                        적용
-                      </Button>
-                      <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
-                        취소
-                      </Button>
+            {rows?.map((r) => {
+              const productName = formatLensDisplayName(
+                {
+                  brand: r.brand,
+                  name: r.lensName,
+                  replacementCycle: r.replacementCycle,
+                  piecesPerBox: r.piecesPerBox,
+                  lensType: r.lensType,
+                },
+                { sku: r.sku, sphere: '0', cylinder: null, axis: null, addPower: null },
+                { format: 'full' },
+              ).replace(/ \/ SPH \+0\.00$/, '');
+              return (
+                <tr key={r.variantId} className={r.isLow ? 'bg-red-50' : ''}>
+                  <td className="px-3 py-2">
+                    <div>{productName}</div>
+                    <div className="text-[10px] font-mono text-gray-400">{r.sku}</div>
+                  </td>
+                  <td className="px-3 py-2 text-xs text-gray-700">{formatLensSpec(r) || '—'}</td>
+                  <td className="px-3 py-2 text-right">
+                    <div className="font-semibold">{r.onHand}</div>
+                    <div className="text-[10px] text-gray-400">
+                      ({(r.onHand * r.piecesPerBox).toLocaleString()}매)
                     </div>
-                  ) : (
-                    <Button variant="secondary" size="sm" onClick={() => setEditing(r.variantId)}>
-                      변경
-                    </Button>
-                  )}
-                </td>
-              </tr>
-            ))}
+                  </td>
+                  <td className="px-3 py-2 text-right text-gray-500">{r.reserved}</td>
+                  <td className={`px-3 py-2 text-right font-semibold ${r.isLow ? 'text-red-700' : ''}`}>
+                    {r.available}
+                  </td>
+                  <td className="px-3 py-2 text-right text-xs text-gray-500">{r.safetyStock}</td>
+                  <td className="px-3 py-2 text-right">
+                    {editing === r.variantId ? (
+                      <div className="flex items-center justify-end gap-1">
+                        <Input
+                          className="w-20"
+                          value={delta}
+                          onChange={(e) => setDelta(e.target.value.replace(/[^\-0-9]/g, ''))}
+                          inputMode="numeric"
+                        />
+                        <Button size="sm" onClick={() => adjust(r.variantId)}>
+                          적용
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
+                          취소
+                        </Button>
+                      </div>
+                    ) : (
+                      <Button variant="secondary" size="sm" onClick={() => setEditing(r.variantId)}>
+                        변경
+                      </Button>
+                    )}
+                  </td>
+                </tr>
+              );
+            })}
             {rows && rows.length === 0 && (
-              <tr><td colSpan={8} className="px-3 py-10 text-center text-gray-400">데이터 없음</td></tr>
+              <tr><td colSpan={7} className="px-3 py-10 text-center text-gray-400">데이터 없음</td></tr>
             )}
           </tbody>
         </table>
