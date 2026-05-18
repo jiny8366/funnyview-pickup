@@ -99,13 +99,19 @@ function StorePickupInner() {
               {r.completedAt ? `완료 ${formatDateTime(r.completedAt)}` : `준비 ${formatDateTime(r.readyAt)}`}
             </div>
             {r.status === 'ready' && (
-              <div className="mt-3">
+              <div className="mt-3 grid grid-cols-2 gap-2">
+                <Link
+                  href={`/store/pickup/${r.id}`}
+                  className="inline-flex h-9 items-center justify-center rounded-lg border border-gray-200 bg-white text-sm font-medium text-gray-700 hover:bg-gray-50"
+                >
+                  📷 스캔 처리
+                </Link>
                 {r.isPaid ? (
-                  <Button size="sm" disabled={busy === r.id} onClick={() => complete(r)} className="w-full bg-green-600 hover:bg-green-700">
-                    픽업 완료
+                  <Button size="sm" disabled={busy === r.id} onClick={() => complete(r)} className="bg-green-600 hover:bg-green-700">
+                    빠른 완료
                   </Button>
                 ) : (
-                  <Button size="sm" onClick={() => setPayOpen(r)} className="w-full bg-amber-600 hover:bg-amber-700">
+                  <Button size="sm" onClick={() => setPayOpen(r)} className="bg-amber-600 hover:bg-amber-700">
                     결제 + 완료
                   </Button>
                 )}
@@ -154,15 +160,23 @@ function StorePickupInner() {
                 </td>
                 <td className="px-3 py-2 text-right">
                   {r.status === 'ready' && (
-                    r.isPaid ? (
-                      <Button size="sm" disabled={busy === r.id} onClick={() => complete(r)} className="bg-green-600 hover:bg-green-700">
-                        픽업 완료
-                      </Button>
-                    ) : (
-                      <Button size="sm" onClick={() => setPayOpen(r)} className="bg-amber-600 hover:bg-amber-700">
-                        결제 + 완료
-                      </Button>
-                    )
+                    <div className="flex justify-end gap-1">
+                      <Link
+                        href={`/store/pickup/${r.id}`}
+                        className="inline-flex h-8 items-center justify-center rounded-lg border border-gray-200 px-3 text-xs font-medium text-gray-700 hover:bg-gray-50"
+                      >
+                        📷 스캔
+                      </Link>
+                      {r.isPaid ? (
+                        <Button size="sm" disabled={busy === r.id} onClick={() => complete(r)} className="bg-green-600 hover:bg-green-700">
+                          빠른 완료
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={() => setPayOpen(r)} className="bg-amber-600 hover:bg-amber-700">
+                          결제 + 완료
+                        </Button>
+                      )}
+                    </div>
                   )}
                 </td>
               </tr>
