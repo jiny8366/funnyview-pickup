@@ -6,6 +6,8 @@ const NAV = [
   { href: '/warehouse/picklist', label: '픽리스트' },
   { href: '/warehouse/shipments', label: '출고 관리' },
   { href: '/warehouse/inventory', label: '재고' },
+  { href: '/warehouse/inbound', label: '입고' },
+  { href: '/warehouse/returns', label: '반품' },
 ] as const;
 
 export default function WarehouseLayout({

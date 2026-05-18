@@ -4,6 +4,8 @@ const NAV = [
   { href: '/store', label: '대시보드' },
   { href: '/store/incoming', label: '배송 중' },
   { href: '/store/pickup', label: '픽업 처리' },
+  { href: '/store/history', label: '처리 이력' },
+  { href: '/store/info', label: '매장 정보' },
 ] as const;
 
 export default function StoreLayout({
