@@ -389,6 +389,54 @@ async function main() {
     console.log('[seed] home_sections seeded (6)');
   }
 
+  // 5-1) 카페24 스타일 데모 섹션 — '원데이(1D) 베스트' (sample 3개 수동 묶음)
+  // idempotent: title 기준 upsert
+  const cafe24Title = '원데이(1D)';
+  const cafe24Config = {
+    mode: 'manual' as const,
+    subtitle: '베스트',
+    limit: 3,
+    lensIds: [sampleBrown, sampleDrip, sampleBlack],
+    viewAllHref: '/lenses?cycle=1day',
+  };
+
+  const existingCafe24 = await db
+    .select({ id: homeSections.id })
+    .from(homeSections)
+    .where(eq(homeSections.title, cafe24Title))
+    .limit(1);
+
+  if (existingCafe24[0]) {
+    await db
+      .update(homeSections)
+      .set({
+        config: cafe24Config,
+        isActive: true,
+        sortOrder: 5,
+      })
+      .where(eq(homeSections.id, existingCafe24[0].id));
+    console.log('[seed] 카페24 데모 섹션 갱신:', existingCafe24[0].id);
+  } else {
+    const [s] = await db
+      .insert(homeSections)
+      .values({
+        kind: 'product_grid',
+        title: cafe24Title,
+        config: cafe24Config,
+        sortOrder: 5,
+        isActive: true,
+        createdBy: admin,
+      })
+      .returning({ id: homeSections.id });
+    console.log('[seed] 카페24 데모 섹션 추가:', s.id);
+  }
+
+  // 5-2) 기존 product_grid '베스트셀러' 가 비활성이면 활성화 (혹시 모를 안전망)
+  await db
+    .update(homeSections)
+    .set({ isActive: true })
+    .where(eq(homeSections.kind, 'product_grid'));
+
   console.log('\n[seed] 완료!\n');
   console.log('통합 테스트 계정 (모든 portal 로그인 가능, admin role)');
   console.log('  jiny8366 / 2282\n');
