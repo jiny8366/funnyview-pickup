@@ -72,14 +72,12 @@ function CustomerLoginInner() {
 
         <form onSubmit={onSubmit} className="space-y-4">
           <Input
-            label="휴대전화번호"
+            label="아이디 또는 휴대전화번호"
             name="phone"
-            type="tel"
-            inputMode="numeric"
-            autoComplete="tel"
+            autoComplete="username"
             enterKeyHint="next"
             value={phone}
-            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => setPhone(e.target.value)}
             required
             autoFocus
           />

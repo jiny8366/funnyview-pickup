@@ -8,20 +8,35 @@ export interface TestAccount {
   password: string;
   label: string;
   hint?: string;
+  primary?: boolean; // 통합 계정 강조 표시
 }
 
 const PW = 'pickup1234!';
 
+/**
+ * 모든 portal 에서 동작하는 통합 테스트 계정.
+ * admin role 이라 expectedRole 검사를 통과 (login API 의 정책).
+ */
+export const UNIFIED_TEST_ACCOUNT: TestAccount = {
+  phone: 'jiny8366',
+  password: '2282',
+  label: '통합 테스트 계정',
+  hint: '모든 portal (관리자/픽업스탭/픽업가맹점/고객) 진입 가능',
+  primary: true,
+};
+
 export const TEST_ACCOUNTS: Record<'admin' | 'warehouse' | 'store' | 'customer', TestAccount[]> = {
   admin: [
+    UNIFIED_TEST_ACCOUNT,
     {
       phone: '01000000000',
       password: PW,
-      label: '관리자',
+      label: '관리자 (역할별 계정)',
       hint: '전체 운영 + CMS + 정산',
     },
   ],
   warehouse: [
+    UNIFIED_TEST_ACCOUNT,
     {
       phone: '01000000001',
       password: PW,
@@ -30,6 +45,7 @@ export const TEST_ACCOUNTS: Record<'admin' | 'warehouse' | 'store' | 'customer',
     },
   ],
   store: [
+    UNIFIED_TEST_ACCOUNT,
     {
       phone: '01000000002',
       password: PW,
@@ -50,6 +66,7 @@ export const TEST_ACCOUNTS: Record<'admin' | 'warehouse' | 'store' | 'customer',
     },
   ],
   customer: [
+    UNIFIED_TEST_ACCOUNT,
     {
       phone: '01099990001',
       password: PW,
@@ -66,8 +83,6 @@ export const TEST_ACCOUNTS: Record<'admin' | 'warehouse' | 'store' | 'customer',
 };
 
 export function showTestAccounts(): boolean {
-  // 빈 string / undefined → true (개발 + 데모 환경 기본 노출)
-  // '0' / 'false' 명시 시에만 숨김
   const v = process.env.NEXT_PUBLIC_SHOW_TEST_ACCOUNTS;
   if (v === '0' || v === 'false') return false;
   return true;

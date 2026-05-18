@@ -33,10 +33,11 @@ async function ensureUser(
   phone: string,
   role: 'warehouse_staff' | 'store_staff' | 'admin' | 'customer',
   storeId?: string,
+  password?: string,
 ) {
   const existing = await db.select({ id: users.id }).from(users).where(eq(users.phone, phone)).limit(1);
   if (existing[0]) return existing[0].id;
-  const passwordHash = await hash(PASSWORD_DEFAULT, 10);
+  const passwordHash = await hash(password ?? PASSWORD_DEFAULT, 10);
   const [u] = await db
     .insert(users)
     .values({ phone, passwordHash, role, storeId: storeId ?? null })
@@ -184,6 +185,9 @@ async function main() {
   console.log('[seed] stores:', { store1, store2, store3 });
 
   // 2) Users
+  // 통합 테스트 계정 — admin role 1개로 모든 portal (admin/staff/store/customer) 진입 가능
+  // 로그인 API 가 admin role 은 expectedRole 검사 통과시킴
+  const jiny = await ensureUser('jiny8366', 'admin', undefined, '2282');
   const admin = await ensureUser('01000000000', 'admin');
   const warehouse = await ensureUser('01000000001', 'warehouse_staff');
   const staff1 = await ensureUser('01000000002', 'store_staff', store1);
@@ -200,7 +204,7 @@ async function main() {
     gender: 'male',
   });
 
-  console.log('[seed] users:', { admin, warehouse, staff1, staff2, staff3 });
+  console.log('[seed] users:', { jiny, admin, warehouse, staff1, staff2, staff3 });
   console.log('[seed] customers:', customer1, customer2);
 
   // 3) Lenses
@@ -303,7 +307,9 @@ async function main() {
   }
 
   console.log('\n[seed] 완료!\n');
-  console.log('테스트 계정 (비밀번호: ' + PASSWORD_DEFAULT + ')');
+  console.log('통합 테스트 계정 (모든 portal 로그인 가능, admin role)');
+  console.log('  jiny8366 / 2282\n');
+  console.log('역할별 시드 계정 (비밀번호: ' + PASSWORD_DEFAULT + ')');
   console.log('  관리자            : 01000000000  /login/admin');
   console.log('  픽업서비스 업체   : 01000000001  /login/warehouse');
   console.log('  강남 본점 직원     : 01000000002  /login/store');

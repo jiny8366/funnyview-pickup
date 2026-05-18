@@ -54,11 +54,11 @@ function WarehouseLoginInner() {
 
         <form onSubmit={onSubmit} className="space-y-4">
           <Input
-            label="아이디 (전화번호)"
+            label="아이디"
             name="phone"
-            inputMode="numeric"
+            autoComplete="username"
             value={phone}
-            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => setPhone(e.target.value)}
             required
             autoFocus
           />

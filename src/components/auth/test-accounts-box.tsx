@@ -31,19 +31,28 @@ export function TestAccountsBox({
         {accounts.map((a) => (
           <li
             key={a.phone}
-            className="flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5"
+            className={
+              a.primary
+                ? 'flex items-center justify-between gap-2 rounded-lg border-2 border-brand-500 bg-brand-50 px-2.5 py-1.5'
+                : 'flex items-center justify-between gap-2 rounded-lg bg-white px-2.5 py-1.5'
+            }
           >
             <button
               type="button"
               onClick={() => onFill(a)}
               className="min-w-0 flex-1 text-left"
             >
-              <div className="truncate font-medium text-gray-900">{a.label}</div>
-              <div className="truncate font-mono text-[10px] text-gray-500">
+              <div className={a.primary ? 'truncate font-bold text-brand-700' : 'truncate font-medium text-gray-900'}>
+                {a.primary && '⭐ '}
+                {a.label}
+              </div>
+              <div className={a.primary ? 'truncate font-mono text-[11px] font-semibold text-brand-700' : 'truncate font-mono text-[10px] text-gray-500'}>
                 {a.phone} · {a.password}
               </div>
               {a.hint && (
-                <div className="mt-0.5 truncate text-[10px] text-gray-400">{a.hint}</div>
+                <div className={a.primary ? 'mt-0.5 truncate text-[10px] text-brand-600' : 'mt-0.5 truncate text-[10px] text-gray-400'}>
+                  {a.hint}
+                </div>
               )}
             </button>
             <div className="flex shrink-0 gap-0.5">

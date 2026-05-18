@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { SectionRenderer } from '@/components/home/section-renderer';
+import { StaffPortalSwitcher } from '@/components/layout/staff-portal-switcher';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { loadActiveSections } from '@/lib/home/load-sections';
 
@@ -42,14 +43,6 @@ export default async function Home() {
                 내 주문
               </Link>
             )}
-            {user?.role === 'admin' && (
-              <Link
-                href="/admin/dashboard"
-                className="rounded-full bg-gray-900 px-2.5 py-1 text-[11px] font-medium text-white md:text-xs"
-              >
-                관리자
-              </Link>
-            )}
             {user ? (
               <Link
                 href={myPageHref}
@@ -73,6 +66,8 @@ export default async function Home() {
                 </Link>
               </>
             )}
+            <span className="ml-1 h-6 w-px bg-gray-200" aria-hidden />
+            <StaffPortalSwitcher />
           </nav>
         </div>
       </header>

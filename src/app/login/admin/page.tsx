@@ -53,10 +53,10 @@ function AdminLoginInner() {
         </header>
         <form onSubmit={onSubmit} className="space-y-4">
           <Input
-            label="아이디 (전화번호)"
-            inputMode="numeric"
+            label="아이디"
+            autoComplete="username"
             value={phone}
-            onChange={(e) => setPhone(e.target.value.replace(/\D/g, ''))}
+            onChange={(e) => setPhone(e.target.value)}
             required
             autoFocus
           />
