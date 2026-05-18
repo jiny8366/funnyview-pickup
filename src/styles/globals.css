@@ -3,6 +3,8 @@
 @tailwind utilities;
 
 :root {
+  /* 앱 전체 Light 디자인 고정 — 시스템 다크모드 시 input/text 가독성 문제 방지 */
+  color-scheme: light;
   --background: 255 255 255;
   --foreground: 17 24 39;
   /* iOS safe area inset — html 폴백 (CSS env() 미지원 환경) */
@@ -10,13 +12,6 @@
   --sar: env(safe-area-inset-right, 0px);
   --sab: env(safe-area-inset-bottom, 0px);
   --sal: env(safe-area-inset-left, 0px);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: 17 24 39;
-    --foreground: 243 244 246;
-  }
 }
 
 html,
@@ -35,10 +30,17 @@ body {
 }
 
 /* iOS 자동 줌(폼 포커스 시) 방지 — input 16px 이상 */
+/* + 시스템 다크모드에서도 글씨/배경 가독성 보장 */
 input,
 select,
 textarea {
   font-size: 16px;
+  color: #111827; /* gray-900 */
+  background-color: #ffffff;
+}
+input::placeholder,
+textarea::placeholder {
+  color: #9ca3af; /* gray-400 */
 }
 @media (min-width: 768px) {
   input,
