@@ -34,6 +34,9 @@ export default async function Home() {
             <Link href="/customer/order" className="hidden hover:text-gray-900 md:inline">
               주문
             </Link>
+            <Link href="/stores" className="hidden hover:text-gray-900 md:inline">
+              매장찾기
+            </Link>
             {user?.role === 'customer' && (
               <Link href="/customer/orders" className="hidden hover:text-gray-900 md:inline">
                 내 주문

@@ -20,6 +20,12 @@ const TABS: Tab[] = [
     match: (p) => p.startsWith('/customer/order'),
   },
   {
+    href: '/stores',
+    label: '매장찾기',
+    icon: '🏪',
+    match: (p) => p.startsWith('/stores'),
+  },
+  {
     href: '/customer/orders',
     label: '내 주문',
     icon: '📦',
@@ -41,7 +47,7 @@ export function CustomerBottomNav() {
       className="fixed inset-x-0 bottom-0 z-30 border-t border-gray-200 bg-white/95 backdrop-blur md:hidden"
       style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
-      <ul className="grid grid-cols-4">
+      <ul className="grid grid-cols-5">
         {TABS.map((tab) => {
           const active = tab.match(pathname);
           return (
