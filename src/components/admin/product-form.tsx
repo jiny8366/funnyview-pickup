@@ -158,6 +158,10 @@ export function ProductForm({
   const [seriesNameKo, setSeriesNameKo] = useState('');
   /** true: 제품명 자동 생성. 사용자가 input 을 직접 수정하면 false 로 전환. */
   const [autoNameMode, setAutoNameMode] = useState(mode === 'create');
+  /** 상단 대분류 탭. */
+  const [tab, setTab] = useState<'productInfo' | 'saleInfo' | 'priceInfo' | 'mfdsInfo'>(
+    'productInfo',
+  );
 
   // 자동 생성 — 브랜드/시리즈/팩 수량 변경 시 제품명 갱신
   useEffect(() => {
@@ -263,6 +267,31 @@ export function ProductForm({
 
   return (
     <div className="space-y-5">
+      {/* 대분류 탭 */}
+      <div className="sticky top-0 z-10 -mx-4 flex gap-1 overflow-x-auto border-b border-gray-200 bg-white px-4 py-2 md:-mx-8 md:px-8">
+        {([
+          { key: 'productInfo', label: '제품 정보' },
+          { key: 'saleInfo', label: '판매 정보' },
+          { key: 'priceInfo', label: '가격 정보' },
+          { key: 'mfdsInfo', label: '식약처 UDI' },
+        ] as const).map((t) => (
+          <button
+            key={t.key}
+            type="button"
+            onClick={() => setTab(t.key)}
+            className={`shrink-0 rounded-lg px-4 py-2 text-sm font-medium transition ${
+              tab === t.key
+                ? 'bg-gray-900 text-white'
+                : 'text-gray-600 hover:bg-gray-100'
+            }`}
+          >
+            {t.label}
+          </button>
+        ))}
+      </div>
+
+      {/* === 제품 정보 탭 === */}
+      <div className={tab === 'productInfo' ? 'space-y-5' : 'hidden'}>
       {/* 기본 정보 */}
       <Card>
         <CardHeader>
@@ -272,50 +301,41 @@ export function ProductForm({
           </div>
         </CardHeader>
         <CardBody className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="브랜드 *">
-              <div className="flex gap-1.5">
-                <select
-                  value={form.brand}
-                  onChange={(e) => update('brand', e.target.value)}
-                  className="input flex-1"
-                >
-                  <option value="">— 브랜드 선택 —</option>
-                  {brands.map((b) => (
-                    <option key={b.id} value={b.nameKo}>
-                      {b.nameKo} ({b.nameEn} · {b.code})
-                    </option>
-                  ))}
-                </select>
-                <button
-                  type="button"
-                  onClick={() => setBrandModalOpen(true)}
-                  className="shrink-0 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  title="브랜드 관리"
-                >
-                  등록
-                </button>
-              </div>
+          {/* 1행: 5컬럼 (브랜드 / 제품 코드 / 렌즈 유형 / 교체 주기 / 팩당 수량) */}
+          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
+            <Field
+              label="브랜드"
+              required
+              actionText="+ 등록"
+              onAction={() => setBrandModalOpen(true)}
+            >
+              <select
+                value={form.brand}
+                onChange={(e) => update('brand', e.target.value)}
+                className="input"
+              >
+                <option value="">— 선택 —</option>
+                {brands.map((b) => (
+                  <option key={b.id} value={b.nameKo}>
+                    {b.nameKo} ({b.code})
+                  </option>
+                ))}
+              </select>
             </Field>
-            <Field label="제품 코드 *">
-              <div className="flex gap-1.5">
-                <input
-                  value={form.productCode}
-                  onChange={(e) => update('productCode', e.target.value)}
-                  placeholder="예: ACU-OAS1D"
-                  className="input flex-1 font-mono"
-                />
-                <button
-                  type="button"
-                  onClick={() => setProductCodeModalOpen(true)}
-                  className="shrink-0 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
-                  title="제품 코드 관리"
-                >
-                  등록
-                </button>
-              </div>
+            <Field
+              label="제품 코드"
+              required
+              actionText="+ 등록"
+              onAction={() => setProductCodeModalOpen(true)}
+            >
+              <input
+                value={form.productCode}
+                onChange={(e) => update('productCode', e.target.value)}
+                placeholder="ACU-OAS1D"
+                className="input font-mono"
+              />
             </Field>
-            <Field label="렌즈 유형 *">
+            <Field label="렌즈 유형" required>
               <select
                 value={form.lensType}
                 onChange={(e) => update('lensType', e.target.value)}
@@ -328,7 +348,7 @@ export function ProductForm({
                 ))}
               </select>
             </Field>
-            <Field label="교체 주기 *">
+            <Field label="교체 주기" required>
               <select
                 value={form.replacementCycle}
                 onChange={(e) => update('replacementCycle', e.target.value)}
@@ -351,14 +371,11 @@ export function ProductForm({
                 className="input"
               />
             </Field>
-            <Field label="대표 이미지">
-              <ImagePicker
-                value={form.imageUrl}
-                onChange={(v) => update('imageUrl', v)}
-                folder="lenses"
-              />
-            </Field>
-            <Field label="제품명 *" full>
+          </div>
+
+          {/* 2행: 제품명 (full width) */}
+          <div>
+            <Field label="제품명" required>
               <div className="flex gap-1.5">
                 <input
                   value={form.name}
@@ -387,12 +404,19 @@ export function ProductForm({
               </p>
             </Field>
           </div>
+
+          {/* 3행: 대표 이미지 */}
+          <div>
+            <Field label="대표 이미지">
+              <ImagePicker
+                value={form.imageUrl}
+                onChange={(v) => update('imageUrl', v)}
+                folder="lenses"
+              />
+            </Field>
+          </div>
         </CardBody>
       </Card>
-
-      {/* 가격 */}
-      <PricingCard form={form} update={update} />
-
 
       {/* 렌즈 스펙 */}
       <Card>
@@ -456,6 +480,10 @@ export function ProductForm({
         </CardBody>
       </Card>
 
+      </div>
+
+      {/* === 판매 정보 탭 === */}
+      <div className={tab === 'saleInfo' ? 'space-y-5' : 'hidden'}>
       {/* 쇼핑몰 카드 표시 */}
       <Card>
         <CardHeader>
@@ -531,6 +559,27 @@ export function ProductForm({
         </CardBody>
       </Card>
 
+      {/* 콘텐츠 편집기 (saleInfo 탭 내부, UDI 앞으로 이동) */}
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>상세 콘텐츠</CardTitle>
+            <CardDescription>이미지 · 영상 · 설명을 블록 단위로 구성하세요.</CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <ProductEditor blocks={blocks} onChange={setBlocks} />
+        </CardBody>
+      </Card>
+      </div>
+
+      {/* === 가격 정보 탭 === */}
+      <div className={tab === 'priceInfo' ? 'space-y-5' : 'hidden'}>
+      <PricingCard form={form} update={update} />
+      </div>
+
+      {/* === 식약처 UDI 탭 === */}
+      <div className={tab === 'mfdsInfo' ? 'space-y-5' : 'hidden'}>
       {/* 식약처 UDI 참조 */}
       <Card>
         <CardHeader>
@@ -580,18 +629,7 @@ export function ProductForm({
         </CardBody>
       </Card>
 
-      {/* 콘텐츠 편집기 */}
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle>상세 콘텐츠</CardTitle>
-            <CardDescription>이미지 · 영상 · 설명을 블록 단위로 구성하세요.</CardDescription>
-          </div>
-        </CardHeader>
-        <CardBody>
-          <ProductEditor blocks={blocks} onChange={setBlocks} />
-        </CardBody>
-      </Card>
+      </div>
 
       {/* 푸터 액션 */}
       <div className="sticky bottom-0 z-10 -mx-4 flex flex-col gap-2 border-t border-gray-200 bg-white px-4 py-3 sm:flex-row sm:items-center sm:justify-between md:-mx-8 md:px-8">
@@ -651,14 +689,34 @@ function Field({
   label,
   children,
   full,
+  required,
+  actionText,
+  onAction,
 }: {
   label: string;
   children: React.ReactNode;
   full?: boolean;
+  required?: boolean;
+  actionText?: string;
+  onAction?: () => void;
 }) {
   return (
     <div className={full ? 'md:col-span-2' : undefined}>
-      <label className="mb-1.5 block text-xs font-medium text-gray-700">{label}</label>
+      <div className="mb-1.5 flex items-baseline justify-between gap-2">
+        <label className="text-xs font-medium text-gray-700">
+          {label}
+          {required && <span className="ml-0.5 text-red-500">*</span>}
+        </label>
+        {actionText && onAction && (
+          <button
+            type="button"
+            onClick={onAction}
+            className="text-[11px] font-medium text-brand-600 hover:underline"
+          >
+            {actionText}
+          </button>
+        )}
+      </div>
       {children}
     </div>
   );
