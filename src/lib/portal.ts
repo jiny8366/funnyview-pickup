@@ -159,3 +159,71 @@ export function canRoleAccess(role: string, pathname: string): boolean {
   const allowed = ROLE_PREFIX[role] ?? [];
   return allowed.some((p) => pathname === p || pathname.startsWith(p + '/'));
 }
+
+/**
+ * 현재 host 기준으로 target portal 의 URL 생성.
+ *
+ * 패턴:
+ *  - vercel.app: 'admin-funnyview-pickup.vercel.app' ↔ 'staff-funnyview-pickup.vercel.app' 등 prefix 교체 ('-' separator)
+ *  - 자체 도메인: 'admin.funnyview.kr' ↔ 'staff.funnyview.kr' ('.' separator)
+ *  - ENV override: NEXT_PUBLIC_HOST_ADMIN/STAFF/STORE 가 정의되어 있으면 그 host 우선
+ *  - localhost: protocol=http, separator='-' 유지
+ *
+ * 마스터/관리자가 다른 portal 로 이동할 때 사용. 각 portal 의 쿠키가 분리되어
+ * 진입 후 그 portal 의 로그인 페이지로 redirect 되는 게 정상 동작.
+ */
+export function portalUrl(target: Portal, currentHost: string): string {
+  const h = (currentHost || '').toLowerCase().split(':')[0];
+
+  // ENV override 우선
+  if (target === 'admin' && process.env.NEXT_PUBLIC_HOST_ADMIN) {
+    return `https://${process.env.NEXT_PUBLIC_HOST_ADMIN}${portalEntryAfterLogin(target)}`;
+  }
+  if (target === 'staff' && process.env.NEXT_PUBLIC_HOST_STAFF) {
+    return `https://${process.env.NEXT_PUBLIC_HOST_STAFF}${portalEntryAfterLogin(target)}`;
+  }
+  if (target === 'store' && process.env.NEXT_PUBLIC_HOST_STORE) {
+    return `https://${process.env.NEXT_PUBLIC_HOST_STORE}${portalEntryAfterLogin(target)}`;
+  }
+
+  // 현재 host 의 prefix 제거하여 customer base host 추출
+  let baseHost = h;
+  for (const prefix of ['admin-', 'admin.', 'staff-', 'staff.', 'store-', 'store.']) {
+    if (h.startsWith(prefix)) {
+      baseHost = h.slice(prefix.length);
+      break;
+    }
+  }
+
+  const protocol = baseHost.startsWith('localhost') ? 'http' : 'https';
+  const sep = baseHost.includes('vercel.app') ? '-' : '.';
+
+  switch (target) {
+    case 'customer':
+      return `${protocol}://${baseHost}/`;
+    case 'admin':
+      return `${protocol}://admin${sep}${baseHost}/admin/home`;
+    case 'staff':
+      return `${protocol}://staff${sep}${baseHost}/warehouse`;
+    case 'store':
+      return `${protocol}://store${sep}${baseHost}/store`;
+  }
+}
+
+/**
+ * portalUrl 의 ENV override 케이스에서 사용할 portal 별 첫 진입 path.
+ * (entryPath 는 비로그인 시 로그인 페이지를 가리키므로, 마스터/관리자
+ *  바로가기는 메인 페이지로 이동해야 더 자연스러움.)
+ */
+function portalEntryAfterLogin(target: Portal): string {
+  switch (target) {
+    case 'customer':
+      return '/';
+    case 'admin':
+      return '/admin/home';
+    case 'staff':
+      return '/warehouse';
+    case 'store':
+      return '/store';
+  }
+}

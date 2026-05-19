@@ -13,6 +13,8 @@ export interface MenuItem {
   icon?: ReactNode;
   /** 이 항목 노출에 필요한 권한 슬러그. 없으면 항상 노출. */
   permission?: string;
+  /** 외부 URL (다른 hostname). true 면 <a> 태그로 새 탐색 (same hostname 쿠키 분리). */
+  external?: boolean;
 }
 
 export interface MenuSection {
@@ -135,27 +137,41 @@ export function HeaderMenu({
                 <ul>
                   {section.items.map((it) => {
                     const active =
-                      pathname === it.href ||
-                      (it.href !== '/' && pathname?.startsWith(it.href + '/'));
+                      !it.external &&
+                      (pathname === it.href ||
+                        (it.href !== '/' && pathname?.startsWith(it.href + '/')));
+                    const classes = cn(
+                      'flex items-center gap-2.5 px-4 py-2 text-sm font-medium transition',
+                      active
+                        ? cn('text-gray-900', ACCENT_BG_ACTIVE[accent])
+                        : 'text-gray-700 hover:bg-gray-50',
+                    );
+                    const inner = (
+                      <>
+                        {it.icon && (
+                          <span
+                            className={cn(
+                              'shrink-0',
+                              active ? ACCENT_TEXT[accent] : 'text-gray-400',
+                            )}
+                          >
+                            {it.icon}
+                          </span>
+                        )}
+                        <span className="truncate">{it.label}</span>
+                      </>
+                    );
                     return (
                       <li key={it.href}>
-                        <Link
-                          href={it.href}
-                          className={cn(
-                            'flex items-center gap-2.5 px-4 py-2 text-sm font-medium transition',
-                            active
-                              ? cn('text-gray-900', ACCENT_BG_ACTIVE[accent])
-                              : 'text-gray-700 hover:bg-gray-50',
-                          )}
-                          role="menuitem"
-                        >
-                          {it.icon && (
-                            <span className={cn('shrink-0', active ? ACCENT_TEXT[accent] : 'text-gray-400')}>
-                              {it.icon}
-                            </span>
-                          )}
-                          <span className="truncate">{it.label}</span>
-                        </Link>
+                        {it.external ? (
+                          <a href={it.href} className={classes} role="menuitem">
+                            {inner}
+                          </a>
+                        ) : (
+                          <Link href={it.href} className={classes} role="menuitem">
+                            {inner}
+                          </Link>
+                        )}
                       </li>
                     );
                   })}

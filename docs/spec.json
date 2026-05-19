@@ -583,7 +583,18 @@
         "PATCH /api/admin/staff/[id] — 마스터 대상 role/permissions/isActive 변경 시 400 CANNOT_MODIFY_MASTER",
         "DELETE /api/admin/staff/[id] — 마스터 대상 soft-delete 시 400 CANNOT_MODIFY_MASTER",
         "StaffForm UI — 마스터 편집 시 권한 섹션 자체를 안내 박스로 대체 (체크박스 없음)"
-      ]
+      ],
+      "portalBar": {
+        "appliesTo": "admin portal 햄버거 메뉴 최상단 (마스터일 때만 노출)",
+        "items": [
+          "🏠 쇼핑몰 디자인 (고객) → customer portal entry",
+          "⚙️ 관리자 → admin portal entry",
+          "🛒 픽업담당자 → staff portal entry",
+          "🏬 픽업가맹점 → store portal entry"
+        ],
+        "linkType": "외부 hostname (a 태그) — 각 portal 의 쿠키 분리상 진입 후 그 portal 의 로그인 페이지로 redirect 됨 (마스터/admin 으로 다시 로그인 필요)",
+        "urlBuilder": "src/lib/portal.ts portalUrl(target, currentHost) — vercel.app/자체도메인/ENV override 모두 처리"
+      }
     },
     "phases": {
       "C1": "마이그레이션 0008 + ALL_PERMISSIONS + ROLE_DEFAULTS + 메뉴 permission 필드 + 권한 편집 UI — 완료",
