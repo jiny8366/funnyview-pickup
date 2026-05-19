@@ -332,6 +332,13 @@
         "api": ["GET /api/admin/brands (활성 목록)", "POST /api/admin/brands (영문/국문/약자, unique 검증, requireAdmin)"],
         "note": "lenses.brand (text) 는 호환을 위해 그대로 유지 — 폼에서 선택 시 brands.nameKo 값을 lenses.brand 에 저장. 추후 lenses.brandId FK 도입 가능."
       },
+      "product_codes": {
+        "purpose": "제품 시리즈/모델 코드 마스터 (확정 2026-05-19)",
+        "fields": ["nameKo (unique-when-not-null)", "nameEn (모달 리스트 영문 정렬 기준)", "code (3자 [A-Z0-9])", "suffix (2자 [A-Z0-9])", "isActive", "deletedAt"],
+        "uniqueWhereNotNull": ["nameKo", "(code, suffix) 조합"],
+        "ui": "제품 등록 폼의 '제품 코드' input 옆 '등록' 버튼 → ProductCodeManagerModal. 모달의 행에서 '선택' 클릭 시 현재 선택된 브랜드의 약자 + code + suffix 가 자동 조합되어 lenses.productCode 에 채워짐 (형식: {brand.code}-{pc.code}{pc.suffix} = 예: CHR-OOL1D 11자)",
+        "api": ["GET /api/admin/product-codes (활성, 영문 정렬)", "POST /api/admin/product-codes (영문/국문/3자/2자, code+suffix unique 검증)"]
+      },
       "stores": {
         "purpose": "픽업가맹점 마스터",
         "fields": ["code (J001~)", "name", "phone", "postalCode", "addressLine1/2", "latitude", "longitude", "kakaoMapUrl", "naverMapUrl", "tmapUrl", "businessHours (jsonb)", "businessNumber", "representativeName", "commissionRate (%)", "sortOrder", "isActive"]
@@ -411,7 +418,8 @@
       "0006 — username 컬럼 (users), 회원가입 필드 (customers landline/memberType/refundBank)",
       "0007 — 카페24 카드 컬럼 (lenses 5개: colorName/Hex/PreviewUrl/seriesCode/isNew)",
       "0008 — RBAC users.permissions text[] (Phase C1, 확정 2026-05-19)",
-      "0009 — brands 테이블 신설 (nameKo/nameEn/code 3자, 제품 등록 폼 드롭다운, 확정 2026-05-19)"
+      "0009 — brands 테이블 신설 (nameKo/nameEn/code 3자, 제품 등록 폼 드롭다운, 확정 2026-05-19)",
+      "0010 — product_codes 테이블 신설 (nameKo/nameEn/code 3자/suffix 2자, code+suffix unique, 영문 정렬, 확정 2026-05-19)"
     ]
   },
 

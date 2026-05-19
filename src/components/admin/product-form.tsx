@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { BrandManagerModal } from '@/components/admin/brand-manager-modal';
+import { ProductCodeManagerModal } from '@/components/admin/product-code-manager-modal';
 import { ImagePicker } from '@/components/admin/image-picker';
 import { ProductEditor } from '@/components/admin/product-editor';
 import { Button } from '@/components/ui/button';
@@ -115,6 +116,7 @@ export function ProductForm({
 
   const [brands, setBrands] = useState<BrandOption[]>([]);
   const [brandModalOpen, setBrandModalOpen] = useState(false);
+  const [productCodeModalOpen, setProductCodeModalOpen] = useState(false);
 
   async function refreshBrands() {
     try {
@@ -216,12 +218,22 @@ export function ProductForm({
               </div>
             </Field>
             <Field label="제품 코드 *">
-              <input
-                value={form.productCode}
-                onChange={(e) => update('productCode', e.target.value)}
-                placeholder="예: ACU-OAS1D"
-                className="input font-mono"
-              />
+              <div className="flex gap-1.5">
+                <input
+                  value={form.productCode}
+                  onChange={(e) => update('productCode', e.target.value)}
+                  placeholder="예: ACU-OAS1D"
+                  className="input flex-1 font-mono"
+                />
+                <button
+                  type="button"
+                  onClick={() => setProductCodeModalOpen(true)}
+                  className="shrink-0 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  title="제품 코드 관리"
+                >
+                  등록
+                </button>
+              </div>
             </Field>
             <Field label="제품명 *" full>
               <input
@@ -544,6 +556,17 @@ export function ProductForm({
         onCreated={(b) => {
           refreshBrands();
           update('brand', b.nameKo);
+        }}
+      />
+
+      <ProductCodeManagerModal
+        open={productCodeModalOpen}
+        onClose={() => setProductCodeModalOpen(false)}
+        onSelect={(pc) => {
+          // 현재 선택된 브랜드의 약자(code) + 제품 코드(code+suffix) 자동 조합
+          const brand = brands.find((b) => b.nameKo === form.brand);
+          const brandCode = brand?.code ?? '???';
+          update('productCode', `${brandCode}-${pc.code}${pc.suffix}`);
         }}
       />
     </div>
