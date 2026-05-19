@@ -1,5 +1,6 @@
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
@@ -41,7 +42,9 @@ const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   pending: { label: '추후 활성화', cls: 'bg-gray-100 text-gray-600' },
 };
 
-export default function AdminSettingsPage() {
+export default async function AdminSettingsPage() {
+  await requirePermissionOrRedirect('settings_write');
+
   return (
     <PageWrap>
       <PageHeader

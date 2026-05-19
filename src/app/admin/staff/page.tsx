@@ -6,6 +6,7 @@ import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconEdit, IconPlus, IconUsers } from '@/components/ui/icons';
 import { isMasterUser } from '@/lib/auth/permissions';
+import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
@@ -17,6 +18,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default async function AdminStaffPage() {
+  await requirePermissionOrRedirect('staff_read');
   const rawRows = await db
     .select({
       id: users.id,

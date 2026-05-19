@@ -7,6 +7,7 @@ import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { ProductForm } from '@/components/admin/product-form';
 import { LensPromotionsCard } from '@/components/admin/lens-promotions-card';
 import { IconArrowLeft } from '@/components/ui/icons';
+import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,6 +16,7 @@ export default async function EditProductPage({
 }: {
   params: { id: string };
 }) {
+  await requirePermissionOrRedirect('products_write');
   const [row] = await db.select().from(lenses).where(eq(lenses.id, params.id)).limit(1);
   if (!row) notFound();
 

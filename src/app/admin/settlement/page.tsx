@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconChart, IconWallet } from '@/components/ui/icons';
+import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminSettlementPage() {
+export default async function AdminSettlementPage() {
+  await requirePermissionOrRedirect('settlement_read');
   return (
     <PageWrap>
       <PageHeader

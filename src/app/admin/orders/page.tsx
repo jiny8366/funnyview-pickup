@@ -2,10 +2,12 @@ import Link from 'next/link';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconCart } from '@/components/ui/icons';
+import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
-export default function AdminOrdersPage() {
+export default async function AdminOrdersPage() {
+  await requirePermissionOrRedirect('orders_read');
   return (
     <PageWrap>
       <PageHeader

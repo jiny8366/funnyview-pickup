@@ -5,10 +5,12 @@ import { stores } from '@/db/schema';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { StaffForm } from '@/components/admin/staff-form';
 import { IconArrowLeft } from '@/components/ui/icons';
+import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
 export default async function NewStaffPage() {
+  await requirePermissionOrRedirect('staff_manage');
   const storeRows = await db
     .select({ id: stores.id, name: stores.name })
     .from(stores)
