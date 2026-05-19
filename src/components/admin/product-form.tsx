@@ -772,7 +772,6 @@ export function ProductForm({
         open={powerChartOpen}
         onClose={() => setPowerChartOpen(false)}
         enableCylinder={isToric}
-        initial={powerList}
         onApply={(cells) => {
           // 기존 + 새 셀, 중복 제거
           const seen = new Set(powerList.map((p) => `${p.sphere}|${p.cylinder}`));
