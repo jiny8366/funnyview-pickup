@@ -8,11 +8,24 @@ interface StoreOption {
   name: string;
 }
 
-interface Props {
-  stores: StoreOption[];
+type StaffRole = 'admin' | 'warehouse_staff' | 'store_staff';
+
+interface StaffInitial {
+  id: string;
+  role: StaffRole;
+  email: string;
+  phone: string;
+  storeId: string | null;
+  isActive: boolean;
 }
 
-type StaffRole = 'admin' | 'warehouse_staff' | 'store_staff';
+interface Props {
+  stores: StoreOption[];
+  mode: 'create' | 'edit';
+  initial?: StaffInitial;
+  /** 현재 로그인된 관리자의 user id — 본인 보호 가드용 */
+  currentUserId?: string;
+}
 
 interface FormState {
   role: StaffRole;
@@ -23,16 +36,6 @@ interface FormState {
   storeId: string;
   isActive: boolean;
 }
-
-const EMPTY: FormState = {
-  role: 'admin',
-  email: '',
-  phone: '',
-  password: '',
-  passwordConfirm: '',
-  storeId: '',
-  isActive: true,
-};
 
 const ROLE_OPTIONS: Array<{ value: StaffRole; label: string; help: string }> = [
   { value: 'admin', label: '관리자', help: '모든 portal 접근 가능 (디버깅/대행 포함)' },
@@ -58,14 +61,43 @@ function errorMessage(code: string): string {
       return '이미 등록된 이메일입니다';
     case 'FORBIDDEN':
       return '관리자 권한이 필요합니다';
+    case 'CANNOT_MODIFY_SELF_ROLE':
+      return '본인의 역할은 변경할 수 없습니다';
+    case 'CANNOT_DEACTIVATE_SELF':
+      return '본인 계정은 비활성화할 수 없습니다';
+    case 'NOT_FOUND':
+      return '계정을 찾을 수 없습니다';
     default:
       return code;
   }
 }
 
-export function StaffForm({ stores }: Props) {
+export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
   const router = useRouter();
-  const [f, setF] = useState<FormState>(EMPTY);
+  const isEdit = mode === 'edit';
+  const isSelf = isEdit && initial?.id === currentUserId;
+
+  const [f, setF] = useState<FormState>(() =>
+    initial
+      ? {
+          role: initial.role,
+          email: initial.email,
+          phone: initial.phone,
+          password: '',
+          passwordConfirm: '',
+          storeId: initial.storeId ?? '',
+          isActive: initial.isActive,
+        }
+      : {
+          role: 'admin',
+          email: '',
+          phone: '',
+          password: '',
+          passwordConfirm: '',
+          storeId: '',
+          isActive: true,
+        },
+  );
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -77,7 +109,7 @@ export function StaffForm({ stores }: Props) {
     e.preventDefault();
     setError(null);
 
-    if (f.password !== f.passwordConfirm) {
+    if (f.password && f.password !== f.passwordConfirm) {
       setError('비밀번호가 일치하지 않습니다');
       return;
     }
@@ -88,38 +120,46 @@ export function StaffForm({ stores }: Props) {
 
     setSubmitting(true);
     try {
-      const res = await fetch('/api/admin/staff', {
-        method: 'POST',
+      const url = isEdit ? `/api/admin/staff/${initial!.id}` : '/api/admin/staff';
+      const method = isEdit ? 'PATCH' : 'POST';
+
+      const body: Record<string, unknown> = {
+        role: f.role,
+        email: f.email.trim(),
+        phone: f.phone.replace(/\D/g, ''),
+        storeId: f.role === 'store_staff' ? f.storeId : null,
+        isActive: f.isActive,
+      };
+      // 생성 모드는 비밀번호 필수, 편집 모드는 입력했을 때만 변경
+      if (!isEdit) {
+        body.password = f.password;
+        body.passwordConfirm = f.passwordConfirm;
+      } else if (f.password) {
+        body.password = f.password;
+        body.passwordConfirm = f.passwordConfirm;
+      }
+
+      const res = await fetch(url, {
+        method,
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          role: f.role,
-          email: f.email.trim(),
-          phone: f.phone.replace(/\D/g, ''),
-          password: f.password,
-          passwordConfirm: f.passwordConfirm,
-          storeId: f.role === 'store_staff' ? f.storeId : null,
-          isActive: f.isActive,
-        }),
+        body: JSON.stringify(body),
       });
-      const body = await res.json().catch(() => ({}));
+      const resBody = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(errorMessage(body.error ?? 'UNKNOWN'));
+        setError(errorMessage(resBody.error ?? 'UNKNOWN'));
         return;
       }
       router.push('/admin/staff');
       router.refresh();
     } catch (err) {
-      setError(err instanceof Error ? err.message : '등록 실패');
+      setError(err instanceof Error ? err.message : '저장 실패');
     } finally {
       setSubmitting(false);
     }
   }
 
   return (
-    <form
-      onSubmit={onSubmit}
-      className="mx-auto max-w-3xl space-y-6"
-    >
+    <form onSubmit={onSubmit} className="mx-auto max-w-3xl space-y-6">
       <section className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
         <h2 className="mb-4 text-sm font-semibold text-gray-700">역할 선택</h2>
         <div className="space-y-2">
@@ -130,7 +170,7 @@ export function StaffForm({ stores }: Props) {
                 f.role === opt.value
                   ? 'border-brand-500 bg-brand-50'
                   : 'border-gray-200 hover:bg-gray-50'
-              }`}
+              } ${isSelf ? 'opacity-60' : ''}`}
             >
               <input
                 type="radio"
@@ -138,6 +178,7 @@ export function StaffForm({ stores }: Props) {
                 value={opt.value}
                 checked={f.role === opt.value}
                 onChange={() => set('role', opt.value)}
+                disabled={isSelf}
                 className="mt-0.5"
               />
               <div className="flex-1">
@@ -147,6 +188,11 @@ export function StaffForm({ stores }: Props) {
             </label>
           ))}
         </div>
+        {isSelf && (
+          <p className="mt-2 text-[11px] text-amber-600">
+            본인 계정의 역할은 안전상 변경할 수 없습니다.
+          </p>
+        )}
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
@@ -174,11 +220,15 @@ export function StaffForm({ stores }: Props) {
               className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm"
             />
           </Field>
-          <Field label="비밀번호" required hint="8-16자, 영문 대소/숫자/특수 중 3가지 이상">
+          <Field
+            label={isEdit ? '새 비밀번호 (변경 시에만 입력)' : '비밀번호'}
+            required={!isEdit}
+            hint="8-16자, 영문 대소/숫자/특수 중 3가지 이상"
+          >
             <input
               type="password"
               autoComplete="new-password"
-              required
+              required={!isEdit}
               minLength={8}
               maxLength={16}
               value={f.password}
@@ -186,11 +236,11 @@ export function StaffForm({ stores }: Props) {
               className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm"
             />
           </Field>
-          <Field label="비밀번호 확인" required>
+          <Field label="비밀번호 확인" required={!isEdit && Boolean(f.password)}>
             <input
               type="password"
               autoComplete="new-password"
-              required
+              required={!isEdit && Boolean(f.password)}
               minLength={8}
               maxLength={16}
               value={f.passwordConfirm}
@@ -209,6 +259,7 @@ export function StaffForm({ stores }: Props) {
               required
               value={f.storeId}
               onChange={(e) => set('storeId', e.target.value)}
+              disabled={isSelf}
               className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm"
             >
               <option value="">— 선택 —</option>
@@ -224,14 +275,22 @@ export function StaffForm({ stores }: Props) {
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
         <h2 className="mb-4 text-sm font-semibold text-gray-700">상태</h2>
-        <label className="flex items-center gap-2 text-sm text-gray-700">
+        <label
+          className={`flex items-center gap-2 text-sm text-gray-700 ${isSelf ? 'opacity-60' : ''}`}
+        >
           <input
             type="checkbox"
             checked={f.isActive}
             onChange={(e) => set('isActive', e.target.checked)}
+            disabled={isSelf}
           />
           활성 (체크 해제 시 로그인 불가)
         </label>
+        {isSelf && (
+          <p className="mt-1.5 text-[11px] text-amber-600">
+            본인 계정은 비활성화할 수 없습니다.
+          </p>
+        )}
       </section>
 
       {error && (
@@ -253,7 +312,7 @@ export function StaffForm({ stores }: Props) {
           disabled={submitting}
           className="rounded-lg bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black disabled:opacity-50"
         >
-          {submitting ? '등록 중…' : '계정 등록'}
+          {submitting ? '저장 중…' : isEdit ? '변경 사항 저장' : '계정 등록'}
         </button>
       </div>
     </form>

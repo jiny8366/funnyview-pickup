@@ -76,8 +76,13 @@ export default async function AdminStaffPage() {
             <tbody className="divide-y divide-gray-50">
               {rows.map((u) => (
                 <tr key={u.id} className="hover:bg-gray-50">
-                  <Td className="font-mono text-xs text-gray-700">
-                    {u.email ?? u.username ?? '—'}
+                  <Td className="font-mono text-xs">
+                    <Link
+                      href={`/admin/staff/${u.id}`}
+                      className="text-gray-700 hover:text-brand-600 hover:underline"
+                    >
+                      {u.email ?? u.username ?? '—'}
+                    </Link>
                   </Td>
                   <Td className="font-mono text-xs text-gray-600">{u.phone ?? '—'}</Td>
                   <Td>
