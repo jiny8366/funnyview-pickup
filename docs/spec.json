@@ -440,7 +440,8 @@
       "0009 — brands 테이블 신설 (nameKo/nameEn/code 3자, 제품 등록 폼 드롭다운, 확정 2026-05-19)",
       "0010 — product_codes 테이블 신설 (nameKo/nameEn/code 3자/suffix 2자, code+suffix unique, 영문 정렬, 확정 2026-05-19)",
       "0011 — 가격 모델 확장 (lenses 7 컬럼 + lens_promotions 테이블 신설, 부가세 포함 저장, 확정 2026-05-19)",
-      "0012 — lens_price_entries 테이블 신설 (매입/공급/소비자 기간 적용 가격 시계열, 확정 2026-05-19)"
+      "0012 — lens_price_entries 테이블 신설 (매입/공급/소비자 기간 적용 가격 시계열, 확정 2026-05-19)",
+      "0013 — lens_price_entries.created_by uuid 추가 (가격변동이력의 담당자 컬럼, 확정 2026-05-19)"
     ]
   },
 
@@ -587,7 +588,7 @@
   "admin": {
     "menu": [
       { "group": "운영", "items": ["대시보드 (/admin/dashboard)", "주문 관리 (/admin/orders)", "정산/매출 (/admin/settlement)", "계정 관리 (/admin/staff) — 확정 2026-05-19 신설"] },
-      { "group": "상품", "items": ["제품 마스터 (/admin/products)", "카테고리 (/admin/categories)"] },
+      { "group": "상품", "items": ["제품 마스터 (/admin/products)", "카테고리 (/admin/categories)", "가격변동이력 (/admin/price-history) — 확정 2026-05-19"] },
       { "group": "가맹점", "items": ["가맹점 (/admin/stores)"] },
       { "group": "CMS·마케팅", "items": ["홈 섹션 (/admin/home)", "섹션 분석 (/admin/home/analytics)"] },
       { "group": "시스템", "items": ["설정 (/admin/settings)"] }
@@ -651,6 +652,25 @@
     "guards": "클라이언트 PricingCard 즉시 표시 + 서버 POST/PATCH /api/admin/lenses 에서 동일 검증"
   },
 
+  "priceHistory": {
+    "purpose": "가격변동이력 (확정 2026-05-19) — 햄버거 → 상품 → 가격변동이력",
+    "page": "/admin/price-history",
+    "printPage": "/admin/price-history/print (브라우저 'PDF 로 저장' 사용)",
+    "columns": ["제품명", "구분 (매입/공급/소비자)", "변경일시", "적용시작", "이전금액", "변동금액 (+/-)", "실효가", "담당자"],
+    "actions": {
+      "preview": "미리보기 — 인쇄 친화 페이지 (마스터 + price_history_view)",
+      "csv": "엑셀 다운로드 — GET /api/admin/price-history/export (UTF-8 BOM 포함, .csv)",
+      "pdf": "인쇄 페이지에서 브라우저 'PDF 로 저장' (라이브러리 X)",
+      "delete": "DELETE /api/admin/price-history/[id] — 마스터 또는 price_history_delete 권한자"
+    },
+    "permissions": {
+      "view": "price_history_view (마스터 자동)",
+      "delete": "price_history_delete (마스터 자동) — 기본 default 는 마스터 한정"
+    },
+    "dataSource": "src/lib/price-history.ts fetchPriceHistory — entries + lenses + users join + 직전 entry 와 effective 비교",
+    "csvEncoding": "UTF-8 BOM (한국 엑셀 한글 깨짐 방지)"
+  },
+
   "rbac": {
     "model": "frame-ops 패턴 채택 — permissions text[] (NULL = ROLE_DEFAULTS, 배열 = override). 확정 2026-05-19",
     "master": {
@@ -684,7 +704,7 @@
     },
     "permissionKeys": {
       "운영": ["dashboard_view", "orders_read", "orders_write", "settlement_read", "staff_read", "staff_manage", "staff_permissions"],
-      "상품": ["products_read", "products_write", "categories_write"],
+      "상품": ["products_read", "products_write", "categories_write", "price_history_view", "price_history_delete"],
       "가맹점": ["stores_read", "stores_write"],
       "CMS·마케팅": ["home_sections_read", "home_sections_write", "home_analytics_view"],
       "시스템": ["settings_write"]

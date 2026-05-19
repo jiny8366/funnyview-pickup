@@ -44,6 +44,9 @@ export const lensPriceEntries = pgTable(
     isActive: boolean('is_active').default(true).notNull(),
     note: text('note'),
 
+    // 담당자 (확정 2026-05-19) — 가격 변경 이력에 표시
+    createdBy: uuid('created_by'),
+
     createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
     deletedAt: timestamp('deleted_at', { withTimezone: true }),
   },

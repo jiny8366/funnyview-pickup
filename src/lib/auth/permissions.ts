@@ -37,6 +37,8 @@ export const ALL_PERMISSIONS: PermissionDef[] = [
   { key: 'products_read', label: '제품 조회', group: '상품' },
   { key: 'products_write', label: '제품 등록/수정', group: '상품' },
   { key: 'categories_write', label: '카테고리 관리', group: '상품' },
+  { key: 'price_history_view', label: '가격변동이력 조회/다운로드', group: '상품' },
+  { key: 'price_history_delete', label: '가격변동이력 삭제', group: '상품' },
 
   // 가맹점
   { key: 'stores_read', label: '가맹점 조회', group: '가맹점' },

@@ -137,6 +137,7 @@ export async function POST(req: Request) {
       discountPercent: purchaseDiscountPercent ?? 0,
       startsAt: purchaseStartsAt ?? null,
       endsAt: purchaseEndsAt ?? null,
+      createdBy: user.id,
     });
   }
   if (standardSupplyPrice != null) {
@@ -147,6 +148,7 @@ export async function POST(req: Request) {
       discountPercent: supplyDiscountPercent ?? 0,
       startsAt: supplyStartsAt ?? null,
       endsAt: supplyEndsAt ?? null,
+      createdBy: user.id,
     });
   }
   if (recommendedRetailPrice != null) {
@@ -155,6 +157,7 @@ export async function POST(req: Request) {
       standard: Number(recommendedRetailPrice),
       startsAt: retailStartsAt ?? null,
       endsAt: retailEndsAt ?? null,
+      createdBy: user.id,
     });
   }
 

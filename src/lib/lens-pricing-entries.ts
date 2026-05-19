@@ -19,6 +19,7 @@ export interface PriceEntryInput {
   startsAt?: string | null; // ISO date 또는 null (= 즉시)
   endsAt?: string | null;
   note?: string | null;
+  createdBy?: string | null; // users.id (담당자)
 }
 
 /**
@@ -46,6 +47,7 @@ export async function createPriceEntryAndSyncCache(
     startsAt,
     endsAt,
     note: input.note ?? null,
+    createdBy: input.createdBy ?? null,
   });
 
   // 시작일이 지금 이전/같음 → 캐시 즉시 갱신. 미래면 다음 cron/lazy 에서 (현재는 entries 만)
