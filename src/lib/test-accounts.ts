@@ -84,6 +84,6 @@ export const TEST_ACCOUNTS: Record<'admin' | 'warehouse' | 'store' | 'customer',
 
 export function showTestAccounts(): boolean {
   const v = process.env.NEXT_PUBLIC_SHOW_TEST_ACCOUNTS;
-  if (v === '0' || v === 'false') return false;
-  return true;
+  // 운영 default 는 숨김. dev/preview 에서 보고 싶으면 명시적으로 '1' 설정.
+  return v === '1' || v === 'true';
 }
