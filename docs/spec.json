@@ -340,7 +340,7 @@
         "future": "cron/lazy 로 미래 entry 가 startsAt 도달 시 캐시 자동 갱신 (현재는 entries 가 진실, 캐시는 즉시 적용용)"
       },
       "lens_promotions": {
-        "purpose": "기간/조건부 프로모션 가격 (확정 2026-05-19, Phase 1 — 테이블만 신설, UI 는 다음 chunk)",
+        "purpose": "기간/조건부 프로모션 가격 (확정 2026-05-19)",
         "fields": [
           "lensId (FK lenses cascade)",
           "kind (sale/promotion/volume_bundle)",
@@ -349,6 +349,13 @@
           "buyQty, freeQty (volume_bundle 전용, 1+1: buy=1 free=1)",
           "startsAt, endsAt (NULL=무기한)",
           "isActive, note"
+        ],
+        "ui": "lens 편집 페이지 (/admin/products/[id]) 의 가격 카드 아래 LensPromotionsCard — sale/promotion/volume_bundle 탭형 추가 + 리스트 (활성화 토글 + 삭제)",
+        "api": [
+          "GET /api/admin/lenses/[id]/promotions (조회)",
+          "POST /api/admin/lenses/[id]/promotions (z.discriminatedUnion 검증, 기간 정합성)",
+          "PATCH /api/admin/promotions/[id] (활성화 토글 + 기간/메모 수정)",
+          "DELETE /api/admin/promotions/[id] (soft-delete, products_write 권한)"
         ]
       },
       "product_codes": {
