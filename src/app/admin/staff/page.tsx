@@ -4,7 +4,7 @@ import { db } from '@/db/client';
 import { stores, users } from '@/db/schema';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
-import { IconPlus, IconUsers } from '@/components/ui/icons';
+import { IconEdit, IconPlus, IconUsers } from '@/components/ui/icons';
 import { isMasterUser } from '@/lib/auth/permissions';
 
 export const dynamic = 'force-dynamic';
@@ -75,6 +75,7 @@ export default async function AdminStaffPage() {
                 <Th>역할</Th>
                 <Th>소속 가맹점</Th>
                 <Th className="text-center">상태</Th>
+                <Th className="text-center">편집</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
@@ -117,6 +118,14 @@ export default async function AdminStaffPage() {
                         비활성
                       </span>
                     )}
+                  </Td>
+                  <Td className="text-center">
+                    <Link
+                      href={`/admin/staff/${u.id}`}
+                      className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-2.5 py-1 text-xs font-medium text-gray-600 hover:bg-gray-50 hover:text-brand-600"
+                    >
+                      <IconEdit size={12} /> 편집
+                    </Link>
                   </Td>
                 </tr>
                 );
