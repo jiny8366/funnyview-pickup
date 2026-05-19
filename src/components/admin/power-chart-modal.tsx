@@ -20,6 +20,28 @@ interface Props {
   initial?: PowerCell[];
 }
 
+const STEP = 0.25;
+const SPHERE_MIN = -20;
+const SPHERE_MAX = 4;
+const CYL_MIN = -6;
+const CYL_MAX = 1;
+
+const SPHERE_ROWS: number[] = (() => {
+  const arr: number[] = [];
+  for (let s = SPHERE_MAX; s >= SPHERE_MIN - 1e-6; s -= STEP) {
+    arr.push(Math.round(s * 100) / 100);
+  }
+  return arr;
+})();
+
+const CYL_COLS_FULL: number[] = (() => {
+  const arr: number[] = [];
+  for (let c = CYL_MAX; c >= CYL_MIN - 1e-6; c -= STEP) {
+    arr.push(Math.round(c * 100) / 100);
+  }
+  return arr;
+})();
+
 /**
  * 파워챠트 모달 — 사용자 요구 (확정 2026-05-19):
  *  - 좌상단 = sphere 0.00, cylinder 0.00
@@ -36,51 +58,17 @@ export function PowerChartModal({
   onApply,
   enableCylinder,
   cylinderRange,
-  initial,
 }: Props) {
-  const STEP = 0.25;
-  // 표시 범위 — 사용자가 스크롤로 (+) 영역도 볼 수 있도록 양수도 포함
-  const SPHERE_MIN = -20;
-  const SPHERE_MAX = 4;
-  const CYL_MIN = -6;
-  const CYL_MAX = 1;
-
-  // sphere rows: 위 (+) → 아래 (-) 가 사용자 요구 (좌상단 0)
-  // 즉 array 시작 = 양수, 끝 = 음수
-  const sphereRows = useMemo(() => {
-    const arr: number[] = [];
-    for (let s = SPHERE_MAX; s >= SPHERE_MIN - 1e-6; s -= STEP) {
-      arr.push(Math.round(s * 100) / 100);
-    }
-    return arr;
-  }, []);
-
-  // cylinder cols: 좌 (+) → 우 (-)
+  // cylinder cols
   const cylCols = useMemo(() => {
     if (cylinderRange && cylinderRange.length > 0) return cylinderRange;
     if (!enableCylinder) return [0];
-    const arr: number[] = [];
-    for (let c = CYL_MAX; c >= CYL_MIN - 1e-6; c -= STEP) {
-      arr.push(Math.round(c * 100) / 100);
-    }
-    return arr;
+    return CYL_COLS_FULL;
   }, [cylinderRange, enableCylinder]);
 
   const [hover, setHover] = useState<{ r: number; c: number } | null>(null);
   const [start, setStart] = useState<{ r: number; c: number } | null>(null);
   const [end, setEnd] = useState<{ r: number; c: number } | null>(null);
-
-  if (!open) return null;
-
-  function onCellClick(r: number, c: number) {
-    if (!start || (start && end)) {
-      // 새 선택 시작
-      setStart({ r, c });
-      setEnd(null);
-    } else {
-      setEnd({ r, c });
-    }
-  }
 
   const selection = useMemo(() => {
     if (!start) return null;
@@ -96,11 +84,23 @@ export function PowerChartModal({
     const cells: PowerCell[] = [];
     for (let r = selection.r1; r <= selection.r2; r++) {
       for (let c = selection.c1; c <= selection.c2; c++) {
-        cells.push({ sphere: sphereRows[r], cylinder: cylCols[c] });
+        cells.push({ sphere: SPHERE_ROWS[r], cylinder: cylCols[c] });
       }
     }
     return cells;
-  }, [selection, sphereRows, cylCols]);
+  }, [selection, cylCols]);
+
+  if (!open) return null;
+
+  function onCellClick(r: number, c: number) {
+    if (!start || (start && end)) {
+      // 새 선택 시작
+      setStart({ r, c });
+      setEnd(null);
+    } else {
+      setEnd({ r, c });
+    }
+  }
 
   function isCellSelected(r: number, c: number): boolean {
     if (!selection) return false;
@@ -156,8 +156,8 @@ export function PowerChartModal({
           <div className="font-mono text-gray-700">
             {selection ? (
               <>
-                <span className="font-semibold">선택:</span> SPH {fmt(sphereRows[selection.r2])} ~{' '}
-                {fmt(sphereRows[selection.r1])}
+                <span className="font-semibold">선택:</span> SPH {fmt(SPHERE_ROWS[selection.r2])} ~{' '}
+                {fmt(SPHERE_ROWS[selection.r1])}
                 {enableCylinder && (
                   <>
                     {' · '}CYL {fmt(cylCols[selection.c1])} ~ {fmt(cylCols[selection.c2])}
@@ -201,7 +201,7 @@ export function PowerChartModal({
               </tr>
             </thead>
             <tbody>
-              {sphereRows.map((sph, r) => (
+              {SPHERE_ROWS.map((sph, r) => (
                 <tr key={r}>
                   <th
                     className={`sticky left-0 z-10 border-r border-gray-200 bg-white px-2 py-0.5 text-right text-[10px] font-medium ${
