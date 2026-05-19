@@ -362,7 +362,7 @@ export default function RegisterPage() {
                       onChange={(e) => update('refundAccount', e.target.value.replace(/[^0-9-]/g, ''))}
                       className="cafe-input-sm max-w-xs"
                     />
-                    <p className="mt-0.5 text-[11px] text-gray-500">('-'와 숫자만 입력해주세요.)</p>
+                    <p className="mt-0.5 text-[11px] text-gray-500">{"('-'와 숫자만 입력해주세요.)"}</p>
                   </div>
                 </div>
               </div>
