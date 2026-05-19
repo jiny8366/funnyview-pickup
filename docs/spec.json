@@ -574,6 +574,17 @@
 
   "rbac": {
     "model": "frame-ops 패턴 채택 — permissions text[] (NULL = ROLE_DEFAULTS, 배열 = override). 확정 2026-05-19",
+    "master": {
+      "envVar": "MASTER_USERNAMES (콤마 구분, default = 'jiny8366')",
+      "rule": "username ∈ MASTER_USERNAMES → effectivePermissions 가 항상 PERMISSION_KEYS 반환 (전권). API 에서 role/permissions/isActive/삭제 변경 차단. UI 에서 관련 입력 잠금 + '🛡 마스터' 뱃지 표시.",
+      "rationale": "권한 슬러그가 아닌 username whitelist 인 이유: 1) 슬러그면 다른 admin 권한 편집 UI 에 노출되어 잘못 부여 위험. 2) env 는 환경 단위 통제 가능. 3) role enum 추가 불필요 (마이그레이션 무거움).",
+      "defaultMaster": "jiny8366 — production env 에 MASTER_USERNAMES 미설정 시 적용. spec.json testAccounts.unified 와 일치.",
+      "guards": [
+        "PATCH /api/admin/staff/[id] — 마스터 대상 role/permissions/isActive 변경 시 400 CANNOT_MODIFY_MASTER",
+        "DELETE /api/admin/staff/[id] — 마스터 대상 soft-delete 시 400 CANNOT_MODIFY_MASTER",
+        "StaffForm UI — 마스터 편집 시 권한 섹션 자체를 안내 박스로 대체 (체크박스 없음)"
+      ]
+    },
     "phases": {
       "C1": "마이그레이션 0008 + ALL_PERMISSIONS + ROLE_DEFAULTS + 메뉴 permission 필드 + 권한 편집 UI — 완료",
       "C2": "middleware route gate (ROUTE_PERMISSIONS) + API requirePermission(slug) — 예정",

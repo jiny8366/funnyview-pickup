@@ -5,6 +5,7 @@ import { db } from '@/db/client';
 import { stores, users } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { hashPassword } from '@/lib/auth/password';
+import { isMasterUser } from '@/lib/auth/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -68,7 +69,12 @@ export async function PATCH(
 
   // 대상 사용자 조회
   const [target] = await db
-    .select({ id: users.id, role: users.role, isActive: users.isActive })
+    .select({
+      id: users.id,
+      role: users.role,
+      username: users.username,
+      isActive: users.isActive,
+    })
     .from(users)
     .where(and(eq(users.id, targetId), isNull(users.deletedAt)))
     .limit(1);
@@ -76,8 +82,23 @@ export async function PATCH(
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
   }
 
+  const targetIsMaster = isMasterUser(target.username);
+
+  // 마스터 보호: role/isActive/permissions 변경 차단 (본인이든 타인이든 동일)
+  if (targetIsMaster) {
+    if (input.role !== target.role) {
+      return NextResponse.json({ error: 'CANNOT_MODIFY_MASTER' }, { status: 400 });
+    }
+    if (input.isActive === false) {
+      return NextResponse.json({ error: 'CANNOT_MODIFY_MASTER' }, { status: 400 });
+    }
+    if (input.permissions !== undefined && input.permissions !== null) {
+      return NextResponse.json({ error: 'CANNOT_MODIFY_MASTER' }, { status: 400 });
+    }
+  }
+
   // 본인 보호: role/isActive 변경 금지
-  if (isSelf) {
+  if (isSelf && !targetIsMaster) {
     if (input.role !== target.role) {
       return NextResponse.json({ error: 'CANNOT_MODIFY_SELF_ROLE' }, { status: 400 });
     }
@@ -161,12 +182,15 @@ export async function DELETE(
   }
 
   const [target] = await db
-    .select({ id: users.id })
+    .select({ id: users.id, username: users.username })
     .from(users)
     .where(and(eq(users.id, targetId), isNull(users.deletedAt)))
     .limit(1);
   if (!target) {
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
+  }
+  if (isMasterUser(target.username)) {
+    return NextResponse.json({ error: 'CANNOT_MODIFY_MASTER' }, { status: 400 });
   }
 
   await db

@@ -24,6 +24,8 @@ interface StaffInitial {
   isActive: boolean;
   /** users.permissions raw 값. NULL 이면 role 기본값. */
   permissions: string[] | null;
+  /** 마스터 사용자 (MASTER_USERNAMES env). role/permissions/isActive 변경 차단. */
+  isMaster: boolean;
 }
 
 interface Props {
@@ -76,6 +78,8 @@ function errorMessage(code: string): string {
       return '본인의 역할은 변경할 수 없습니다';
     case 'CANNOT_DEACTIVATE_SELF':
       return '본인 계정은 비활성화할 수 없습니다';
+    case 'CANNOT_MODIFY_MASTER':
+      return '마스터 계정은 수정/삭제할 수 없습니다 (MASTER_USERNAMES 환경변수로만 관리)';
     case 'NOT_FOUND':
       return '계정을 찾을 수 없습니다';
     default:
@@ -87,6 +91,9 @@ export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
   const router = useRouter();
   const isEdit = mode === 'edit';
   const isSelf = isEdit && initial?.id === currentUserId;
+  const isMasterTarget = isEdit && Boolean(initial?.isMaster);
+  // 마스터 대상은 role/storeId/isActive/permissions 잠금 — 비밀번호/email/phone 만 변경 가능
+  const lockMutation = isMasterTarget || isSelf;
 
   const [f, setF] = useState<FormState>(() => {
     if (initial) {
@@ -169,10 +176,13 @@ export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
         phone: f.phone.replace(/\D/g, ''),
         storeId: f.role === 'store_staff' ? f.storeId : null,
         isActive: f.isActive,
+      };
+      // 마스터 사용자는 permissions 변경 차단 (서버도 가드, 클라이언트도 안 보냄)
+      if (!isMasterTarget) {
         // useCustomPerms=false → null 저장 (ROLE_DEFAULTS 따름)
         // useCustomPerms=true  → 배열 저장 (override)
-        permissions: f.useCustomPerms ? Array.from(f.perms) : null,
-      };
+        body.permissions = f.useCustomPerms ? Array.from(f.perms) : null;
+      }
       // 생성 모드는 비밀번호 필수, 편집 모드는 입력했을 때만 변경
       if (!isEdit) {
         body.password = f.password;
@@ -213,7 +223,7 @@ export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
                 f.role === opt.value
                   ? 'border-brand-500 bg-brand-50'
                   : 'border-gray-200 hover:bg-gray-50'
-              } ${isSelf ? 'opacity-60' : ''}`}
+              } ${lockMutation ? 'opacity-60' : ''}`}
             >
               <input
                 type="radio"
@@ -221,7 +231,7 @@ export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
                 value={opt.value}
                 checked={f.role === opt.value}
                 onChange={() => set('role', opt.value)}
-                disabled={isSelf}
+                disabled={lockMutation}
                 className="mt-0.5"
               />
               <div className="flex-1">
@@ -231,7 +241,12 @@ export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
             </label>
           ))}
         </div>
-        {isSelf && (
+        {isMasterTarget && (
+          <p className="mt-2 text-[11px] text-red-600">
+            🛡 마스터 계정 (MASTER_USERNAMES) — 역할 변경 불가
+          </p>
+        )}
+        {!isMasterTarget && isSelf && (
           <p className="mt-2 text-[11px] text-amber-600">
             본인 계정의 역할은 안전상 변경할 수 없습니다.
           </p>
@@ -302,7 +317,7 @@ export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
               required
               value={f.storeId}
               onChange={(e) => set('storeId', e.target.value)}
-              disabled={isSelf}
+              disabled={lockMutation}
               className="h-11 w-full rounded-lg border border-gray-300 px-3 text-sm"
             >
               <option value="">— 선택 —</option>
@@ -319,68 +334,84 @@ export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
       <section className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
         <div className="mb-3 flex items-baseline justify-between gap-2">
           <h2 className="text-sm font-semibold text-gray-700">권한 설정</h2>
-          <label className="inline-flex items-center gap-2 text-xs text-gray-600">
-            <input
-              type="checkbox"
-              checked={f.useCustomPerms}
-              onChange={(e) => set('useCustomPerms', e.target.checked)}
-            />
-            사용자 지정 권한 활성화
-          </label>
+          {!isMasterTarget && (
+            <label className="inline-flex items-center gap-2 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={f.useCustomPerms}
+                onChange={(e) => set('useCustomPerms', e.target.checked)}
+              />
+              사용자 지정 권한 활성화
+            </label>
+          )}
         </div>
-        <p className="mb-4 text-[11px] text-gray-500">
-          {f.useCustomPerms
-            ? '아래 체크박스로 선택한 권한만 부여됩니다.'
-            : `해제 시 역할의 기본 권한(${
-                ROLE_DEFAULTS[f.role]?.length ?? 0
-              }개)을 따릅니다. 관리자는 전권을 갖습니다.`}
-        </p>
+        {isMasterTarget ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-xs text-red-700">
+            🛡 <strong>마스터 계정</strong> — MASTER_USERNAMES 환경변수에 등록된 최상위 권한.
+            현재 및 향후 추가될 모든 권한을 자동으로 가지며, 권한 변경이 불가합니다.
+          </div>
+        ) : (
+          <>
+            <p className="mb-4 text-[11px] text-gray-500">
+              {f.useCustomPerms
+                ? '아래 체크박스로 선택한 권한만 부여됩니다.'
+                : `해제 시 역할의 기본 권한(${
+                    ROLE_DEFAULTS[f.role]?.length ?? 0
+                  }개)을 따릅니다. 관리자는 전권을 갖습니다.`}
+            </p>
 
-        <div className={`grid gap-4 ${f.useCustomPerms ? '' : 'opacity-50'}`}>
-          {permsByGroup.map(({ group, items }) => (
-            <div key={group} className="rounded-xl border border-gray-100 p-3">
-              <div className="mb-2 text-xs font-semibold text-gray-600">{group}</div>
-              <div className="grid gap-1.5 md:grid-cols-2">
-                {items.map((p) => (
-                  <label
-                    key={p.key}
-                    className={`flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-xs ${
-                      f.useCustomPerms ? 'hover:bg-gray-50' : 'cursor-not-allowed'
-                    }`}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={f.perms.has(p.key)}
-                      onChange={() => togglePerm(p.key)}
-                      disabled={!f.useCustomPerms}
-                      className="mt-0.5"
-                    />
-                    <div className="flex-1">
-                      <div className="font-medium text-gray-800">{p.label}</div>
-                      <div className="font-mono text-[10px] text-gray-400">{p.key}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
+            <div className={`grid gap-4 ${f.useCustomPerms ? '' : 'opacity-50'}`}>
+              {permsByGroup.map(({ group, items }) => (
+                <div key={group} className="rounded-xl border border-gray-100 p-3">
+                  <div className="mb-2 text-xs font-semibold text-gray-600">{group}</div>
+                  <div className="grid gap-1.5 md:grid-cols-2">
+                    {items.map((p) => (
+                      <label
+                        key={p.key}
+                        className={`flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-xs ${
+                          f.useCustomPerms ? 'hover:bg-gray-50' : 'cursor-not-allowed'
+                        }`}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={f.perms.has(p.key)}
+                          onChange={() => togglePerm(p.key)}
+                          disabled={!f.useCustomPerms}
+                          className="mt-0.5"
+                        />
+                        <div className="flex-1">
+                          <div className="font-medium text-gray-800">{p.label}</div>
+                          <div className="font-mono text-[10px] text-gray-400">{p.key}</div>
+                        </div>
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))}
             </div>
-          ))}
-        </div>
+          </>
+        )}
       </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
         <h2 className="mb-4 text-sm font-semibold text-gray-700">상태</h2>
         <label
-          className={`flex items-center gap-2 text-sm text-gray-700 ${isSelf ? 'opacity-60' : ''}`}
+          className={`flex items-center gap-2 text-sm text-gray-700 ${lockMutation ? 'opacity-60' : ''}`}
         >
           <input
             type="checkbox"
             checked={f.isActive}
             onChange={(e) => set('isActive', e.target.checked)}
-            disabled={isSelf}
+            disabled={lockMutation}
           />
           활성 (체크 해제 시 로그인 불가)
         </label>
-        {isSelf && (
+        {isMasterTarget && (
+          <p className="mt-1.5 text-[11px] text-red-600">
+            🛡 마스터 계정 — 비활성화 불가
+          </p>
+        )}
+        {!isMasterTarget && isSelf && (
           <p className="mt-1.5 text-[11px] text-amber-600">
             본인 계정은 비활성화할 수 없습니다.
           </p>
