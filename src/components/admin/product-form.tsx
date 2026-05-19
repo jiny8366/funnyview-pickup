@@ -117,6 +117,21 @@ export function ProductForm({
   const [brands, setBrands] = useState<BrandOption[]>([]);
   const [brandModalOpen, setBrandModalOpen] = useState(false);
   const [productCodeModalOpen, setProductCodeModalOpen] = useState(false);
+  /** 제품 코드 모달에서 선택한 시리즈 — 제품명 자동 생성에 사용. */
+  const [seriesNameKo, setSeriesNameKo] = useState('');
+  /** true: 제품명 자동 생성. 사용자가 input 을 직접 수정하면 false 로 전환. */
+  const [autoNameMode, setAutoNameMode] = useState(mode === 'create');
+
+  // 자동 생성 — 브랜드/시리즈/팩 수량 변경 시 제품명 갱신
+  useEffect(() => {
+    if (!autoNameMode) return;
+    if (!form.brand || !seriesNameKo) return;
+    const parts = [form.brand, seriesNameKo];
+    if (form.piecesPerBox > 0) parts.push(`${form.piecesPerBox}팩`);
+    const next = parts.join(' ');
+    setForm((p) => (p.name === next ? p : { ...p, name: next }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [autoNameMode, form.brand, seriesNameKo, form.piecesPerBox]);
 
   async function refreshBrands() {
     try {
@@ -235,14 +250,6 @@ export function ProductForm({
                 </button>
               </div>
             </Field>
-            <Field label="제품명 *" full>
-              <input
-                value={form.name}
-                onChange={(e) => update('name', e.target.value)}
-                placeholder="예: OASYS 1-Day"
-                className="input"
-              />
-            </Field>
             <Field label="렌즈 유형 *">
               <select
                 value={form.lensType}
@@ -269,12 +276,13 @@ export function ProductForm({
                 ))}
               </select>
             </Field>
-            <Field label="박스당 매수">
+            <Field label="팩당 수량">
               <input
                 type="number"
                 min={1}
                 value={form.piecesPerBox}
                 onChange={(e) => update('piecesPerBox', Number(e.target.value))}
+                placeholder="예: 30"
                 className="input"
               />
             </Field>
@@ -284,6 +292,34 @@ export function ProductForm({
                 onChange={(v) => update('imageUrl', v)}
                 folder="lenses"
               />
+            </Field>
+            <Field label="제품명 *" full>
+              <div className="flex gap-1.5">
+                <input
+                  value={form.name}
+                  onChange={(e) => {
+                    setAutoNameMode(false);
+                    update('name', e.target.value);
+                  }}
+                  placeholder="브랜드 + 시리즈 + 수량 선택 시 자동 생성 — 직접 편집 가능"
+                  className="input flex-1"
+                />
+                {!autoNameMode && (
+                  <button
+                    type="button"
+                    onClick={() => setAutoNameMode(true)}
+                    className="shrink-0 rounded-lg border border-gray-300 px-3 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                    title="브랜드 + 시리즈 + 팩 수량으로 자동 채우기"
+                  >
+                    🔄 자동
+                  </button>
+                )}
+              </div>
+              <p className="mt-1 text-[11px] text-gray-400">
+                {autoNameMode
+                  ? '🔄 자동 생성 모드 — 브랜드/시리즈/팩 수량 변경 시 갱신'
+                  : '✏️ 직접 입력 모드 — 자동으로 되돌리려면 우측 🔄 자동 버튼'}
+              </p>
             </Field>
           </div>
         </CardBody>
@@ -567,6 +603,8 @@ export function ProductForm({
           const brand = brands.find((b) => b.nameKo === form.brand);
           const brandCode = brand?.code ?? '???';
           update('productCode', `${brandCode}-${pc.code}${pc.suffix}`);
+          // 시리즈명도 저장 — 제품명 자동 생성에 사용
+          setSeriesNameKo(pc.nameKo);
         }}
       />
     </div>
