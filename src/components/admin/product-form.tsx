@@ -166,7 +166,9 @@ export function ProductForm({
 
   /** 파워챠트 모달 + 도수 리스트 (Phase 1, lens_variants 저장 연동은 Phase 2). */
   const [powerChartOpen, setPowerChartOpen] = useState(false);
-  const [powerList, setPowerList] = useState<PowerCell[]>([]);
+  const [powerList, setPowerList] = useState<
+    Array<{ sphere: number; cylinder: number; isActive: boolean }>
+  >([]);
   const isToric = form.lensType === 'toric';
 
   // 자동 생성 — 브랜드/시리즈/팩 수량 변경 시 제품명 갱신
@@ -517,50 +519,161 @@ export function ProductForm({
                 아직 선택된 도수가 없습니다 — <strong className="text-brand-700">+ 파워챠트 열기</strong> 버튼으로 시작
               </div>
             ) : (
-              <div className="space-y-1">
-                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-                  선택된 도수 ({powerList.length})
-                </div>
-                <div className="flex max-h-48 flex-wrap gap-1 overflow-y-auto rounded-lg bg-white p-2">
-                  {powerList.map((p, i) => (
-                    <span
-                      key={`${p.sphere}-${p.cylinder}-${i}`}
-                      className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-0.5 font-mono text-[10px] text-gray-700"
-                    >
-                      SPH {p.sphere > 0 ? '+' : p.sphere < 0 ? '−' : ''}
-                      {Math.abs(p.sphere).toFixed(2)}
-                      {isToric && (
-                        <>
-                          {' '}/ CYL {p.cylinder > 0 ? '+' : p.cylinder < 0 ? '−' : ''}
-                          {Math.abs(p.cylinder).toFixed(2)}
-                        </>
-                      )}
-                      <button
-                        type="button"
-                        onClick={() =>
-                          setPowerList((prev) => prev.filter((_, idx) => idx !== i))
-                        }
-                        className="ml-0.5 text-gray-400 hover:text-red-600"
-                        title="제거"
-                      >
-                        ×
-                      </button>
+              <div className="space-y-2">
+                <div className="flex items-baseline justify-between gap-2">
+                  <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                    제품 도수 리스트 ({powerList.length}) ·{' '}
+                    <span className="text-emerald-700">
+                      사용 {powerList.filter((p) => p.isActive).length}
+                    </span>{' '}
+                    /{' '}
+                    <span className="text-gray-400">
+                      제외 {powerList.filter((p) => !p.isActive).length}
                     </span>
-                  ))}
+                  </div>
+                  <div className="flex gap-1.5">
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPowerList((prev) => prev.map((p) => ({ ...p, isActive: true })))
+                      }
+                      className="text-[11px] text-emerald-700 hover:underline"
+                    >
+                      전체 사용
+                    </button>
+                    <span className="text-gray-300">·</span>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        setPowerList((prev) => prev.map((p) => ({ ...p, isActive: false })))
+                      }
+                      className="text-[11px] text-gray-500 hover:underline"
+                    >
+                      전체 제외
+                    </button>
+                    <span className="text-gray-300">·</span>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        if (window.confirm('도수 리스트를 모두 삭제할까요?')) setPowerList([]);
+                      }}
+                      className="text-[11px] text-red-600 hover:underline"
+                    >
+                      전체 삭제
+                    </button>
+                  </div>
                 </div>
-                <div className="mt-1.5 flex justify-end">
-                  <button
-                    type="button"
-                    onClick={() => setPowerList([])}
-                    className="text-[11px] text-gray-500 hover:text-red-600"
-                  >
-                    전체 삭제
-                  </button>
+                <div className="max-h-72 overflow-y-auto rounded-lg border border-gray-200 bg-white">
+                  <table className="min-w-full divide-y divide-gray-100 text-xs">
+                    <thead className="sticky top-0 bg-gray-50">
+                      <tr>
+                        <th className="px-2 py-1.5 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                          사용
+                        </th>
+                        <th className="px-2 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                          SPH
+                        </th>
+                        {isToric && (
+                          <th className="px-2 py-1.5 text-left text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                            CYL
+                          </th>
+                        )}
+                        <th className="px-2 py-1.5 text-center text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                          상태
+                        </th>
+                        <th className="px-2 py-1.5 text-right text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                          액션
+                        </th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50">
+                      {powerList.map((p, i) => (
+                        <tr
+                          key={`${p.sphere}-${p.cylinder}-${i}`}
+                          className={`hover:bg-gray-50 ${
+                            !p.isActive ? 'bg-gray-50 text-gray-400' : ''
+                          }`}
+                        >
+                          <td className="px-2 py-1 text-center">
+                            <input
+                              type="checkbox"
+                              checked={p.isActive}
+                              onChange={(e) =>
+                                setPowerList((prev) =>
+                                  prev.map((item, idx) =>
+                                    idx === i ? { ...item, isActive: e.target.checked } : item,
+                                  ),
+                                )
+                              }
+                              className="h-4 w-4"
+                            />
+                          </td>
+                          <td className={`px-2 py-1 font-mono ${!p.isActive ? 'line-through' : ''}`}>
+                            {p.sphere > 0 ? '+' : p.sphere < 0 ? '−' : ''}
+                            {Math.abs(p.sphere).toFixed(2)}
+                          </td>
+                          {isToric && (
+                            <td
+                              className={`px-2 py-1 font-mono ${!p.isActive ? 'line-through' : ''}`}
+                            >
+                              {p.cylinder > 0 ? '+' : p.cylinder < 0 ? '−' : ''}
+                              {Math.abs(p.cylinder).toFixed(2)}
+                            </td>
+                          )}
+                          <td className="px-2 py-1 text-center">
+                            {p.isActive ? (
+                              <span className="rounded bg-emerald-50 px-1.5 py-0.5 text-[10px] font-medium text-emerald-700">
+                                사용
+                              </span>
+                            ) : (
+                              <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] font-medium text-gray-500">
+                                제외
+                              </span>
+                            )}
+                          </td>
+                          <td className="px-2 py-1 text-right">
+                            <div className="flex items-center justify-end gap-1">
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPowerList((prev) =>
+                                    prev.map((item, idx) =>
+                                      idx === i
+                                        ? { ...item, isActive: !item.isActive }
+                                        : item,
+                                    ),
+                                  )
+                                }
+                                className={`rounded border px-1.5 py-0.5 text-[10px] font-medium ${
+                                  p.isActive
+                                    ? 'border-gray-300 bg-white text-gray-600 hover:bg-gray-50'
+                                    : 'border-emerald-300 bg-white text-emerald-700 hover:bg-emerald-50'
+                                }`}
+                              >
+                                {p.isActive ? '제외' : '복원'}
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() =>
+                                  setPowerList((prev) => prev.filter((_, idx) => idx !== i))
+                                }
+                                className="rounded border border-red-200 bg-white px-1.5 py-0.5 text-[10px] font-medium text-red-600 hover:bg-red-50"
+                              >
+                                삭제
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             )}
             <p className="mt-2 text-[11px] text-amber-700">
-              ⓘ 도수 리스트는 Phase 2 에서 lens_variants 로 저장됩니다 (현재는 폼 state 만).
+              ⓘ <strong>사용</strong>: 체크 시 lens_variants 로 저장 / <strong>제외</strong>: 잘못
+              선택된 도수 — 리스트에 남되 비활성 / <strong>삭제</strong>: 완전 제거. (Phase 2 에서
+              lens_variants 저장 연동)
             </p>
           </div>
         </CardBody>
@@ -773,14 +886,14 @@ export function ProductForm({
         onClose={() => setPowerChartOpen(false)}
         enableCylinder={isToric}
         onApply={(cells) => {
-          // 기존 + 새 셀, 중복 제거
+          // 기존 + 새 셀, 중복 제거. 새 셀은 default isActive=true.
           const seen = new Set(powerList.map((p) => `${p.sphere}|${p.cylinder}`));
           const dedup = [...powerList];
           for (const c of cells) {
             const key = `${c.sphere}|${c.cylinder}`;
             if (!seen.has(key)) {
               seen.add(key);
-              dedup.push(c);
+              dedup.push({ sphere: c.sphere, cylinder: c.cylinder, isActive: true });
             }
           }
           // sphere 내림차순, cyl 오름차순 정렬
