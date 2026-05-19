@@ -67,12 +67,13 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
  *
  * frame-ops 의 ROLE_DEFAULTS 와 같은 의미. DB 에 저장하지 않음 (git log 추적용).
  *
- * - admin: 전권. permissions=null 인 admin 은 모든 키 자동 부여.
+ * - admin: [] — default 권한 없음. 마스터(env)만 전권, 그 외 admin 은 권한 편집 UI 에서 명시 부여.
+ *   (확정 2026-05-19: 사용자 요구 "마스터에만 모든 메뉴 접근")
  * - warehouse_staff / store_staff / customer: admin portal 권한 없음.
  *   warehouse/store portal 의 권한은 Phase C3 에서 별도 정의.
  */
 export const ROLE_DEFAULTS: Record<string, string[]> = {
-  admin: PERMISSION_KEYS,
+  admin: [],
   warehouse_staff: [],
   store_staff: [],
   customer: [],

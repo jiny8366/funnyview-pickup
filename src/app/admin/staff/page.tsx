@@ -17,7 +17,7 @@ const ROLE_LABEL: Record<string, string> = {
 };
 
 export default async function AdminStaffPage() {
-  const rows = await db
+  const rawRows = await db
     .select({
       id: users.id,
       username: users.username,
@@ -31,6 +31,9 @@ export default async function AdminStaffPage() {
     .from(users)
     .where(inArray(users.role, ['admin', 'warehouse_staff', 'store_staff']))
     .orderBy(desc(users.createdAt));
+
+  // 마스터 계정은 목록에서 숨김 (env 기반 화이트리스트, 관리 대상 아님)
+  const rows = rawRows.filter((r) => !isMasterUser(r.username));
 
   const storeIds = rows.map((r) => r.storeId).filter((x): x is string => !!x);
   const storeRows = storeIds.length

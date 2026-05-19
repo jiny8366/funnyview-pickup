@@ -582,7 +582,9 @@
       "guards": [
         "PATCH /api/admin/staff/[id] — 마스터 대상 role/permissions/isActive 변경 시 400 CANNOT_MODIFY_MASTER",
         "DELETE /api/admin/staff/[id] — 마스터 대상 soft-delete 시 400 CANNOT_MODIFY_MASTER",
-        "StaffForm UI — 마스터 편집 시 권한 섹션 자체를 안내 박스로 대체 (체크박스 없음)"
+        "StaffForm UI — 마스터 편집 시 권한 섹션 자체를 안내 박스로 대체 (체크박스 없음)",
+        "/admin/staff 목록 — 마스터 행 filter 로 숨김 (env 기반, 관리 대상 아님)",
+        "/admin/staff/[id] 페이지 — 마스터 대상이고 본인이 아니면 notFound (본인은 정보 갱신용 접근 가능, 단 role/permissions/isActive 잠금)"
       ],
       "portalBar": {
         "appliesTo": "admin portal 햄버거 메뉴 최상단 (마스터일 때만 노출)",
@@ -610,7 +612,7 @@
     },
     "naming": "snake_case <domain>_<action> (frame-ops 동일)",
     "roleDefaults": {
-      "admin": "PERMISSION_KEYS 전권",
+      "admin": "[] (확정 2026-05-19: 일반 admin 은 default 권한 없음. 마스터 env 만 전권. 그 외 admin 은 권한 편집 UI 에서 명시 부여)",
       "warehouse_staff": "[] (Phase C3 에서 warehouse portal 권한 추가)",
       "store_staff": "[] (Phase C3 에서 store portal 권한 추가)",
       "customer": "[]"
