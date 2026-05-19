@@ -33,7 +33,7 @@ export default async function AdminStaffPage() {
     .orderBy(desc(users.createdAt));
 
   // 마스터 계정은 목록에서 숨김 (env 기반 화이트리스트, 관리 대상 아님)
-  const rows = rawRows.filter((r) => !isMasterUser(r.username));
+  const rows = rawRows.filter((r) => !isMasterUser(r.username, r.phone));
 
   const storeIds = rows.map((r) => r.storeId).filter((x): x is string => !!x);
   const storeRows = storeIds.length
@@ -80,7 +80,7 @@ export default async function AdminStaffPage() {
             </thead>
             <tbody className="divide-y divide-gray-50">
               {rows.map((u) => {
-                const userIsMaster = isMasterUser(u.username);
+                const userIsMaster = isMasterUser(u.username, u.phone);
                 return (
                 <tr key={u.id} className="hover:bg-gray-50">
                   <Td className="font-mono text-xs">

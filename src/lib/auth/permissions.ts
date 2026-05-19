@@ -89,8 +89,9 @@ export function effectivePermissions(
   role: string,
   explicit: string[] | null | undefined,
   username?: string | null,
+  phone?: string | null,
 ): string[] {
-  if (isMasterUser(username)) return PERMISSION_KEYS;
+  if (isMasterUser(username, phone)) return PERMISSION_KEYS;
   if (Array.isArray(explicit) && explicit.length > 0) return explicit;
   return ROLE_DEFAULTS[role] ?? [];
 }
@@ -129,7 +130,14 @@ function getMasterUsernames(): string[] {
   return DEFAULT_MASTER_USERNAMES;
 }
 
-export function isMasterUser(username: string | null | undefined): boolean {
-  if (!username) return false;
-  return getMasterUsernames().includes(username);
+export function isMasterUser(
+  username: string | null | undefined,
+  phone?: string | null,
+): boolean {
+  const masters = getMasterUsernames();
+  if (username && masters.includes(username)) return true;
+  // seed 의 ensureUser 는 'jiny8366' 을 phone 컬럼에 저장 (username NULL).
+  // 마스터 식별자가 phone 으로 들어와도 매칭하도록 fallback.
+  if (phone && masters.includes(phone)) return true;
+  return false;
 }

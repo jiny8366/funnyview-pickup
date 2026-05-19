@@ -73,6 +73,7 @@ export async function PATCH(
       id: users.id,
       role: users.role,
       username: users.username,
+      phone: users.phone,
       isActive: users.isActive,
     })
     .from(users)
@@ -82,7 +83,7 @@ export async function PATCH(
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
   }
 
-  const targetIsMaster = isMasterUser(target.username);
+  const targetIsMaster = isMasterUser(target.username, target.phone);
 
   // 마스터 보호: role/isActive/permissions 변경 차단 (본인이든 타인이든 동일)
   if (targetIsMaster) {
@@ -182,14 +183,14 @@ export async function DELETE(
   }
 
   const [target] = await db
-    .select({ id: users.id, username: users.username })
+    .select({ id: users.id, username: users.username, phone: users.phone })
     .from(users)
     .where(and(eq(users.id, targetId), isNull(users.deletedAt)))
     .limit(1);
   if (!target) {
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
   }
-  if (isMasterUser(target.username)) {
+  if (isMasterUser(target.username, target.phone)) {
     return NextResponse.json({ error: 'CANNOT_MODIFY_MASTER' }, { status: 400 });
   }
 
