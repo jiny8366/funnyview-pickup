@@ -169,7 +169,7 @@
       "implementation": "jose JWT (HS256)"
     },
     "loginInputs": {
-      "identifier": "username (영문 4-16) OR phone (010xxxxxxxx)",
+      "identifier": "username (영문 4-16) OR phone (010xxxxxxxx) OR email — 관리자/스탭/픽업가맹점 등록 시 email 을 username 으로 자동 저장 (확정 2026-05-19)",
       "password": "8-16자, 영문 대소/숫자/특수 중 3가지 이상 조합"
     },
     "socialLogin": {
@@ -554,7 +554,21 @@
       { "group": "CMS·마케팅", "items": ["홈 섹션 (/admin/home)", "섹션 분석 (/admin/home/analytics)"] },
       { "group": "시스템", "items": ["설정 (/admin/settings)"] }
     ],
-    "shell": "src/components/admin/admin-shell.tsx (햄버거 드롭다운)"
+    "shell": "src/components/admin/admin-shell.tsx (햄버거 드롭다운)",
+    "staffRegistration": {
+      "path": "/admin/staff/new",
+      "api": "POST /api/admin/staff",
+      "fields": [
+        "role (admin / warehouse_staff / store_staff)",
+        "email — username 으로도 자동 저장",
+        "phone (010xxxxxxxx)",
+        "password (8-16, 3가지 조합) + passwordConfirm",
+        "storeId — role=store_staff 시 필수 (활성 stores)",
+        "isActive (default true)"
+      ],
+      "model": "관리자가 모든 정보 직접 입력 (Phase B1). 초대 링크 기반 가입은 Phase 추후 (NOTIFICATION_PROVIDER 설정 시)",
+      "note": "확정 2026-05-19 — username 은 사용자 PC 등록 흐름과 통일 (email 주소 전체)"
+    }
   },
 
   "warehouse": {
@@ -623,7 +637,12 @@
       "식약처 UDI 일괄 import 스크립트 (API 키 발급 후)"
     ],
     "mediumPriority": [
-      "가맹점/직원 CRUD UI (현재는 리스트만)",
+      "직원 편집/비활성 (Phase B2)",
+      "RBAC 권한 슬러그 + hierarchical 권한 설정 (Phase C — 관리자/픽업가맹점 사장/픽업서비스 사장 각자 본인 범위)",
+      "customers.defaultPickupStoreId — 주문 시 매칭 가맹점 기본값 + 변경 가능 (확정 2026-05-19)",
+      "가입 절차 통일 — 일반/네이버/카카오/애플 모두 email=username + 휴대전화 인증 + 본인 패스워드 (확정 2026-05-19)",
+      "초대 링크 기반 스탭 가입 (이메일 토큰, NOTIFICATION_PROVIDER 설정 후)",
+      "가맹점 CRUD UI (현재는 리스트만)",
       "카카오 모빌리티 실시간 ETA",
       "회원 등급 + 이벤트 시스템",
       "후기/리뷰",

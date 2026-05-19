@@ -1,8 +1,8 @@
+import Link from 'next/link';
 import { desc, eq, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { stores, users } from '@/db/schema';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
-import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconPlus, IconUsers } from '@/components/ui/icons';
 
@@ -19,6 +19,7 @@ export default async function AdminStaffPage() {
   const rows = await db
     .select({
       id: users.id,
+      username: users.username,
       phone: users.phone,
       email: users.email,
       role: users.role,
@@ -45,9 +46,12 @@ export default async function AdminStaffPage() {
         title="직원 관리"
         description="관리자 · 픽업서비스 업체 · 가맹점 직원 계정을 관리합니다."
         actions={
-          <Button className="gap-1.5" disabled title="다음 단계에서 활성화">
-            <IconPlus size={16} /> 직원 추가
-          </Button>
+          <Link
+            href="/admin/staff/new"
+            className="inline-flex items-center gap-1.5 rounded-lg bg-gray-900 px-3 py-2 text-sm font-medium text-white hover:bg-black"
+          >
+            <IconPlus size={16} /> 계정 등록
+          </Link>
         }
       />
 
@@ -55,15 +59,15 @@ export default async function AdminStaffPage() {
         <EmptyState
           icon={<IconUsers size={28} />}
           title="등록된 직원이 없습니다"
-          description="seed 스크립트를 실행하면 데모 직원 5명이 생성됩니다."
+          description="우측 상단 '계정 등록' 으로 새 관리자 · 직원을 추가하세요."
         />
       ) : (
         <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
           <table className="min-w-full divide-y divide-gray-100 text-sm">
             <thead className="bg-gray-50">
               <tr>
+                <Th>이메일 (로그인 ID)</Th>
                 <Th>전화번호</Th>
-                <Th>이메일</Th>
                 <Th>역할</Th>
                 <Th>소속 가맹점</Th>
                 <Th className="text-center">상태</Th>
@@ -72,8 +76,10 @@ export default async function AdminStaffPage() {
             <tbody className="divide-y divide-gray-50">
               {rows.map((u) => (
                 <tr key={u.id} className="hover:bg-gray-50">
-                  <Td className="font-mono text-xs text-gray-700">{u.phone ?? '—'}</Td>
-                  <Td className="text-gray-600">{u.email ?? '—'}</Td>
+                  <Td className="font-mono text-xs text-gray-700">
+                    {u.email ?? u.username ?? '—'}
+                  </Td>
+                  <Td className="font-mono text-xs text-gray-600">{u.phone ?? '—'}</Td>
                   <Td>
                     <span className={`rounded px-2 py-0.5 text-[11px] font-medium ${roleColor(u.role)}`}>
                       {ROLE_LABEL[u.role] ?? u.role}
