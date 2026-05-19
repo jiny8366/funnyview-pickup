@@ -46,7 +46,7 @@ export default async function EditStaffPage({
     notFound();
   }
   // 마스터 대상이면 본인만 접근 (정보 갱신용). 다른 admin 은 직접 URL 입력해도 차단.
-  if (isMasterUser(target.username) && me.id !== target.id) {
+  if (isMasterUser(target.username, target.phone) && me.id !== target.id) {
     notFound();
   }
 
@@ -57,7 +57,7 @@ export default async function EditStaffPage({
     .orderBy(asc(stores.sortOrder), asc(stores.name));
 
   const isSelf = me.id === target.id;
-  const targetIsMaster = isMasterUser(target.username);
+  const targetIsMaster = isMasterUser(target.username, target.phone);
 
   return (
     <PageWrap>

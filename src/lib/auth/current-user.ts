@@ -63,9 +63,9 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     phone: user.phone,
     email: user.email,
     storeId: user.storeId,
-    isMaster: isMasterUser(user.username),
+    isMaster: isMasterUser(user.username, user.phone),
     permissionsRaw: user.permissions,
-    permissions: effectivePermissions(user.role, user.permissions, user.username),
+    permissions: effectivePermissions(user.role, user.permissions, user.username, user.phone),
     customerId,
     customerName,
   };
