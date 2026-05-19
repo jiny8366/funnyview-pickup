@@ -29,7 +29,7 @@ export default async function NewStaffPage() {
           </Link>
         }
       />
-      <StaffForm stores={storeRows} />
+      <StaffForm mode="create" stores={storeRows} />
     </PageWrap>
   );
 }
