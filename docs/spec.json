@@ -332,6 +332,13 @@
         "api": ["GET /api/admin/brands (활성 목록)", "POST /api/admin/brands (영문/국문/약자, unique 검증, requireAdmin)"],
         "note": "lenses.brand (text) 는 호환을 위해 그대로 유지 — 폼에서 선택 시 brands.nameKo 값을 lenses.brand 에 저장. 추후 lenses.brandId FK 도입 가능."
       },
+      "lens_price_entries": {
+        "purpose": "매입/공급/소비자 정적 가격의 시계열 (확정 2026-05-19)",
+        "fields": ["lensId (FK lenses cascade)", "scope (purchase/supply/retail)", "standard", "discountAmount", "discountPercent", "startsAt (default now)", "endsAt (NULL=무기한)", "isActive", "note"],
+        "model": "사용자가 매입/공급/소비자 가격 변경 시 '언제부터' 입력. 시작일 ≤ now → lenses 캐시 컬럼 즉시 갱신 / 미래 시작일 → entry 만 INSERT (예약). 종료일 미입력 = 다음 변경 전까지 유지.",
+        "cacheSync": "src/lib/lens-pricing-entries.ts createPriceEntryAndSyncCache(lensId, input)",
+        "future": "cron/lazy 로 미래 entry 가 startsAt 도달 시 캐시 자동 갱신 (현재는 entries 가 진실, 캐시는 즉시 적용용)"
+      },
       "lens_promotions": {
         "purpose": "기간/조건부 프로모션 가격 (확정 2026-05-19, Phase 1 — 테이블만 신설, UI 는 다음 chunk)",
         "fields": [
@@ -432,7 +439,8 @@
       "0008 — RBAC users.permissions text[] (Phase C1, 확정 2026-05-19)",
       "0009 — brands 테이블 신설 (nameKo/nameEn/code 3자, 제품 등록 폼 드롭다운, 확정 2026-05-19)",
       "0010 — product_codes 테이블 신설 (nameKo/nameEn/code 3자/suffix 2자, code+suffix unique, 영문 정렬, 확정 2026-05-19)",
-      "0011 — 가격 모델 확장 (lenses 7 컬럼 + lens_promotions 테이블 신설, 부가세 포함 저장, 확정 2026-05-19)"
+      "0011 — 가격 모델 확장 (lenses 7 컬럼 + lens_promotions 테이블 신설, 부가세 포함 저장, 확정 2026-05-19)",
+      "0012 — lens_price_entries 테이블 신설 (매입/공급/소비자 기간 적용 가격 시계열, 확정 2026-05-19)"
     ]
   },
 

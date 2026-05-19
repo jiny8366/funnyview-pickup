@@ -64,6 +64,13 @@ interface FormState {
   supplyDiscountAmount: number;
   supplyDiscountPercent: number;
   recommendedRetailPrice: number | '';
+  // 가격 적용 기간 (각 영역별) — startsAt 미입력 시 즉시 적용, endsAt 미입력 시 무기한
+  purchaseStartsAt: string;
+  purchaseEndsAt: string;
+  supplyStartsAt: string;
+  supplyEndsAt: string;
+  retailStartsAt: string;
+  retailEndsAt: string;
   imageUrl: string;
   baseCurve: string;
   diameter: string;
@@ -100,6 +107,12 @@ const EMPTY: FormState = {
   supplyDiscountAmount: 0,
   supplyDiscountPercent: 0,
   recommendedRetailPrice: '',
+  purchaseStartsAt: '',
+  purchaseEndsAt: '',
+  supplyStartsAt: '',
+  supplyEndsAt: '',
+  retailStartsAt: '',
+  retailEndsAt: '',
   imageUrl: '',
   baseCurve: '',
   diameter: '',
@@ -202,6 +215,12 @@ export function ProductForm({
           form.standardSupplyPrice === '' ? null : Number(form.standardSupplyPrice),
         recommendedRetailPrice:
           form.recommendedRetailPrice === '' ? null : Number(form.recommendedRetailPrice),
+        purchaseStartsAt: form.purchaseStartsAt || null,
+        purchaseEndsAt: form.purchaseEndsAt || null,
+        supplyStartsAt: form.supplyStartsAt || null,
+        supplyEndsAt: form.supplyEndsAt || null,
+        retailStartsAt: form.retailStartsAt || null,
+        retailEndsAt: form.retailEndsAt || null,
         description: serializeBlocks(blocks),
       };
 
@@ -795,6 +814,14 @@ function PricingCard({ form, update }: PricingCardProps) {
             value={display(purchaseCost)}
             hint={vatTax ? '부가세 별도' : '부가세 포함'}
           />
+          <DateRangeRow
+            startLabel="매입가 적용 시작"
+            endLabel="종료 (선택)"
+            start={form.purchaseStartsAt}
+            end={form.purchaseEndsAt}
+            onStart={(v) => update('purchaseStartsAt', v)}
+            onEnd={(v) => update('purchaseEndsAt', v)}
+          />
         </div>
 
         {/* 공급 */}
@@ -849,6 +876,14 @@ function PricingCard({ form, update }: PricingCardProps) {
               </span>
             </div>
           )}
+          <DateRangeRow
+            startLabel="공급가 적용 시작"
+            endLabel="종료 (선택)"
+            start={form.supplyStartsAt}
+            end={form.supplyEndsAt}
+            onStart={(v) => update('supplyStartsAt', v)}
+            onEnd={(v) => update('supplyEndsAt', v)}
+          />
         </div>
 
         {/* 소비자 (항상 부가세 포함) */}
@@ -882,6 +917,14 @@ function PricingCard({ form, update }: PricingCardProps) {
               </span>
             </div>
           )}
+          <DateRangeRow
+            startLabel="권장소비자가 적용 시작"
+            endLabel="종료 (선택)"
+            start={form.retailStartsAt}
+            end={form.retailEndsAt}
+            onStart={(v) => update('retailStartsAt', v)}
+            onEnd={(v) => update('retailEndsAt', v)}
+          />
           <p className="mt-3 text-[11px] text-gray-400">
             할인판매가 (가맹점 등급별/기간) / 프로모션가 / 1+1·2+1 물량할증은 별도 프로모션 관리에서 (다음
             chunk).
@@ -917,6 +960,49 @@ function ReadOnlyRow({ label, value, hint }: { label: string; value: number; hin
         ₩{value.toLocaleString()}
         {hint && <span className="ml-2 text-[10px] font-normal text-gray-400">{hint}</span>}
       </span>
+    </div>
+  );
+}
+
+function DateRangeRow({
+  startLabel,
+  endLabel,
+  start,
+  end,
+  onStart,
+  onEnd,
+}: {
+  startLabel: string;
+  endLabel: string;
+  start: string;
+  end: string;
+  onStart: (v: string) => void;
+  onEnd: (v: string) => void;
+}) {
+  return (
+    <div className="mt-3 grid gap-3 rounded-lg border border-dashed border-gray-200 p-3 md:grid-cols-2">
+      <label className="block space-y-1">
+        <span className="text-[11px] font-medium text-gray-600">
+          {startLabel} <span className="text-gray-400">(공란 = 즉시 적용)</span>
+        </span>
+        <input
+          type="date"
+          value={start}
+          onChange={(e) => onStart(e.target.value)}
+          className="h-9 w-full rounded-lg border border-gray-300 px-2 text-xs"
+        />
+      </label>
+      <label className="block space-y-1">
+        <span className="text-[11px] font-medium text-gray-600">
+          {endLabel} <span className="text-gray-400">(공란 = 무기한)</span>
+        </span>
+        <input
+          type="date"
+          value={end}
+          onChange={(e) => onEnd(e.target.value)}
+          className="h-9 w-full rounded-lg border border-gray-300 px-2 text-xs"
+        />
+      </label>
     </div>
   );
 }

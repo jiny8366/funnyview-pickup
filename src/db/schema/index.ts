@@ -11,6 +11,7 @@ export * from './brands';
 export * from './product-codes';
 export * from './lenses';
 export * from './lens-promotions';
+export * from './lens-price-entries';
 export * from './inventory';
 export * from './orders';
 export * from './payments';
