@@ -5,6 +5,7 @@ import { stores, users } from '@/db/schema';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconPlus, IconUsers } from '@/components/ui/icons';
+import { isMasterUser } from '@/lib/auth/permissions';
 
 export const dynamic = 'force-dynamic';
 
@@ -74,15 +75,27 @@ export default async function AdminStaffPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
-              {rows.map((u) => (
+              {rows.map((u) => {
+                const userIsMaster = isMasterUser(u.username);
+                return (
                 <tr key={u.id} className="hover:bg-gray-50">
                   <Td className="font-mono text-xs">
-                    <Link
-                      href={`/admin/staff/${u.id}`}
-                      className="text-gray-700 hover:text-brand-600 hover:underline"
-                    >
-                      {u.email ?? u.username ?? '—'}
-                    </Link>
+                    <div className="flex items-center gap-1.5">
+                      <Link
+                        href={`/admin/staff/${u.id}`}
+                        className="text-gray-700 hover:text-brand-600 hover:underline"
+                      >
+                        {u.email ?? u.username ?? '—'}
+                      </Link>
+                      {userIsMaster && (
+                        <span
+                          className="rounded bg-red-100 px-1.5 py-0.5 text-[10px] font-semibold text-red-700"
+                          title="MASTER_USERNAMES 환경변수에 등록된 최상위 권한"
+                        >
+                          🛡 마스터
+                        </span>
+                      )}
+                    </div>
                   </Td>
                   <Td className="font-mono text-xs text-gray-600">{u.phone ?? '—'}</Td>
                   <Td>
@@ -103,7 +116,8 @@ export default async function AdminStaffPage() {
                     )}
                   </Td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         </div>

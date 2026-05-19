@@ -80,13 +80,16 @@ export const ROLE_DEFAULTS: Record<string, string[]> = {
 
 /**
  * 사용자의 effective permissions 산출.
+ *  - 마스터 사용자 (username ∈ MASTER_USERNAMES) → 항상 전권 (PERMISSION_KEYS)
  *  - explicit (users.permissions) 가 배열이면 그대로 사용 (override)
  *  - NULL / undefined 면 ROLE_DEFAULTS 사용
  */
 export function effectivePermissions(
   role: string,
   explicit: string[] | null | undefined,
+  username?: string | null,
 ): string[] {
+  if (isMasterUser(username)) return PERMISSION_KEYS;
   if (Array.isArray(explicit) && explicit.length > 0) return explicit;
   return ROLE_DEFAULTS[role] ?? [];
 }
@@ -99,4 +102,33 @@ export function hasPermission(
   key: string,
 ): boolean {
   return Array.isArray(perms) && perms.includes(key);
+}
+
+/**
+ * 마스터 사용자 — 모든 권한 자동 부여 + role/permissions 변경 차단.
+ *
+ * 환경변수 MASTER_USERNAMES (콤마 구분) 로 운영 환경마다 다른 화이트리스트 가능.
+ * 미설정 시 production 기본값으로 jiny8366 단일 사용자.
+ *
+ * 권한 슬러그가 아닌 username 기반 — 이유:
+ *  1) 슬러그면 다른 admin 의 권한 편집 UI 에 노출되어 실수/악의로 부여 위험
+ *  2) env 는 환경 단위 통제 가능 + 코드 검토 시 변경 이력 명확
+ *  3) 데이터 모델 변경 없음 (role enum 추가 불필요)
+ */
+const DEFAULT_MASTER_USERNAMES = ['jiny8366'];
+
+function getMasterUsernames(): string[] {
+  const env = process.env.MASTER_USERNAMES;
+  if (env && env.trim()) {
+    return env
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean);
+  }
+  return DEFAULT_MASTER_USERNAMES;
+}
+
+export function isMasterUser(username: string | null | undefined): boolean {
+  if (!username) return false;
+  return getMasterUsernames().includes(username);
 }

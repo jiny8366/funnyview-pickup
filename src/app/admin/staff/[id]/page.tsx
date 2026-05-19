@@ -7,6 +7,7 @@ import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { StaffForm } from '@/components/admin/staff-form';
 import { StaffDeleteButton } from '@/components/admin/staff-delete-button';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { isMasterUser } from '@/lib/auth/permissions';
 import { IconArrowLeft } from '@/components/ui/icons';
 
 export const dynamic = 'force-dynamic';
@@ -52,15 +53,16 @@ export default async function EditStaffPage({
     .orderBy(asc(stores.sortOrder), asc(stores.name));
 
   const isSelf = me.id === target.id;
+  const targetIsMaster = isMasterUser(target.username);
 
   return (
     <PageWrap>
       <PageHeader
-        title="계정 편집"
+        title={targetIsMaster ? '계정 편집 (마스터)' : '계정 편집'}
         description={target.email ?? target.username ?? '—'}
         actions={
           <div className="flex items-center gap-2">
-            <StaffDeleteButton id={target.id} isSelf={isSelf} />
+            <StaffDeleteButton id={target.id} isSelf={isSelf} isMaster={targetIsMaster} />
             <Link
               href="/admin/staff"
               className="inline-flex items-center gap-1 rounded-lg border border-gray-200 px-3 py-2 text-sm text-gray-600 hover:bg-gray-50"
@@ -82,6 +84,7 @@ export default async function EditStaffPage({
           storeId: target.storeId,
           isActive: target.isActive,
           permissions: target.permissions,
+          isMaster: targetIsMaster,
         }}
       />
     </PageWrap>
