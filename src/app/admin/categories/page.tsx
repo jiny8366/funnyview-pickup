@@ -1,6 +1,7 @@
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { IconTag } from '@/components/ui/icons';
+import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +38,9 @@ const AXES = [
   },
 ];
 
-export default function AdminCategoriesPage() {
+export default async function AdminCategoriesPage() {
+  await requirePermissionOrRedirect('categories_write');
+
   return (
     <PageWrap>
       <PageHeader

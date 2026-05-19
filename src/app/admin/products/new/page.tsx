@@ -2,8 +2,11 @@ import Link from 'next/link';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { ProductForm } from '@/components/admin/product-form';
 import { IconArrowLeft } from '@/components/ui/icons';
+import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
-export default function NewProductPage() {
+export default async function NewProductPage() {
+  await requirePermissionOrRedirect('products_write');
+
   return (
     <PageWrap>
       <PageHeader

@@ -6,10 +6,12 @@ import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconPlus, IconStore } from '@/components/ui/icons';
+import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminStoresPage() {
+  await requirePermissionOrRedirect('stores_read');
   const rows = await db
     .select()
     .from(stores)

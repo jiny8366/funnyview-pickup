@@ -7,6 +7,7 @@ import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { StaffForm } from '@/components/admin/staff-form';
 import { StaffDeleteButton } from '@/components/admin/staff-delete-button';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 import { isMasterUser } from '@/lib/auth/permissions';
 import { IconArrowLeft } from '@/components/ui/icons';
 
@@ -19,10 +20,7 @@ export default async function EditStaffPage({
 }: {
   params: { id: string };
 }) {
-  const me = await getCurrentUser();
-  if (!me || me.role !== 'admin') {
-    notFound();
-  }
+  const me = await requirePermissionOrRedirect('staff_manage');
 
   const [target] = await db
     .select({
