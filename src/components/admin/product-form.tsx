@@ -1,7 +1,8 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
+import { BrandManagerModal } from '@/components/admin/brand-manager-modal';
 import { ImagePicker } from '@/components/admin/image-picker';
 import { ProductEditor } from '@/components/admin/product-editor';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,13 @@ import {
   parseBlocks,
   serializeBlocks,
 } from '@/lib/content/blocks';
+
+interface BrandOption {
+  id: string;
+  nameKo: string;
+  nameEn: string;
+  code: string;
+}
 
 const LENS_TYPES = [
   { value: 'spherical', label: '일반 (Spherical)' },
@@ -105,6 +113,25 @@ export function ProductForm({
     setForm((p) => ({ ...p, [k]: v }));
   }
 
+  const [brands, setBrands] = useState<BrandOption[]>([]);
+  const [brandModalOpen, setBrandModalOpen] = useState(false);
+
+  async function refreshBrands() {
+    try {
+      const res = await fetch('/api/admin/brands', { cache: 'no-store' });
+      if (res.ok) {
+        const body = await res.json();
+        setBrands(body.brands ?? []);
+      }
+    } catch {
+      /* swallow */
+    }
+  }
+
+  useEffect(() => {
+    refreshBrands();
+  }, []);
+
   async function save() {
     setSaving(true);
     setError(null);
@@ -165,12 +192,28 @@ export function ProductForm({
         <CardBody className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2">
             <Field label="브랜드 *">
-              <input
-                value={form.brand}
-                onChange={(e) => update('brand', e.target.value)}
-                placeholder="예: ACUVUE"
-                className="input"
-              />
+              <div className="flex gap-1.5">
+                <select
+                  value={form.brand}
+                  onChange={(e) => update('brand', e.target.value)}
+                  className="input flex-1"
+                >
+                  <option value="">— 브랜드 선택 —</option>
+                  {brands.map((b) => (
+                    <option key={b.id} value={b.nameKo}>
+                      {b.nameKo} ({b.nameEn} · {b.code})
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => setBrandModalOpen(true)}
+                  className="shrink-0 rounded-lg border border-gray-300 px-3 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  title="브랜드 관리"
+                >
+                  등록
+                </button>
+              </div>
             </Field>
             <Field label="제품 코드 *">
               <input
@@ -494,6 +537,15 @@ export function ProductForm({
           </Button>
         </div>
       </div>
+
+      <BrandManagerModal
+        open={brandModalOpen}
+        onClose={() => setBrandModalOpen(false)}
+        onCreated={(b) => {
+          refreshBrands();
+          update('brand', b.nameKo);
+        }}
+      />
     </div>
   );
 }
