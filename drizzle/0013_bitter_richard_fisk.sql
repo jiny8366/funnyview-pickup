@@ -1,0 +1,1 @@
+ALTER TABLE "lens_price_entries" ADD COLUMN "created_by" uuid;

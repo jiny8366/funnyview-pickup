@@ -129,6 +129,7 @@ export async function PATCH(
       discountPercent: body.purchaseDiscountPercent ?? 0,
       startsAt: body.purchaseStartsAt ?? null,
       endsAt: body.purchaseEndsAt ?? null,
+      createdBy: user.id,
     });
   }
   if ('standardSupplyPrice' in body && body.standardSupplyPrice != null) {
@@ -139,6 +140,7 @@ export async function PATCH(
       discountPercent: body.supplyDiscountPercent ?? 0,
       startsAt: body.supplyStartsAt ?? null,
       endsAt: body.supplyEndsAt ?? null,
+      createdBy: user.id,
     });
   }
   if ('recommendedRetailPrice' in body && body.recommendedRetailPrice != null) {
@@ -147,6 +149,7 @@ export async function PATCH(
       standard: Number(body.recommendedRetailPrice),
       startsAt: body.retailStartsAt ?? null,
       endsAt: body.retailEndsAt ?? null,
+      createdBy: user.id,
     });
   }
 
