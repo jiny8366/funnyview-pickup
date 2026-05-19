@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { lenses } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { createPriceEntryAndSyncCache } from '@/lib/lens-pricing-entries';
 import { validatePricing } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
@@ -43,13 +44,8 @@ export async function PATCH(
     'piecesPerBox',
     'price',
     'cost',
-    'standardCost',
-    'purchaseDiscountAmount',
-    'purchaseDiscountPercent',
-    'standardSupplyPrice',
-    'supplyDiscountAmount',
-    'supplyDiscountPercent',
-    'recommendedRetailPrice',
+    // 가격 정적 컬럼 (standardCost/standardSupplyPrice/recommendedRetailPrice/discount*) 은
+    // createPriceEntryAndSyncCache 가 처리 — 시작일 ≤ now 일 때만 캐시 갱신
     'imageUrl',
     'description',
     'baseCurve',
@@ -70,18 +66,7 @@ export async function PATCH(
     'isActive',
   ] as const;
 
-  const numericFields = new Set([
-    'price',
-    'cost',
-    'piecesPerBox',
-    'standardCost',
-    'purchaseDiscountAmount',
-    'purchaseDiscountPercent',
-    'standardSupplyPrice',
-    'supplyDiscountAmount',
-    'supplyDiscountPercent',
-    'recommendedRetailPrice',
-  ]);
+  const numericFields = new Set(['price', 'cost', 'piecesPerBox']);
 
   for (const k of fields) {
     if (k in body) {
@@ -97,7 +82,7 @@ export async function PATCH(
   }
   allowed.updatedAt = new Date();
 
-  // 가격 검증 (input 에 가격 관련 필드가 하나라도 있으면)
+  // 가격 검증 (body 에 가격 관련 필드가 하나라도 있으면)
   const hasPricing = [
     'standardCost',
     'purchaseDiscountAmount',
@@ -109,13 +94,13 @@ export async function PATCH(
   ].some((k) => k in body);
   if (hasPricing) {
     const issues = validatePricing({
-      standardCost: allowed.standardCost as number | null,
-      purchaseDiscountAmount: allowed.purchaseDiscountAmount as number,
-      purchaseDiscountPercent: allowed.purchaseDiscountPercent as number,
-      standardSupplyPrice: allowed.standardSupplyPrice as number | null,
-      supplyDiscountAmount: allowed.supplyDiscountAmount as number,
-      supplyDiscountPercent: allowed.supplyDiscountPercent as number,
-      recommendedRetailPrice: allowed.recommendedRetailPrice as number | null,
+      standardCost: body.standardCost ?? null,
+      purchaseDiscountAmount: body.purchaseDiscountAmount ?? 0,
+      purchaseDiscountPercent: body.purchaseDiscountPercent ?? 0,
+      standardSupplyPrice: body.standardSupplyPrice ?? null,
+      supplyDiscountAmount: body.supplyDiscountAmount ?? 0,
+      supplyDiscountPercent: body.supplyDiscountPercent ?? 0,
+      recommendedRetailPrice: body.recommendedRetailPrice ?? null,
     });
     const errs = issues.filter((i) => i.severity === 'error');
     if (errs.length > 0) {
@@ -133,6 +118,38 @@ export async function PATCH(
     .returning();
 
   if (!row) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
+
+  // 가격 entry 생성 (각 영역 — 변경 여부 무관하게 body 에 명시되면 기록).
+  // 시작/종료일 정보가 변경 추적의 핵심 단서.
+  if ('standardCost' in body && body.standardCost != null) {
+    await createPriceEntryAndSyncCache(row.id, {
+      scope: 'purchase',
+      standard: Number(body.standardCost),
+      discountAmount: body.purchaseDiscountAmount ?? 0,
+      discountPercent: body.purchaseDiscountPercent ?? 0,
+      startsAt: body.purchaseStartsAt ?? null,
+      endsAt: body.purchaseEndsAt ?? null,
+    });
+  }
+  if ('standardSupplyPrice' in body && body.standardSupplyPrice != null) {
+    await createPriceEntryAndSyncCache(row.id, {
+      scope: 'supply',
+      standard: Number(body.standardSupplyPrice),
+      discountAmount: body.supplyDiscountAmount ?? 0,
+      discountPercent: body.supplyDiscountPercent ?? 0,
+      startsAt: body.supplyStartsAt ?? null,
+      endsAt: body.supplyEndsAt ?? null,
+    });
+  }
+  if ('recommendedRetailPrice' in body && body.recommendedRetailPrice != null) {
+    await createPriceEntryAndSyncCache(row.id, {
+      scope: 'retail',
+      standard: Number(body.recommendedRetailPrice),
+      startsAt: body.retailStartsAt ?? null,
+      endsAt: body.retailEndsAt ?? null,
+    });
+  }
+
   return NextResponse.json({ lens: row });
 }
 

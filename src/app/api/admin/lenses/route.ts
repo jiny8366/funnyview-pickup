@@ -3,6 +3,7 @@ import { desc, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { lenses } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { createPriceEntryAndSyncCache } from '@/lib/lens-pricing-entries';
 import { validatePricing } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
@@ -47,6 +48,12 @@ export async function POST(req: Request) {
     supplyDiscountAmount,
     supplyDiscountPercent,
     recommendedRetailPrice,
+    purchaseStartsAt,
+    purchaseEndsAt,
+    supplyStartsAt,
+    supplyEndsAt,
+    retailStartsAt,
+    retailEndsAt,
     imageUrl,
     description,
     baseCurve,
@@ -99,14 +106,8 @@ export async function POST(req: Request) {
       piecesPerBox: piecesPerBox ?? 1,
       price: Number(price),
       cost: cost == null ? null : Number(cost),
-      standardCost: standardCost == null ? null : Number(standardCost),
-      purchaseDiscountAmount: purchaseDiscountAmount ?? 0,
-      purchaseDiscountPercent: purchaseDiscountPercent ?? 0,
-      standardSupplyPrice: standardSupplyPrice == null ? null : Number(standardSupplyPrice),
-      supplyDiscountAmount: supplyDiscountAmount ?? 0,
-      supplyDiscountPercent: supplyDiscountPercent ?? 0,
-      recommendedRetailPrice:
-        recommendedRetailPrice == null ? null : Number(recommendedRetailPrice),
+      // standardCost/standardSupplyPrice/recommendedRetailPrice/discount* 은
+      // createPriceEntryAndSyncCache 에서 처리 — 시작일 ≤ now 일 때만 캐시 갱신
       imageUrl: imageUrl || null,
       description: description ?? null,
       baseCurve: baseCurve != null && baseCurve !== '' ? String(baseCurve) : null,
@@ -126,6 +127,36 @@ export async function POST(req: Request) {
       isNew: !!isNew,
     })
     .returning();
+
+  // 가격 entry 생성 (각 영역마다, 캐시는 위에서 직접 insert 했지만 entries 시계열 기록)
+  if (standardCost != null) {
+    await createPriceEntryAndSyncCache(row.id, {
+      scope: 'purchase',
+      standard: Number(standardCost),
+      discountAmount: purchaseDiscountAmount ?? 0,
+      discountPercent: purchaseDiscountPercent ?? 0,
+      startsAt: purchaseStartsAt ?? null,
+      endsAt: purchaseEndsAt ?? null,
+    });
+  }
+  if (standardSupplyPrice != null) {
+    await createPriceEntryAndSyncCache(row.id, {
+      scope: 'supply',
+      standard: Number(standardSupplyPrice),
+      discountAmount: supplyDiscountAmount ?? 0,
+      discountPercent: supplyDiscountPercent ?? 0,
+      startsAt: supplyStartsAt ?? null,
+      endsAt: supplyEndsAt ?? null,
+    });
+  }
+  if (recommendedRetailPrice != null) {
+    await createPriceEntryAndSyncCache(row.id, {
+      scope: 'retail',
+      standard: Number(recommendedRetailPrice),
+      startsAt: retailStartsAt ?? null,
+      endsAt: retailEndsAt ?? null,
+    });
+  }
 
   return NextResponse.json({ lens: row });
 }
