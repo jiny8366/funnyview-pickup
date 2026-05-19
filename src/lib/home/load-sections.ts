@@ -1,4 +1,4 @@
-import { and, asc, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, isNull, lte, or } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { homeSections, type HomeSection } from '@/db/schema';
 import { type CurationMode, curateLenses } from './curation';
@@ -20,8 +20,8 @@ export async function loadActiveSections(): Promise<HydratedSection[]> {
       and(
         eq(homeSections.isActive, true),
         isNull(homeSections.deletedAt),
-        or(isNull(homeSections.startsAt), sql`${homeSections.startsAt} <= ${now}`),
-        or(isNull(homeSections.endsAt), sql`${homeSections.endsAt} >= ${now}`),
+        or(isNull(homeSections.startsAt), lte(homeSections.startsAt, now)),
+        or(isNull(homeSections.endsAt), gte(homeSections.endsAt, now)),
       ),
     )
     .orderBy(asc(homeSections.sortOrder), asc(homeSections.createdAt));

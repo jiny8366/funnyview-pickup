@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { and, eq, sql } from 'drizzle-orm';
+import { and, eq, gte, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { homeSectionEvents, homeSections } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
@@ -32,7 +32,7 @@ export async function GET(req: Request) {
       homeSectionEvents,
       and(
         eq(homeSectionEvents.sectionId, homeSections.id),
-        sql`${homeSectionEvents.occurredAt} >= ${since}`,
+        gte(homeSectionEvents.occurredAt, since),
       ),
     )
     .groupBy(homeSections.id)

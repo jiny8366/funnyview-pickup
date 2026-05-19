@@ -3,7 +3,7 @@
  * 사용: source .env.local 후 npx tsx scripts/check-home-sections.ts
  */
 import 'dotenv/config';
-import { and, asc, eq, isNull, or, sql } from 'drizzle-orm';
+import { and, asc, eq, gte, isNull, lte, or } from 'drizzle-orm';
 import { db } from '../src/db/client';
 import { homeSections } from '../src/db/schema';
 
@@ -27,8 +27,8 @@ async function main() {
       and(
         eq(homeSections.isActive, true),
         isNull(homeSections.deletedAt),
-        or(isNull(homeSections.startsAt), sql`${homeSections.startsAt} <= ${now}`),
-        or(isNull(homeSections.endsAt), sql`${homeSections.endsAt} >= ${now}`),
+        or(isNull(homeSections.startsAt), lte(homeSections.startsAt, now)),
+        or(isNull(homeSections.endsAt), gte(homeSections.endsAt, now)),
       ),
     )
     .orderBy(asc(homeSections.sortOrder), asc(homeSections.createdAt));
