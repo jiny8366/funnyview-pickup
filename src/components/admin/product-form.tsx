@@ -1,7 +1,7 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { BrandManagerModal } from '@/components/admin/brand-manager-modal';
 import { ProductCodeManagerModal } from '@/components/admin/product-code-manager-modal';
 import { ImagePicker } from '@/components/admin/image-picker';
@@ -13,6 +13,14 @@ import {
   parseBlocks,
   serializeBlocks,
 } from '@/lib/content/blocks';
+import {
+  effectivePurchaseCost,
+  effectiveSupplyPrice,
+  retailMarginRate,
+  supplyMarginRate,
+  toVatExcluded,
+  validatePricing,
+} from '@/lib/pricing';
 
 interface BrandOption {
   id: string;
@@ -45,8 +53,17 @@ interface FormState {
   lensType: string;
   replacementCycle: string;
   piecesPerBox: number;
+  // 기존 가격 (호환). 신규 등록은 standardCost/standardSupplyPrice/recommendedRetailPrice 사용.
   price: number;
   cost: number | '';
+  // 신규 가격 모델 — 모두 부가세 포함 (KRW). 빈 문자열 = 미입력 (NULL).
+  standardCost: number | '';
+  purchaseDiscountAmount: number;
+  purchaseDiscountPercent: number;
+  standardSupplyPrice: number | '';
+  supplyDiscountAmount: number;
+  supplyDiscountPercent: number;
+  recommendedRetailPrice: number | '';
   imageUrl: string;
   baseCurve: string;
   diameter: string;
@@ -76,6 +93,13 @@ const EMPTY: FormState = {
   piecesPerBox: 30,
   price: 0,
   cost: '',
+  standardCost: '',
+  purchaseDiscountAmount: 0,
+  purchaseDiscountPercent: 0,
+  standardSupplyPrice: '',
+  supplyDiscountAmount: 0,
+  supplyDiscountPercent: 0,
+  recommendedRetailPrice: '',
   imageUrl: '',
   baseCurve: '',
   diameter: '',
@@ -150,12 +174,34 @@ export function ProductForm({
   }, []);
 
   async function save() {
+    // 가격 검증 — error 가 있으면 저장 차단
+    const pricingIssues = validatePricing({
+      standardCost: form.standardCost === '' ? null : form.standardCost,
+      purchaseDiscountAmount: form.purchaseDiscountAmount,
+      purchaseDiscountPercent: form.purchaseDiscountPercent,
+      standardSupplyPrice: form.standardSupplyPrice === '' ? null : form.standardSupplyPrice,
+      supplyDiscountAmount: form.supplyDiscountAmount,
+      supplyDiscountPercent: form.supplyDiscountPercent,
+      recommendedRetailPrice:
+        form.recommendedRetailPrice === '' ? null : form.recommendedRetailPrice,
+    });
+    const errors = pricingIssues.filter((i) => i.severity === 'error');
+    if (errors.length > 0) {
+      setError(errors[0].message);
+      return;
+    }
+
     setSaving(true);
     setError(null);
     try {
       const body = {
         ...form,
         cost: form.cost === '' ? null : Number(form.cost),
+        standardCost: form.standardCost === '' ? null : Number(form.standardCost),
+        standardSupplyPrice:
+          form.standardSupplyPrice === '' ? null : Number(form.standardSupplyPrice),
+        recommendedRetailPrice:
+          form.recommendedRetailPrice === '' ? null : Number(form.recommendedRetailPrice),
         description: serializeBlocks(blocks),
       };
 
@@ -326,37 +372,8 @@ export function ProductForm({
       </Card>
 
       {/* 가격 */}
-      <Card>
-        <CardHeader>
-          <div>
-            <CardTitle>가격</CardTitle>
-            <CardDescription>원가는 매출 분석 / 영업이익 계산에만 사용됩니다.</CardDescription>
-          </div>
-        </CardHeader>
-        <CardBody>
-          <div className="grid gap-4 md:grid-cols-2">
-            <Field label="판매가 (₩) *">
-              <input
-                type="number"
-                min={0}
-                value={form.price}
-                onChange={(e) => update('price', Number(e.target.value))}
-                className="input"
-              />
-            </Field>
-            <Field label="원가 (₩)">
-              <input
-                type="number"
-                min={0}
-                value={form.cost}
-                onChange={(e) => update('cost', e.target.value === '' ? '' : Number(e.target.value))}
-                className="input"
-                placeholder="(선택)"
-              />
-            </Field>
-          </div>
-        </CardBody>
-      </Card>
+      <PricingCard form={form} update={update} />
+
 
       {/* 렌즈 스펙 */}
       <Card>
@@ -624,6 +641,282 @@ function Field({
     <div className={full ? 'md:col-span-2' : undefined}>
       <label className="mb-1.5 block text-xs font-medium text-gray-700">{label}</label>
       {children}
+    </div>
+  );
+}
+
+interface PricingCardProps {
+  form: FormState;
+  update: <K extends keyof FormState>(k: K, v: FormState[K]) => void;
+}
+
+function PricingCard({ form, update }: PricingCardProps) {
+  // 매입/공급 영역 부가세 표시 모드 (UI 만, DB 는 항상 부가세 포함)
+  const [vatMode, setVatMode] = useState<'included' | 'excluded'>('included');
+  const vatTax = vatMode === 'excluded';
+
+  const purchaseCost = useMemo(
+    () =>
+      effectivePurchaseCost(
+        form.standardCost === '' ? null : form.standardCost,
+        form.purchaseDiscountAmount,
+        form.purchaseDiscountPercent,
+      ),
+    [form.standardCost, form.purchaseDiscountAmount, form.purchaseDiscountPercent],
+  );
+  const supplyPrice = useMemo(
+    () =>
+      effectiveSupplyPrice(
+        form.standardSupplyPrice === '' ? null : form.standardSupplyPrice,
+        form.supplyDiscountAmount,
+        form.supplyDiscountPercent,
+      ),
+    [form.standardSupplyPrice, form.supplyDiscountAmount, form.supplyDiscountPercent],
+  );
+  const retail = form.recommendedRetailPrice === '' ? 0 : form.recommendedRetailPrice;
+
+  const supplyMargin = supplyMarginRate(supplyPrice, purchaseCost);
+  const retailMargin = retailMarginRate(retail, supplyPrice);
+
+  const issues = useMemo(
+    () =>
+      validatePricing({
+        standardCost: form.standardCost === '' ? null : form.standardCost,
+        purchaseDiscountAmount: form.purchaseDiscountAmount,
+        purchaseDiscountPercent: form.purchaseDiscountPercent,
+        standardSupplyPrice: form.standardSupplyPrice === '' ? null : form.standardSupplyPrice,
+        supplyDiscountAmount: form.supplyDiscountAmount,
+        supplyDiscountPercent: form.supplyDiscountPercent,
+        recommendedRetailPrice: form.recommendedRetailPrice === '' ? null : form.recommendedRetailPrice,
+      }),
+    [
+      form.standardCost,
+      form.purchaseDiscountAmount,
+      form.purchaseDiscountPercent,
+      form.standardSupplyPrice,
+      form.supplyDiscountAmount,
+      form.supplyDiscountPercent,
+      form.recommendedRetailPrice,
+    ],
+  );
+
+  /** DB 저장값 (부가세 포함) ↔ 화면 표시값 (vatMode 따라 환산). */
+  const display = (vatIncludedAmount: number): number =>
+    vatTax ? toVatExcluded(vatIncludedAmount) : vatIncludedAmount;
+
+  /** 사용자 입력값 → DB 저장값 (부가세 포함). */
+  const fromInput = (rawNumber: number): number =>
+    vatTax ? Math.round(rawNumber * 1.1) : rawNumber;
+
+  function setMaybe<K extends keyof FormState>(k: K, raw: string) {
+    if (raw === '') {
+      update(k, '' as FormState[K]);
+      return;
+    }
+    const n = Number(raw);
+    if (Number.isNaN(n)) return;
+    update(k, fromInput(n) as FormState[K]);
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex w-full items-start justify-between gap-3">
+          <div>
+            <CardTitle>가격 (모든 금액 부가세 포함 기준 저장)</CardTitle>
+            <CardDescription>
+              매입/공급 영역만 부가세 토글로 환산 표시. 소비자 가격은 항상 부가세 포함.
+            </CardDescription>
+          </div>
+          <div className="flex shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-0.5 text-xs">
+            <button
+              type="button"
+              onClick={() => setVatMode('included')}
+              className={`rounded px-2.5 py-1 ${
+                vatMode === 'included' ? 'bg-white font-semibold text-gray-900 shadow-sm' : 'text-gray-500'
+              }`}
+            >
+              부가세 포함
+            </button>
+            <button
+              type="button"
+              onClick={() => setVatMode('excluded')}
+              className={`rounded px-2.5 py-1 ${
+                vatMode === 'excluded' ? 'bg-white font-semibold text-gray-900 shadow-sm' : 'text-gray-500'
+              }`}
+            >
+              부가세 별도
+            </button>
+          </div>
+        </div>
+      </CardHeader>
+      <CardBody className="space-y-5">
+        {/* 매입 */}
+        <div className="rounded-xl border border-gray-200 p-4">
+          <h3 className="mb-3 text-sm font-semibold text-gray-700">매입 (제조사 → 본사)</h3>
+          <div className="grid gap-3 md:grid-cols-3">
+            <Field label={`표준매입가 (₩, ${vatTax ? '부가세 별도' : '부가세 포함'})`}>
+              <input
+                type="number"
+                min={0}
+                value={form.standardCost === '' ? '' : display(form.standardCost)}
+                onChange={(e) => setMaybe('standardCost', e.target.value)}
+                placeholder="(선택)"
+                className="input"
+              />
+            </Field>
+            <Field label="매입할인 (₩)">
+              <input
+                type="number"
+                min={0}
+                value={display(form.purchaseDiscountAmount)}
+                onChange={(e) =>
+                  update(
+                    'purchaseDiscountAmount',
+                    e.target.value === '' ? 0 : fromInput(Number(e.target.value)),
+                  )
+                }
+                className="input"
+              />
+            </Field>
+            <Field label="매입할인 (%)">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={form.purchaseDiscountPercent}
+                onChange={(e) => update('purchaseDiscountPercent', Number(e.target.value || 0))}
+                className="input"
+              />
+            </Field>
+          </div>
+          <ReadOnlyRow
+            label="매입가 (실효)"
+            value={display(purchaseCost)}
+            hint={vatTax ? '부가세 별도' : '부가세 포함'}
+          />
+        </div>
+
+        {/* 공급 */}
+        <div className="rounded-xl border border-gray-200 p-4">
+          <h3 className="mb-3 text-sm font-semibold text-gray-700">공급 (본사 → 가맹점)</h3>
+          <div className="grid gap-3 md:grid-cols-3">
+            <Field label={`표준공급가 (₩, ${vatTax ? '부가세 별도' : '부가세 포함'})`}>
+              <input
+                type="number"
+                min={0}
+                value={form.standardSupplyPrice === '' ? '' : display(form.standardSupplyPrice)}
+                onChange={(e) => setMaybe('standardSupplyPrice', e.target.value)}
+                placeholder="(선택)"
+                className="input"
+              />
+            </Field>
+            <Field label="공급할인 (₩)">
+              <input
+                type="number"
+                min={0}
+                value={display(form.supplyDiscountAmount)}
+                onChange={(e) =>
+                  update(
+                    'supplyDiscountAmount',
+                    e.target.value === '' ? 0 : fromInput(Number(e.target.value)),
+                  )
+                }
+                className="input"
+              />
+            </Field>
+            <Field label="공급할인 (%)">
+              <input
+                type="number"
+                min={0}
+                max={100}
+                value={form.supplyDiscountPercent}
+                onChange={(e) => update('supplyDiscountPercent', Number(e.target.value || 0))}
+                className="input"
+              />
+            </Field>
+          </div>
+          <ReadOnlyRow
+            label="할인공급가 (실효)"
+            value={display(supplyPrice)}
+            hint={vatTax ? '부가세 별도' : '부가세 포함'}
+          />
+          {supplyPrice > 0 && purchaseCost > 0 && (
+            <div className="mt-2 text-[11px] text-gray-500">
+              본사 마진율 (공급가 vs 매입가, 부가세 포함 기준):{' '}
+              <span className={supplyMargin < 0 ? 'font-semibold text-red-600' : 'font-medium text-gray-700'}>
+                {supplyMargin.toFixed(2)}%
+              </span>
+            </div>
+          )}
+        </div>
+
+        {/* 소비자 (항상 부가세 포함) */}
+        <div className="rounded-xl border border-gray-200 p-4">
+          <h3 className="mb-3 text-sm font-semibold text-gray-700">
+            소비자 가격{' '}
+            <span className="text-[11px] font-normal text-gray-400">(부가세 포함, 소매 표준)</span>
+          </h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            <Field label="권장소비자가 (₩)">
+              <input
+                type="number"
+                min={0}
+                value={form.recommendedRetailPrice}
+                onChange={(e) =>
+                  update(
+                    'recommendedRetailPrice',
+                    e.target.value === '' ? '' : Number(e.target.value),
+                  )
+                }
+                placeholder="(선택)"
+                className="input"
+              />
+            </Field>
+          </div>
+          {retail > 0 && supplyPrice > 0 && (
+            <div className="mt-2 text-[11px] text-gray-500">
+              가맹점 마진율 (소비자가 vs 공급가):{' '}
+              <span className={retailMargin < 0 ? 'font-semibold text-red-600' : 'font-medium text-gray-700'}>
+                {retailMargin.toFixed(2)}%
+              </span>
+            </div>
+          )}
+          <p className="mt-3 text-[11px] text-gray-400">
+            할인판매가 (가맹점 등급별/기간) / 프로모션가 / 1+1·2+1 물량할증은 별도 프로모션 관리에서 (다음
+            chunk).
+          </p>
+        </div>
+
+        {issues.length > 0 && (
+          <div className="space-y-1">
+            {issues.map((it, i) => (
+              <div
+                key={i}
+                className={`rounded-lg px-3 py-2 text-xs ${
+                  it.severity === 'error'
+                    ? 'border border-red-200 bg-red-50 text-red-700'
+                    : 'border border-amber-200 bg-amber-50 text-amber-700'
+                }`}
+              >
+                {it.severity === 'error' ? '⛔' : '⚠️'} {it.message}
+              </div>
+            ))}
+          </div>
+        )}
+      </CardBody>
+    </Card>
+  );
+}
+
+function ReadOnlyRow({ label, value, hint }: { label: string; value: number; hint?: string }) {
+  return (
+    <div className="mt-3 flex items-center justify-between rounded-lg bg-gray-50 px-3 py-2 text-sm">
+      <span className="text-gray-600">{label}</span>
+      <span className="font-mono font-semibold text-gray-900">
+        ₩{value.toLocaleString()}
+        {hint && <span className="ml-2 text-[10px] font-normal text-gray-400">{hint}</span>}
+      </span>
     </div>
   );
 }

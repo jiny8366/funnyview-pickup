@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { lenses } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { validatePricing } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,6 +43,13 @@ export async function PATCH(
     'piecesPerBox',
     'price',
     'cost',
+    'standardCost',
+    'purchaseDiscountAmount',
+    'purchaseDiscountPercent',
+    'standardSupplyPrice',
+    'supplyDiscountAmount',
+    'supplyDiscountPercent',
+    'recommendedRetailPrice',
     'imageUrl',
     'description',
     'baseCurve',
@@ -62,10 +70,23 @@ export async function PATCH(
     'isActive',
   ] as const;
 
+  const numericFields = new Set([
+    'price',
+    'cost',
+    'piecesPerBox',
+    'standardCost',
+    'purchaseDiscountAmount',
+    'purchaseDiscountPercent',
+    'standardSupplyPrice',
+    'supplyDiscountAmount',
+    'supplyDiscountPercent',
+    'recommendedRetailPrice',
+  ]);
+
   for (const k of fields) {
     if (k in body) {
       const v = body[k];
-      if (k === 'price' || k === 'cost' || k === 'piecesPerBox') {
+      if (numericFields.has(k)) {
         allowed[k] = v == null ? null : Number(v);
       } else if (['baseCurve', 'diameter', 'waterContent', 'sphereMin', 'sphereMax'].includes(k)) {
         allowed[k] = v == null || v === '' ? null : String(v);
@@ -75,6 +96,35 @@ export async function PATCH(
     }
   }
   allowed.updatedAt = new Date();
+
+  // 가격 검증 (input 에 가격 관련 필드가 하나라도 있으면)
+  const hasPricing = [
+    'standardCost',
+    'purchaseDiscountAmount',
+    'purchaseDiscountPercent',
+    'standardSupplyPrice',
+    'supplyDiscountAmount',
+    'supplyDiscountPercent',
+    'recommendedRetailPrice',
+  ].some((k) => k in body);
+  if (hasPricing) {
+    const issues = validatePricing({
+      standardCost: allowed.standardCost as number | null,
+      purchaseDiscountAmount: allowed.purchaseDiscountAmount as number,
+      purchaseDiscountPercent: allowed.purchaseDiscountPercent as number,
+      standardSupplyPrice: allowed.standardSupplyPrice as number | null,
+      supplyDiscountAmount: allowed.supplyDiscountAmount as number,
+      supplyDiscountPercent: allowed.supplyDiscountPercent as number,
+      recommendedRetailPrice: allowed.recommendedRetailPrice as number | null,
+    });
+    const errs = issues.filter((i) => i.severity === 'error');
+    if (errs.length > 0) {
+      return NextResponse.json(
+        { error: 'PRICING_INVALID', detail: errs },
+        { status: 400 },
+      );
+    }
+  }
 
   const [row] = await db
     .update(lenses)

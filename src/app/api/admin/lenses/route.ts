@@ -3,6 +3,7 @@ import { desc, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { lenses } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { validatePricing } from '@/lib/pricing';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,13 @@ export async function POST(req: Request) {
     piecesPerBox,
     price,
     cost,
+    standardCost,
+    purchaseDiscountAmount,
+    purchaseDiscountPercent,
+    standardSupplyPrice,
+    supplyDiscountAmount,
+    supplyDiscountPercent,
+    recommendedRetailPrice,
     imageUrl,
     description,
     baseCurve,
@@ -62,6 +70,24 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'MISSING_FIELDS' }, { status: 400 });
   }
 
+  // 서버 측 가격 검증 (클라이언트와 동일 규칙)
+  const issues = validatePricing({
+    standardCost: standardCost ?? null,
+    purchaseDiscountAmount: purchaseDiscountAmount ?? 0,
+    purchaseDiscountPercent: purchaseDiscountPercent ?? 0,
+    standardSupplyPrice: standardSupplyPrice ?? null,
+    supplyDiscountAmount: supplyDiscountAmount ?? 0,
+    supplyDiscountPercent: supplyDiscountPercent ?? 0,
+    recommendedRetailPrice: recommendedRetailPrice ?? null,
+  });
+  const errs = issues.filter((i) => i.severity === 'error');
+  if (errs.length > 0) {
+    return NextResponse.json(
+      { error: 'PRICING_INVALID', detail: errs },
+      { status: 400 },
+    );
+  }
+
   const [row] = await db
     .insert(lenses)
     .values({
@@ -73,6 +99,14 @@ export async function POST(req: Request) {
       piecesPerBox: piecesPerBox ?? 1,
       price: Number(price),
       cost: cost == null ? null : Number(cost),
+      standardCost: standardCost == null ? null : Number(standardCost),
+      purchaseDiscountAmount: purchaseDiscountAmount ?? 0,
+      purchaseDiscountPercent: purchaseDiscountPercent ?? 0,
+      standardSupplyPrice: standardSupplyPrice == null ? null : Number(standardSupplyPrice),
+      supplyDiscountAmount: supplyDiscountAmount ?? 0,
+      supplyDiscountPercent: supplyDiscountPercent ?? 0,
+      recommendedRetailPrice:
+        recommendedRetailPrice == null ? null : Number(recommendedRetailPrice),
       imageUrl: imageUrl || null,
       description: description ?? null,
       baseCurve: baseCurve != null && baseCurve !== '' ? String(baseCurve) : null,

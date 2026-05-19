@@ -47,9 +47,23 @@ export const lenses = pgTable(
     ),
     axisStep: integer('axis_step').default(10), // 축 간격
 
-    // 가격
-    price: integer('price').notNull(), // 판매가 (원)
-    cost: integer('cost'), // 원가 (영업이익 계산)
+    // 가격 — 모든 금액은 부가세 포함 (한국 회계 관행, 확정 2026-05-19)
+    // 기존 price/cost 는 호환 위해 유지 (NULL 가능)
+    price: integer('price').notNull(), // 판매가 (호환) — 신규는 recommendedRetailPrice 사용
+    cost: integer('cost'), // 원가 (호환) — 신규는 standardCost 사용
+
+    // 매입 (제조사 → 본사)
+    standardCost: integer('standard_cost'), // 표준매입가
+    purchaseDiscountAmount: integer('purchase_discount_amount').default(0), // 매입할인 금액
+    purchaseDiscountPercent: integer('purchase_discount_percent').default(0), // 매입할인 % (0-100)
+
+    // 공급 (본사 → 가맹점)
+    standardSupplyPrice: integer('standard_supply_price'), // 표준공급가 (= 가맹점 공급가)
+    supplyDiscountAmount: integer('supply_discount_amount').default(0), // 공급할인 금액
+    supplyDiscountPercent: integer('supply_discount_percent').default(0), // 공급할인 % (0-100)
+
+    // 소비자 (가맹점 → 소비자)
+    recommendedRetailPrice: integer('recommended_retail_price'), // 권장소비자가
 
     // 식약처 UDI 참조 (1회/분기 일괄 적재, 런타임 호출 없음)
     mfdsPermitNo: text('mfds_permit_no'), // 품목허가번호 (예: '제조허가 21-1234')
