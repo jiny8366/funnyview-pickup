@@ -1,0 +1,673 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "meta": {
+    "version": "1.0",
+    "generatedAt": "2026-05-19",
+    "purpose": "Funnyview Pickup 프로젝트 전체 확정 사항 — 새 세션 진입점 / 단일 진실의 출처(SoT)",
+    "sandbox": {
+      "workingDir": "/home/user/funnyview-pickup (또는 사용자 PC ~/funnyview-pickup)",
+      "frameOpsRelation": "완전 무관 (PAT 직접 push)"
+    }
+  },
+
+  "project": {
+    "company": "(주)퍼니뷰",
+    "serviceName": "Funnyview Pickup",
+    "businessModel": "한국 콘택트렌즈 픽업 플랫폼 — 고객 온라인 주문 → 가까운 픽업가맹점에서 안경사 상담 후 수령",
+    "market": "한국",
+    "regulatoryNotes": [
+      "콘택트렌즈는 의료기기 2등급 (식약처)",
+      "2021.07 부터 UDI 의무화",
+      "안경사 또는 안과의사 처방전 (6개월 이내) 필요",
+      "만 14세 미만 픽업 서비스 이용 제한"
+    ]
+  },
+
+  "referenceSites": [
+    {
+      "name": "렌즈링크",
+      "url": "https://lenslink.co.kr",
+      "type": "직접 경쟁",
+      "key": "픽업 플랫폼 + 가맹점 매장찾기 + 빠른배송 병행"
+    },
+    {
+      "name": "마이피픈 MYFiPN",
+      "url": "https://myfipn.com",
+      "type": "방문예약 모범",
+      "key": "방문예약 + 안경사 상담 + 처방전 6개월 + 만14세 제한 + 회원혜택"
+    },
+    {
+      "name": "렌즈미",
+      "url": "https://www.lens-me.com",
+      "type": "매장 카탈로그",
+      "key": "직경별/기능별/가격별 다중 분류축"
+    },
+    {
+      "name": "루킹굿",
+      "url": "https://lookingood802.cafe24.com",
+      "type": "일반 쇼핑몰 참조",
+      "key": "카페24 스타일 카드 UI"
+    },
+    {
+      "name": "지니스안경",
+      "url": "https://home.jinys.co.kr",
+      "type": "가맹점 데이터 소스",
+      "key": "69개 매장 import (지역/매장명/주소/전화)"
+    }
+  ],
+
+  "techStack": {
+    "framework": "Next.js 14 (App Router)",
+    "language": "TypeScript strict",
+    "styling": "Tailwind CSS",
+    "database": "PostgreSQL (Neon, Asia Pacific Singapore, Pooled)",
+    "orm": "Drizzle ORM (postgres-js driver)",
+    "cache": "Redis (Upstash, optional — 미설정 시 폴링 폴백)",
+    "auth": "jose (JWT 세션 쿠키)",
+    "push": "web-push (VAPID)",
+    "charts": "recharts",
+    "icons": "자체 inline SVG (lucide-style)",
+    "nodejs": ">= 18"
+  },
+
+  "infra": {
+    "github": {
+      "repo": "jiny8366/funnyview-pickup",
+      "branch": "main",
+      "frameOpsRelation": "완전 무관 (PAT 직접 push)"
+    },
+    "vercel": {
+      "project": "funnyview-pickup",
+      "productionBranch": "main",
+      "region": "icn1 (Seoul)",
+      "buildCommand": "npm run vercel:build",
+      "vercelBuild": "drizzle-kit migrate && next build",
+      "domains": [
+        "funnyview-pickup.vercel.app (메인/고객)",
+        "admin-funnyview-pickup.vercel.app (관리자)",
+        "staff-funnyview-pickup.vercel.app (픽업서비스 운영)",
+        "store-funnyview-pickup.vercel.app (픽업가맹점)"
+      ]
+    },
+    "neon": {
+      "region": "Asia Pacific Singapore (ap-southeast-1)",
+      "database": "neondb",
+      "connectionMode": "Pooled (Vercel serverless 필수)"
+    },
+    "envVars": {
+      "required": [
+        "DATABASE_URL (Neon pooled)",
+        "JWT_SECRET (32+ random)",
+        "SESSION_COOKIE_NAME=funnyview_pickup_session",
+        "SESSION_MAX_AGE_DAYS=30",
+        "NEXT_PUBLIC_APP_NAME=Funnyview Pickup",
+        "NEXT_PUBLIC_APP_URL=https://funnyview-pickup.vercel.app",
+        "NOTIFICATION_PROVIDER=console",
+        "VAPID_SUBJECT=mailto:admin@funnyview.local"
+      ],
+      "optional": [
+        "KAKAO_REST_API_KEY (geocoding)",
+        "REDIS_URL (Upstash)",
+        "NAVER_CLIENT_ID / SECRET",
+        "KAKAO_CLIENT_ID / SECRET",
+        "GOOGLE_CLIENT_ID / SECRET",
+        "SOLAPI_API_KEY / SECRET / SENDER",
+        "VAPID_PUBLIC_KEY / PRIVATE_KEY",
+        "NEXT_PUBLIC_HOST_ADMIN / STAFF / STORE (자체 도메인 전환 시)",
+        "NEXT_PUBLIC_SHOW_TEST_ACCOUNTS (=0 으로 숨김)"
+      ]
+    }
+  },
+
+  "portals": {
+    "model": "hostname-based 4 portal 분리",
+    "resolver": "src/lib/portal.ts — hostname prefix 또는 ENV 매핑",
+    "list": [
+      {
+        "kind": "customer",
+        "label": "고객",
+        "host": "funnyview-pickup.vercel.app (또는 funnyview.kr)",
+        "entryPath": "/",
+        "allowedPaths": ["/", "/customer", "/login", "/register", "/onboarding", "/order", "/my", "/stores", "/api/auth", "/api/orders", "/api/lenses", "/api/stores", "/api/home", "/api/notifications", "/api/push", "/api/events"]
+      },
+      {
+        "kind": "admin",
+        "label": "관리자",
+        "host": "admin-funnyview-pickup.vercel.app (또는 admin.funnyview.kr)",
+        "entryPath": "/login/admin",
+        "allowedPaths": ["/admin", "/login/admin", "/api/admin", "/api/auth"]
+      },
+      {
+        "kind": "staff",
+        "label": "픽업서비스 업체",
+        "host": "staff-funnyview-pickup.vercel.app",
+        "entryPath": "/login/warehouse",
+        "allowedPaths": ["/warehouse", "/login/warehouse", "/api/warehouse", "/api/auth", "/api/notifications", "/api/push", "/api/events"]
+      },
+      {
+        "kind": "store",
+        "label": "픽업가맹점",
+        "host": "store-funnyview-pickup.vercel.app",
+        "entryPath": "/login/store",
+        "allowedPaths": ["/store", "/login/store", "/api/store", "/api/auth", "/api/notifications", "/api/push", "/api/events"]
+      }
+    ],
+    "rolePathRules": {
+      "customer": ["/customer"],
+      "warehouse_staff": ["/warehouse"],
+      "store_staff": ["/store"],
+      "admin": ["/customer", "/warehouse", "/store", "/admin"]
+    }
+  },
+
+  "auth": {
+    "roles": ["customer", "warehouse_staff", "store_staff", "admin"],
+    "loginPolicy": "user.role === expectedRole OR user.role === 'admin' — admin 1 계정으로 모든 portal 진입 가능",
+    "session": {
+      "cookie": "{SESSION_COOKIE_NAME}",
+      "lifetime": "30 days",
+      "implementation": "jose JWT (HS256)"
+    },
+    "loginInputs": {
+      "identifier": "username (영문 4-16) OR phone (010xxxxxxxx)",
+      "password": "8-16자, 영문 대소/숫자/특수 중 3가지 이상 조합"
+    },
+    "socialLogin": {
+      "providers": ["naver", "kakao", "google"],
+      "phoneOnboarding": "/onboarding/phone (소셜 후 전화번호 미입력 시)"
+    },
+    "testAccounts": {
+      "unified": {
+        "id": "jiny8366",
+        "password": "2282",
+        "role": "admin",
+        "note": "모든 portal 진입 가능"
+      },
+      "seeded": [
+        { "id": "01000000000", "pw": "pickup1234!", "role": "admin" },
+        { "id": "01000000001", "pw": "pickup1234!", "role": "warehouse_staff" },
+        { "id": "01000000002", "pw": "pickup1234!", "role": "store_staff", "store": "강남 본점" },
+        { "id": "01000000003", "pw": "pickup1234!", "role": "store_staff", "store": "홍대 지점" },
+        { "id": "01000000004", "pw": "pickup1234!", "role": "store_staff", "store": "판교 지점" },
+        { "id": "01099990001", "pw": "pickup1234!", "role": "customer", "label": "데모 고객 (성인)" },
+        { "id": "01099990002", "pw": "pickup1234!", "role": "customer", "label": "데모 고객 (시니어)" }
+      ],
+      "displayPolicy": "NEXT_PUBLIC_SHOW_TEST_ACCOUNTS!=0 일 때 로그인 페이지에 박스 노출"
+    }
+  },
+
+  "ui": {
+    "designLanguage": "카페24 스타일 (한국 쇼핑몰 표준)",
+    "colorScheme": "Light 고정 (color-scheme: light), 다크모드 미지원",
+    "mainPage": {
+      "path": "/",
+      "default": "비로그인 고객 화면",
+      "topRight": {
+        "redLockBox": {
+          "visual": "9x9 빨간 사각형 + 자물쇠 아이콘",
+          "onClick": "드롭다운 — 관리자 / 픽업스탭 / 픽업가맹점",
+          "navigateTo": "각 portal hostname 의 로그인 페이지 (portalUrl 함수)"
+        },
+        "regularNav": ["주문", "매장찾기", "내 주문 (로그인 시)", "마이페이지 (로그인 시)", "로그인", "가입"]
+      }
+    },
+    "header": {
+      "pattern": "햄버거 드롭다운 통일 (admin/staff/store/customer 모두)",
+      "component": "src/components/layout/header-menu.tsx",
+      "accents": {
+        "customer": "brand (blue)",
+        "admin": "red",
+        "staff": "emerald",
+        "store": "amber"
+      }
+    },
+    "customerBottomNav": {
+      "mobile": true,
+      "tabs": ["홈", "주문", "매장찾기", "내 주문", "마이"]
+    },
+    "loginPage": {
+      "path": "/login",
+      "design": "카페24 스타일 (빵부스러기 / 큰 input / 검정 로그인 버튼 / 소셜 원형 3개)",
+      "elements": ["홈 > 로그인 빵부스러기", "큰 input 박스 (h-14, font-medium)", "보안접속 토글", "아이디찾기 / 비밀번호찾기 / 회원가입 링크", "검정 로그인 버튼", "소셜 원형 (Naver/Kakao/Apple)"]
+    },
+    "registerPage": {
+      "path": "/register",
+      "design": "카페24 스타일 table 폼",
+      "sections": [
+        "빵부스러기 (홈 > 회원가입)",
+        "소셜 가로 3개 (네이버 로그인 / 카카오로 시작 / Apple로 로그인)",
+        "회원구분 (개인회원 라디오)",
+        "회원인증 (휴대폰인증 — 데모 모드)",
+        "기본정보: 이메일* / 아이디* (영문소문자/숫자 4-16) / 비밀번호* (8-16, 3가지 이상) / 비밀번호 확인* / 이름* / 주소 (우편번호+검색) / 일반전화 (지역코드+분리) / 휴대전화* (010 select+분리)",
+        "추가정보: 추천인 아이디 / 환불계좌 (예금주+은행+계좌)",
+        "약관 동의 (필수 2개 + 선택 SMS/이메일)"
+      ],
+      "validations": {
+        "username": "/^[a-z0-9]{4,16}$/",
+        "password": "8-16자, 영문 대소/숫자/특수 3가지 이상",
+        "phone": "/^01[016789]\\d{7,8}$/",
+        "phoneVerified": "휴대폰 인증 필수 (데모 모드)"
+      }
+    },
+    "inputPolicy": {
+      "color": "#111827 (gray-900)",
+      "backgroundColor": "#ffffff",
+      "fontWeight": "500",
+      "placeholderColor": "#6b7280 (gray-500)",
+      "autofillOverride": "-webkit-text-fill-color + box-shadow inset (Chrome/Safari)",
+      "placeholderRemoved": ["/login/* 의 휴대전화", "/register 의 휴대전화", "/onboarding/phone"]
+    },
+    "productCard": {
+      "design": "카페24 스타일",
+      "elements": [
+        "4:5 모델 이미지",
+        "좌상단 ♡ 위시리스트 (drop-shadow)",
+        "우상단 NEW 핑크 뱃지 (조건)",
+        "우하단 원형 컬러 미리보기 (image URL 우선, HEX radial-gradient 폴백)",
+        "제품명: '{brand} {name} - {colorName}'",
+        "컬러/주기/직경: '{colorName} | {cycle} ({diameter}mm)'",
+        "가격 (굵게)",
+        "+N가지 컬러 (같은 series 안 다른 컬러 수)"
+      ],
+      "component": "src/components/product/product-card.tsx"
+    },
+    "productSection": {
+      "design": "카페24 스타일 섹션",
+      "elements": ["큰 제목 + 부제 (서브타이틀)", "이전/다음 화살표 (데스크탑)", "전체보기 링크", "5열 grid (데스크탑) / 가로 스크롤 (모바일)"],
+      "component": "src/components/product/product-section.tsx"
+    }
+  },
+
+  "terms": {
+    "company": "(주)퍼니뷰",
+    "serviceName": "Funnyview Pickup",
+    "documents": [
+      {
+        "key": "service",
+        "title": "[필수] 이용약관 동의",
+        "content": "제1조 ~ 제24조 + 부칙 (시행일 2020.7.1)",
+        "source": "한국 표준 + (주)퍼니뷰 명의 치환"
+      },
+      {
+        "key": "privacy",
+        "title": "[필수] 개인정보 수집 및 이용 동의",
+        "content": "수집목적/항목/보유기간",
+        "retention": {
+          "internalPolicy": "3년 (부정거래 방지)",
+          "contractRecords": "5년 (전자상거래법)",
+          "paymentRecords": "5년 (전자상거래법)",
+          "complaintRecords": "3년 (전자상거래법)",
+          "logRecords": "3개월 (통신비밀보호법)"
+        }
+      },
+      {
+        "key": "marketing",
+        "title": "[선택] 쇼핑정보 수신 동의",
+        "channels": ["SMS", "이메일"]
+      }
+    ],
+    "file": "src/lib/terms.ts"
+  },
+
+  "dbSchema": {
+    "tables": {
+      "users": {
+        "purpose": "인증 마스터",
+        "key": "id (uuid)",
+        "uniqueWhereNotNull": ["username", "phone", "email"],
+        "fields": ["role (customer/warehouse_staff/store_staff/admin)", "storeId (store_staff)", "passwordHash", "isActive", "lastLoginAt"]
+      },
+      "customers": {
+        "purpose": "고객 정보 (users 와 1:1)",
+        "fields": ["name", "gender", "birthDate", "phone", "postalCode", "addressLine1/2", "landlinePhone", "memberType", "refundBank (jsonb)", "referrerCode", "referredByCode", "referredById"]
+      },
+      "customer_prescriptions": {
+        "purpose": "도수 이력 (재주문 편의)",
+        "fields": ["eyeSide (left/right/both)", "sphere", "cylinder", "axis", "addPower", "source", "recordedAt"]
+      },
+      "stores": {
+        "purpose": "픽업가맹점 마스터",
+        "fields": ["code (J001~)", "name", "phone", "postalCode", "addressLine1/2", "latitude", "longitude", "kakaoMapUrl", "naverMapUrl", "tmapUrl", "businessHours (jsonb)", "businessNumber", "representativeName", "commissionRate (%)", "sortOrder", "isActive"]
+      },
+      "lenses": {
+        "purpose": "제품 마스터 (브랜드/제품군)",
+        "fields": [
+          "productCode (unique)",
+          "brand / name",
+          "lensType (spherical/toric/multifocal/color/circle)",
+          "replacementCycle (1day/2week/1month/3month/6month/1year)",
+          "baseCurve / diameter / waterContent / material",
+          "piecesPerBox",
+          "sphereMin/Max/Step, cylinderMin/Max/Step, axisStep",
+          "price, cost",
+          "mfdsPermitNo (식약처 허가번호)",
+          "mfdsClassificationCode (분류번호 A07020)",
+          "mfdsProductName (식약처 등록 품목명)",
+          "manufacturer (제조원)",
+          "udiSyncedAt",
+          "imageUrl (대표 모델 이미지)",
+          "description (블록 JSON)",
+          "colorName / colorHex / colorPreviewUrl (카드)",
+          "seriesCode (컬러 그루핑)",
+          "isNew (뱃지)",
+          "isActive"
+        ]
+      },
+      "lens_variants": {
+        "purpose": "도수별 SKU",
+        "fields": ["lensId (FK)", "sku (unique, 결정적 생성)", "sphere", "cylinder", "axis", "addPower", "udiDi (GTIN-13, unique-when-not-null)", "priceOverride", "isActive"]
+      },
+      "lens_barcodes": {
+        "purpose": "다중 바코드 (1:N)",
+        "fields": ["variantId (FK)", "barcode (unique)", "barcodeType (udi_di/manufacturer_ean/internal/legacy)", "isPrimary"]
+      },
+      "inventory": {
+        "purpose": "SKU별 현재 재고",
+        "fields": ["variantId (FK, unique)", "quantityOnHand", "quantityReserved", "safetyStock", "reorderPoint", "location", "lastCountedAt"]
+      },
+      "inventory_movements": {
+        "purpose": "Append-only audit log",
+        "fields": ["variantId", "movementType (inbound/outbound/reserve/release/adjust/return)", "quantity (부호 포함)", "referenceType/Id", "note", "performedBy"]
+      },
+      "orders": {
+        "fields": ["orderNumber", "customerId", "pickupStoreId", "status (pending/paid/accepted/picking/shipped/arrived/ready/completed/cancelled)", "subtotal", "discount", "total", "isPaid", "각 상태별 timestamp"]
+      },
+      "order_items": {
+        "fields": ["orderId", "variantId", "eyeSide", "quantity", "unitPrice/lineTotal/unitCost", "lensName/Brand (snapshot)", "sphere/cylinder/axis/addPower (snapshot)", "skuSnapshot"]
+      },
+      "order_status_history": "상태 전환 감사",
+      "payments": "결제 기록",
+      "notifications": {
+        "types": ["order_received", "order_shipped", "order_arrived", "pickup_ready", "pickup_completed", "low_stock"],
+        "channels": ["app", "sms", "kakao", "email"]
+      },
+      "push_subscriptions": "VAPID 푸시 구독",
+      "user_oauth_accounts": "소셜 로그인 연동",
+      "home_sections": "CMS 섹션 (hero/product_grid/category_chips/banner_strip/countdown/brand_story)",
+      "home_section_events": "노출/클릭/전환 (CTR/CVR)",
+      "referral_rewards": "추천인 3% 리워드"
+    },
+    "views": [
+      "v_sales_daily — 일별/가맹점별 매출",
+      "v_sales_monthly — 월별/가맹점별 매출",
+      "v_store_settlement — 가맹점 정산 (수수료율 적용)",
+      "v_low_stock_alerts — 안전재고 미달 SKU"
+    ],
+    "migrations": [
+      "0000_0000_initial — 19 테이블",
+      "0001_0002_oauth — OAuth 계정",
+      "0001_sales_views — 4 SQL 뷰 (수동 적용)",
+      "0002_0003_home_cms — CMS",
+      "0003_0004_push — 웹 푸시",
+      "0004_0005_referral — 추천인",
+      "0005 — 식약처 UDI 컬럼 (lenses 5개, lens_variants.udi_di)",
+      "0006 — username 컬럼 (users), 회원가입 필드 (customers landline/memberType/refundBank)",
+      "0007 — 카페24 카드 컬럼 (lenses 5개: colorName/Hex/PreviewUrl/seriesCode/isNew)"
+    ]
+  },
+
+  "lensDisplay": {
+    "format": "계층형 슬래시 구분",
+    "patterns": {
+      "full": "{brand} / {name} / {cycle} / {pack}매 / SPH {sph} [/ CYL {cyl} / AX {axis}] [/ ADD {add}]",
+      "compact": "{brand} / {name} / SPH {sph}",
+      "spec": "SPH {sph} / CYL {cyl} / AX {axis} / ADD {add}",
+      "sku": "{sku}"
+    },
+    "units": {
+      "quantity": "팩 (=박스), 매수 환산 동시 표시 (예: 12팩 (360매))",
+      "eyeSide": "OS (좌) / OD (우) / 양안"
+    },
+    "appliedTo": ["/warehouse/picklist", "/warehouse/inventory", "/customer/orders/[id]", "/store/pickup/[id]"],
+    "file": "src/lib/lens/format.ts"
+  },
+
+  "barcode": {
+    "supported": ["EAN-13", "GTIN-14", "GS1-128", "GS1 DataMatrix"],
+    "policy": "UDI-DI (GTIN-13) 만 사용 — PI (lot/expiry) 참고 메타데이터",
+    "applicationIdentifiers": {
+      "01": "GTIN (필수)",
+      "17": "유효기간 YYMMDD",
+      "11": "제조일",
+      "10": "로트번호",
+      "21": "시리얼"
+    },
+    "conversion": "GTIN-14 → GTIN-13 (선두 0 제거)",
+    "file": "src/lib/barcode/parse.ts",
+    "scanFlows": {
+      "inbound": "/warehouse/inbound — 큰 input, 연속 스캔 모드, 매칭/미매칭 카드, 팩 단위 + 매수 환산",
+      "outbound": "/store/pickup/[id] — 주문 항목별 매칭, ± 수동 조정, 강제 매칭 토글"
+    }
+  },
+
+  "mfdsUdi": {
+    "purpose": "식약처 등록 상품의 정보·표준 차용 (참조 마스터)",
+    "runtime": "사용 안 함 (1회/분기 일괄 적재만)",
+    "apis": [
+      {
+        "name": "식품의약품안전처_의료기기 표준코드별 제품정보",
+        "priority": 1,
+        "source": "data.go.kr",
+        "fields": ["udiDi", "prdlstNm (품목명)", "clsfNo (분류번호)", "gradeCd (등급)", "prmsNo (허가번호)"]
+      },
+      {
+        "name": "식품의약품안전처_의료기기 표준코드(UDI코드)정보",
+        "priority": 2,
+        "source": "data.go.kr",
+        "purpose": "전체 GTIN 일괄 다운로드 + 업체명"
+      }
+    ],
+    "classificationFilter": "A07020 (콘택트렌즈)",
+    "envVar": "MFDS_UDI_API_KEY (data.go.kr 인증키)",
+    "schedule": "수동 또는 분기 1회 cron",
+    "script": "scripts/import-udi.ts (TODO)",
+    "dbFields": {
+      "lenses": ["mfdsPermitNo", "mfdsClassificationCode", "mfdsProductName", "manufacturer", "udiSyncedAt"],
+      "lens_variants": ["udiDi (GTIN-13)"]
+    }
+  },
+
+  "stores": {
+    "seedDefault": [
+      "ST-0001 강남 본점 (서울 강남구)",
+      "ST-0002 홍대 지점 (서울 마포구)",
+      "ST-0003 판교 지점 (경기 분당)"
+    ],
+    "jinysImport": {
+      "source": "https://home.jinys.co.kr/store-list (10 page)",
+      "count": 69,
+      "codeRange": "J001 ~ J069",
+      "method": "사용자 PC 에서 curl 다운로드 → ~/jinys-pages/page*.html → npm run db:import-jinys",
+      "script": "scripts/import-jinys-stores.ts",
+      "parsePattern": "[지역 → 매장명(XX점) → 주소 → 전화] 4라인 순",
+      "geocoding": "KAKAO_REST_API_KEY 있으면 자동 좌표 채움"
+    }
+  },
+
+  "geo": {
+    "provider": "카카오 로컬 API",
+    "freeQuota": "일 100,000 / 월 3,000,000",
+    "envVar": "KAKAO_REST_API_KEY",
+    "library": "src/lib/geo/kakao.ts",
+    "functions": ["geocodeAddress(address)", "haversineKm(a,b)", "estimateWalkMinutes(km)", "estimateDriveMinutes(km)", "kakaoRouteUrl / naverRouteUrl / tmapRouteUrl"],
+    "apis": [
+      "POST /api/admin/geocode — 관리자",
+      "POST /api/stores/geocode-customer — 공개",
+      "GET /api/stores/nearby?lat=&lng= — 거리순"
+    ],
+    "estimationConstants": {
+      "walkingSpeed": "4 km/h",
+      "drivingSpeed": "25 km/h (도심)"
+    },
+    "publicStoresPage": {
+      "path": "/stores",
+      "auth": false,
+      "elements": ["📡 GPS 위치 사용", "🏠 주소 입력", "지역 필터 칩", "검색", "매장 카드 (이름/주소/전화/영업시간/거리/시간/외부 길찾기 링크)", "이 매장으로 주문 CTA"]
+    }
+  },
+
+  "products": {
+    "schema": "lenses (제품군) + lens_variants (도수) + lens_barcodes (바코드 1:N)",
+    "samples": {
+      "series": "CHRISTIN-1DAY",
+      "items": [
+        { "productCode": "CHR-OO-1D-BR", "brand": "크리스틴", "name": "원앤온리 원데이", "color": "브라운", "hex": "#6B4423", "diameter": "13.0", "price": 19000 },
+        { "productCode": "CHR-VEN-1D-DRIP", "brand": "크리스틴", "name": "빈 원데이", "color": "드립 브라운", "hex": "#8B6F47", "diameter": "13.2", "price": 19000, "isNew": true },
+        { "productCode": "CHR-QUI-1D-GB", "brand": "크리스틴", "name": "콰이어트 원데이", "color": "글로우 블랙", "hex": "#2C2C2C", "diameter": "13.4", "price": 19000, "isNew": true }
+      ],
+      "imageUrl": "picsum.photos (placeholder, 실제 모델 이미지로 교체 필요)"
+    },
+    "editor": {
+      "file": "src/components/admin/product-editor.tsx",
+      "blocks": ["heading (H2/H3)", "paragraph (Markdown 일부)", "image (ImagePicker + caption + alt)", "video (YouTube/Vimeo URL → embed)", "gallery (멀티 이미지)", "list (번호/불릿)", "divider"],
+      "storage": "lenses.description (JSON 직렬화)",
+      "preview": "토글 가능"
+    },
+    "form": {
+      "file": "src/components/admin/product-form.tsx",
+      "cards": ["기본 정보", "가격", "렌즈 스펙", "식약처 UDI 참조", "쇼핑몰 카드 표시", "상세 콘텐츠 (블록 편집기)"]
+    }
+  },
+
+  "orders": {
+    "flow": "4단계 — 렌즈 선택 → 도수 선택 → 가맹점 선택 → 결제",
+    "polling": "5초 (재고 변동 감지)",
+    "statuses": ["pending", "paid", "accepted", "picking", "shipped", "arrived", "ready", "completed", "cancelled"],
+    "stateTransitions": {
+      "warehouse": "accepted → picking → shipped",
+      "store": "shipped → arrived → ready → completed",
+      "auto": "paid → accepted (결제 후)"
+    },
+    "payment": {
+      "current": "mock (PG 미연동)",
+      "venue": ["online (선결제)", "store (매장 결제)"],
+      "methods": ["card", "cash", "bank_transfer", "point", "mixed"],
+      "future": "Toss / Nice / PortOne"
+    }
+  },
+
+  "admin": {
+    "menu": [
+      { "group": "운영", "items": ["대시보드 (/admin/dashboard)", "주문 관리 (/admin/orders)", "정산/매출 (/admin/settlement)"] },
+      { "group": "상품", "items": ["제품 마스터 (/admin/products)", "카테고리 (/admin/categories)"] },
+      { "group": "가맹점·직원", "items": ["가맹점 (/admin/stores)", "직원 (/admin/staff)"] },
+      { "group": "CMS·마케팅", "items": ["홈 섹션 (/admin/home)", "섹션 분석 (/admin/home/analytics)"] },
+      { "group": "시스템", "items": ["설정 (/admin/settings)"] }
+    ],
+    "shell": "src/components/admin/admin-shell.tsx (햄버거 드롭다운)"
+  },
+
+  "warehouse": {
+    "menu": ["대시보드", "주문 처리", "픽리스트", "출고 관리", "재고", "입고 (바코드 스캔)", "반품"],
+    "scanInbound": "src/app/warehouse/inbound/page.tsx"
+  },
+
+  "store": {
+    "menu": ["대시보드", "배송 중", "픽업 처리", "처리 이력", "매장 정보"],
+    "scanPickup": "src/app/store/pickup/[id]/page.tsx"
+  },
+
+  "cms": {
+    "sections": ["hero (배너+CTA)", "product_grid (상품 그리드 — 카페24 카드)", "category_chips (필터 칩)", "banner_strip (띠)", "countdown (한정)", "brand_story (이미지+텍스트)"],
+    "curationModes": ["best (매출순)", "trending (7일 가중)", "new (최신)", "manual (관리자 지정 lensIds)"],
+    "cache": "Redis 5분 TTL",
+    "analytics": ["impression", "click", "conversion"],
+    "demoSection": "원데이(1D) 베스트 (manual, sample 3개 CHRISTIN-1DAY)"
+  },
+
+  "notifications": {
+    "sse": "src/app/api/events/stream/route.ts (Redis Pub/Sub fallback to polling)",
+    "bell": "src/components/layout/notification-bell.tsx",
+    "push": "VAPID 웹 푸시 (PushToggle 컴포넌트)",
+    "externalProvider": {
+      "current": "console (로그 출력만)",
+      "env": "NOTIFICATION_PROVIDER",
+      "future": "solapi (Solapi SMS/카카오 알림톡)"
+    },
+    "kakaoTemplates": ["ORDER_RECEIVED", "ORDER_SHIPPED", "PICKUP_READY", "PICKUP_COMPLETED"]
+  },
+
+  "settlement": {
+    "schedule": "월별 자동 (v_store_settlement 뷰)",
+    "calculation": "(SUM(line_total) - SUM(discount)) * commission_rate / 100",
+    "dashboard": "/admin/dashboard (recharts)"
+  },
+
+  "referral": {
+    "rate": "3%",
+    "trigger": "주문 완료 시",
+    "table": "referral_rewards",
+    "codeFormat": "FV{8자리 hex}"
+  },
+
+  "uploads": {
+    "endpoint": "POST /api/admin/uploads",
+    "adapter": "StorageAdapter (인터페이스, 현재 로컬 FS)",
+    "future": "S3 / R2",
+    "limits": "5MB, png/jpg/webp/gif/svg"
+  },
+
+  "i18n": {
+    "primary": "ko-KR",
+    "future": "en, zh-CN"
+  },
+
+  "todos": {
+    "highPriority": [
+      "결제 PG 실연동 (Toss/Nice/PortOne 어댑터)",
+      "실 SMS / 카카오 알림톡 (Solapi)",
+      "본인인증 (PASS/NICE)",
+      "Daum 우편번호 API",
+      "만 14세 미만 가입/주문 차단 (법적)",
+      "처방전 6개월 유효성 체크 (법적)",
+      "식약처 UDI 일괄 import 스크립트 (API 키 발급 후)"
+    ],
+    "mediumPriority": [
+      "가맹점/직원 CRUD UI (현재는 리스트만)",
+      "카카오 모빌리티 실시간 ETA",
+      "회원 등급 + 이벤트 시스템",
+      "후기/리뷰",
+      "도수별 SKU 일괄 생성 마법사",
+      "카테고리 자동 분류 (직경/기능/가격)"
+    ],
+    "lowPriority": [
+      "자체 도메인 (funnyview.kr) 전환",
+      "실제 모델 이미지 (picsum placeholder 교체)",
+      "S3/R2 스토리지 어댑터",
+      "다국어 (영문/중문)"
+    ]
+  },
+
+  "scripts": {
+    "dev": "next dev -p 3001",
+    "build": "next build",
+    "vercel:build": "drizzle-kit migrate && next build",
+    "db:generate": "drizzle-kit generate",
+    "db:migrate": "drizzle-kit migrate",
+    "db:seed": "tsx scripts/seed.ts",
+    "db:import-jinys": "tsx scripts/import-jinys-stores.ts"
+  },
+
+  "workflow": {
+    "sandbox": {
+      "path": "/home/user/funnyview-pickup",
+      "git": "PAT 직접 push (frame-ops 매개 없음)",
+      "session": "다음 세션은 ~/funnyview-pickup 폴더에서 Claude Code 시작 권장"
+    },
+    "deployment": "git push origin main → Vercel 자동 빌드 (vercel:build 가 migrate 자동 실행) → 2-4분 후 배포",
+    "seeding": "수동 1회: DATABASE_URL=... npm run db:seed (idempotent)"
+  },
+
+  "knownIssues": {
+    "fixed": [
+      "Vercel 빌드 ESLint react/no-unescaped-entities (register page 작은따옴표)",
+      "로그인 입력 흐림 (다크모드 → Light 고정)",
+      "전화번호 placeholder 잔재 (제거)",
+      "Vercel preview 잘못된 브랜치 빌드 (frame-ops 매개 정리)"
+    ],
+    "open": [
+      "메인 화면 카드 표시 — Vercel 빌드 fix push 후 확인 대기 중",
+      "frame-ops repo 의 funnyview-pickup-export / claude/contact-lens-pickup-service-TuyS5 브랜치 잔재 (사용자 GitHub UI 에서 삭제 필요)"
+    ]
+  }
+}

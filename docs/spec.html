@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Funnyview Pickup — 확정 사양 보고서</title>
+<style>
+  :root {
+    --brand: #2563eb;
+    --red: #dc2626;
+    --green: #059669;
+    --amber: #d97706;
+    --gray-50: #f9fafb;
+    --gray-100: #f3f4f6;
+    --gray-200: #e5e7eb;
+    --gray-300: #d1d5db;
+    --gray-500: #6b7280;
+    --gray-700: #374151;
+    --gray-900: #111827;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: -apple-system, 'Pretendard', 'Apple SD Gothic Neo', BlinkMacSystemFont, sans-serif;
+    color: var(--gray-900); background: var(--gray-50);
+    line-height: 1.6; -webkit-font-smoothing: antialiased;
+  }
+  .container { max-width: 1100px; margin: 0 auto; padding: 32px 24px; }
+  header.hero {
+    background: linear-gradient(135deg, #1e40af 0%, #2563eb 100%);
+    color: white; padding: 48px 24px; margin-bottom: 32px; border-radius: 16px;
+  }
+  header.hero h1 { font-size: 32px; font-weight: 800; letter-spacing: -0.02em; }
+  header.hero p { margin-top: 8px; opacity: 0.9; font-size: 14px; }
+  header.hero .meta { margin-top: 16px; display: flex; gap: 12px; flex-wrap: wrap; font-size: 12px; }
+  header.hero .meta span { background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 99px; }
+
+  nav.toc {
+    background: white; border: 1px solid var(--gray-200); border-radius: 12px;
+    padding: 20px 24px; margin-bottom: 32px;
+  }
+  nav.toc h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.08em; color: var(--gray-500); margin-bottom: 12px; }
+  nav.toc ul { list-style: none; display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 6px; }
+  nav.toc a { color: var(--brand); text-decoration: none; font-size: 13px; padding: 4px 0; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  section.block {
+    background: white; border: 1px solid var(--gray-200); border-radius: 12px;
+    padding: 24px 28px; margin-bottom: 20px; scroll-margin-top: 20px;
+  }
+  section.block > h2 {
+    font-size: 20px; font-weight: 700; margin-bottom: 16px;
+    padding-bottom: 12px; border-bottom: 1px solid var(--gray-100);
+    display: flex; align-items: center; gap: 10px;
+  }
+  section.block > h2 .num { color: var(--gray-300); font-weight: 500; font-size: 14px; }
+  section.block > h3 { font-size: 14px; font-weight: 600; margin: 20px 0 8px; color: var(--gray-700); }
+
+  table {
+    width: 100%; border-collapse: collapse; margin: 8px 0 12px;
+    font-size: 13px;
+  }
+  table th, table td {
+    padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--gray-100);
+    vertical-align: top;
+  }
+  table th { background: var(--gray-50); font-weight: 600; color: var(--gray-700); font-size: 12px; }
+  table td code { background: var(--gray-100); padding: 1px 6px; border-radius: 4px; font-size: 12px; }
+
+  ul.bullet { padding-left: 18px; margin: 4px 0 12px; }
+  ul.bullet li { font-size: 13px; padding: 2px 0; color: var(--gray-700); }
+
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 99px;
+    font-size: 11px; font-weight: 600;
+  }
+  .pill.brand { background: #dbeafe; color: #1e40af; }
+  .pill.red { background: #fee2e2; color: #991b1b; }
+  .pill.green { background: #d1fae5; color: #047857; }
+  .pill.amber { background: #fef3c7; color: #92400e; }
+  .pill.gray { background: var(--gray-100); color: var(--gray-700); }
+
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  @media (max-width: 768px) {
+    .grid-2, .grid-3 { grid-template-columns: 1fr; }
+  }
+
+  .card {
+    background: var(--gray-50); padding: 14px 16px;
+    border-radius: 8px; font-size: 13px;
+    border-left: 3px solid var(--brand);
+  }
+  .card .label { font-size: 11px; color: var(--gray-500); text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 4px; }
+  .card .value { font-weight: 600; color: var(--gray-900); }
+
+  code.inline { background: var(--gray-100); padding: 1px 6px; border-radius: 4px; font-size: 12px; font-family: ui-monospace, monospace; }
+  pre {
+    background: var(--gray-900); color: #d1d5db; padding: 14px 16px;
+    border-radius: 8px; overflow-x: auto; font-size: 12px;
+    font-family: ui-monospace, 'SF Mono', Consolas, monospace;
+    margin: 8px 0 16px;
+  }
+
+  .check { color: var(--green); }
+  .cross { color: var(--red); }
+  .warn { color: var(--amber); }
+
+  .footer { text-align: center; color: var(--gray-500); font-size: 12px; padding: 32px 0; }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header class="hero">
+    <h1>Funnyview Pickup — 확정 사양 보고서</h1>
+    <p>(주)퍼니뷰 / 한국 콘택트렌즈 픽업 플랫폼 / 단일 진실의 출처 (SoT)</p>
+    <div class="meta">
+      <span>📅 2026-05-19</span>
+      <span>🔖 v1.0</span>
+      <span>📂 jiny8366/funnyview-pickup</span>
+      <span>🌐 funnyview-pickup.vercel.app</span>
+    </div>
+  </header>
+
+  <nav class="toc">
+    <h3>목차</h3>
+    <ul>
+      <li><a href="#sec-1">1. 프로젝트 개요</a></li>
+      <li><a href="#sec-2">2. 기술 스택 & 인프라</a></li>
+      <li><a href="#sec-3">3. Portal 분리 (4개)</a></li>
+      <li><a href="#sec-4">4. 인증 & 테스트 계정</a></li>
+      <li><a href="#sec-5">5. UI 디자인 정책</a></li>
+      <li><a href="#sec-6">6. 회원가입 & 약관</a></li>
+      <li><a href="#sec-7">7. DB 스키마</a></li>
+      <li><a href="#sec-8">8. 상품 마스터 & 편집툴</a></li>
+      <li><a href="#sec-9">9. 표시명 & 바코드</a></li>
+      <li><a href="#sec-10">10. 식약처 UDI</a></li>
+      <li><a href="#sec-11">11. 매장 & 거리/시간</a></li>
+      <li><a href="#sec-12">12. 주문 & 정산</a></li>
+      <li><a href="#sec-13">13. CMS & 알림</a></li>
+      <li><a href="#sec-14">14. 시드 데이터</a></li>
+      <li><a href="#sec-15">15. 워크플로우</a></li>
+      <li><a href="#sec-16">16. TODO 우선순위</a></li>
+    </ul>
+  </nav>
+
+  <section class="block" id="sec-1">
+    <h2><span class="num">01</span> 프로젝트 개요</h2>
+    <div class="grid-3">
+      <div class="card"><div class="label">회사</div><div class="value">(주)퍼니뷰</div></div>
+      <div class="card"><div class="label">서비스</div><div class="value">Funnyview Pickup</div></div>
+      <div class="card"><div class="label">시장</div><div class="value">한국</div></div>
+    </div>
+    <h3>비즈니스 모델</h3>
+    <p style="font-size: 13px; color: var(--gray-700);">고객 온라인 주문 → 가까운 픽업가맹점에서 안경사 상담 후 수령 (의료기기법 준수)</p>
+    <h3>참조 사이트</h3>
+    <table>
+      <thead><tr><th>사이트</th><th>유형</th><th>핵심 차용</th></tr></thead>
+      <tbody>
+        <tr><td><a href="https://lenslink.co.kr">렌즈링크</a></td><td><span class="pill red">직접 경쟁</span></td><td>픽업 플랫폼 + 가맹점 매장찾기</td></tr>
+        <tr><td><a href="https://myfipn.com">마이피픈</a></td><td><span class="pill amber">방문예약 모범</span></td><td>안경사 상담 + 처방전 6개월 + 14세 제한</td></tr>
+        <tr><td><a href="https://www.lens-me.com">렌즈미</a></td><td><span class="pill brand">카탈로그</span></td><td>직경별/기능별/가격별 분류축</td></tr>
+        <tr><td><a href="https://lookingood802.cafe24.com">루킹굿</a></td><td><span class="pill gray">UI 참조</span></td><td>카페24 스타일 카드 디자인</td></tr>
+        <tr><td><a href="https://home.jinys.co.kr">지니스안경</a></td><td><span class="pill green">가맹점 데이터</span></td><td>69개 매장 import 소스</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="sec-2">
+    <h2><span class="num">02</span> 기술 스택 & 인프라</h2>
+    <div class="grid-2">
+      <div>
+        <h3>스택</h3>
+        <ul class="bullet">
+          <li>Next.js 14 (App Router)</li>
+          <li>TypeScript strict</li>
+          <li>Tailwind CSS</li>
+          <li>PostgreSQL (Neon Singapore Pooled)</li>
+          <li>Drizzle ORM (postgres-js)</li>
+          <li>Redis (Upstash, 선택)</li>
+          <li>jose (JWT)</li>
+          <li>web-push (VAPID)</li>
+          <li>recharts</li>
+        </ul>
+      </div>
+      <div>
+        <h3>인프라</h3>
+        <ul class="bullet">
+          <li>GitHub: <code>jiny8366/funnyview-pickup</code> (단독)</li>
+          <li>Vercel: Production main 자동 배포</li>
+          <li>Neon: Asia Pacific Singapore</li>
+          <li>Region: icn1 (Seoul)</li>
+          <li>Build: <code>drizzle-kit migrate &amp;&amp; next build</code></li>
+        </ul>
+      </div>
+    </div>
+    <h3>핵심 환경변수</h3>
+    <table>
+      <thead><tr><th>이름</th><th>필수</th><th>용도</th></tr></thead>
+      <tbody>
+        <tr><td><code>DATABASE_URL</code></td><td><span class="check">✓</span></td><td>Neon Pooled 연결 문자열</td></tr>
+        <tr><td><code>JWT_SECRET</code></td><td><span class="check">✓</span></td><td>32+ 랜덤</td></tr>
+        <tr><td><code>NEXT_PUBLIC_APP_URL</code></td><td><span class="check">✓</span></td><td>https://funnyview-pickup.vercel.app</td></tr>
+        <tr><td><code>NOTIFICATION_PROVIDER</code></td><td><span class="check">✓</span></td><td>console (기본) / solapi</td></tr>
+        <tr><td><code>KAKAO_REST_API_KEY</code></td><td><span class="warn">선택</span></td><td>geocoding (매장 좌표)</td></tr>
+        <tr><td><code>REDIS_URL</code></td><td><span class="warn">선택</span></td><td>Upstash (SSE pub/sub)</td></tr>
+        <tr><td><code>{NAVER|KAKAO|GOOGLE}_CLIENT_{ID,SECRET}</code></td><td><span class="warn">선택</span></td><td>소셜 로그인</td></tr>
+        <tr><td><code>NEXT_PUBLIC_SHOW_TEST_ACCOUNTS</code></td><td><span class="warn">선택</span></td><td>=0 으로 운영 시 테스트 박스 숨김</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="sec-3">
+    <h2><span class="num">03</span> Portal 분리 (4개, hostname-based)</h2>
+    <table>
+      <thead><tr><th>역할</th><th>색상</th><th>Host</th><th>진입 경로</th></tr></thead>
+      <tbody>
+        <tr><td>고객 (메인)</td><td><span class="pill brand">brand</span></td><td><code>funnyview-pickup.vercel.app</code></td><td><code>/</code></td></tr>
+        <tr><td>관리자</td><td><span class="pill red">red</span></td><td><code>admin-funnyview-pickup.vercel.app</code></td><td><code>/login/admin</code></td></tr>
+        <tr><td>픽업서비스 운영</td><td><span class="pill green">emerald</span></td><td><code>staff-funnyview-pickup.vercel.app</code></td><td><code>/login/warehouse</code></td></tr>
+        <tr><td>픽업가맹점</td><td><span class="pill amber">amber</span></td><td><code>store-funnyview-pickup.vercel.app</code></td><td><code>/login/store</code></td></tr>
+      </tbody>
+    </table>
+    <h3>미들웨어 정책</h3>
+    <ul class="bullet">
+      <li>hostname prefix (admin-/staff-/store-) → portal 결정</li>
+      <li>portal 별 허용 path 화이트리스트 검사</li>
+      <li>비고객 portal 의 <code>/</code> → 자동 로그인 페이지 리디렉트</li>
+      <li>JWT role 기반 path 접근 제어 (admin 은 모든 path 가능)</li>
+      <li>구현: <code>src/lib/portal.ts</code> + <code>src/middleware.ts</code></li>
+    </ul>
+  </section>
+
+  <section class="block" id="sec-4">
+    <h2><span class="num">04</span> 인증 & 테스트 계정</h2>
+    <h3>역할 (Roles)</h3>
+    <ul class="bullet">
+      <li><code>customer</code> / <code>warehouse_staff</code> / <code>store_staff</code> / <code>admin</code></li>
+      <li>로그인 정책: <code>user.role === expectedRole OR user.role === 'admin'</code></li>
+      <li>→ admin 1 계정으로 모든 portal 진입 가능</li>
+    </ul>
+    <h3>통합 테스트 계정 ⭐</h3>
+    <div class="card" style="border-left-color: var(--red); background: #fef2f2;">
+      <div class="label">모든 portal 진입 가능 (admin role)</div>
+      <div class="value" style="font-family: ui-monospace, monospace; font-size: 16px; margin-top: 8px;">jiny8366 / 2282</div>
+    </div>
+    <h3>역할별 시드 계정 (비번 <code>pickup1234!</code>)</h3>
+    <table>
+      <thead><tr><th>아이디</th><th>역할</th><th>비고</th></tr></thead>
+      <tbody>
+        <tr><td><code>01000000000</code></td><td><span class="pill red">admin</span></td><td>관리자</td></tr>
+        <tr><td><code>01000000001</code></td><td><span class="pill green">warehouse_staff</span></td><td>픽업서비스 운영</td></tr>
+        <tr><td><code>01000000002</code></td><td><span class="pill amber">store_staff</span></td><td>강남 본점</td></tr>
+        <tr><td><code>01000000003</code></td><td><span class="pill amber">store_staff</span></td><td>홍대 지점</td></tr>
+        <tr><td><code>01000000004</code></td><td><span class="pill amber">store_staff</span></td><td>판교 지점</td></tr>
+        <tr><td><code>01099990001</code></td><td><span class="pill brand">customer</span></td><td>데모 고객 (성인)</td></tr>
+        <tr><td><code>01099990002</code></td><td><span class="pill brand">customer</span></td><td>데모 고객 (시니어)</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="sec-5">
+    <h2><span class="num">05</span> UI 디자인 정책</h2>
+    <h3>디자인 언어</h3>
+    <p style="font-size: 13px;">카페24 스타일 (한국 쇼핑몰 표준) — <span class="pill gray">Light 모드 고정</span> (다크모드 미지원, 입력 가독성 보장)</p>
+    <h3>메인 화면 (/)</h3>
+    <ul class="bullet">
+      <li>비로그인 고객 화면 (기본)</li>
+      <li>우측 상단 <strong>🔴 빨간 자물쇠 박스</strong> → 클릭 시 드롭다운: 관리자 / 픽업스탭 / 픽업가맹점</li>
+      <li>각 항목 → 해당 portal hostname 으로 자동 이동 (<code>portalUrl()</code>)</li>
+    </ul>
+    <h3>공통 헤더</h3>
+    <ul class="bullet">
+      <li>모든 portal 햄버거 드롭다운 통일 (데스크탑 + 모바일)</li>
+      <li>구현: <code>src/components/layout/header-menu.tsx</code></li>
+      <li>portal 별 accent: brand / red / emerald / amber</li>
+    </ul>
+    <h3>고객 하단 탭 (모바일)</h3>
+    <p style="font-size: 13px;">홈 / 주문 / 매장찾기 / 내 주문 / 마이</p>
+    <h3>입력 정책</h3>
+    <ul class="bullet">
+      <li>color: <code>#111827</code> (gray-900), font-weight 500</li>
+      <li>placeholder: <code>#6b7280</code> (gray-500)</li>
+      <li>autofill override: <code>-webkit-text-fill-color</code> + <code>box-shadow inset</code></li>
+      <li>전화번호 입력은 placeholder 제거 (빈 상태)</li>
+    </ul>
+  </section>
+
+  <section class="block" id="sec-6">
+    <h2><span class="num">06</span> 회원가입 & 약관</h2>
+    <h3>회원가입 (/register) — 카페24 스타일 table 폼</h3>
+    <ul class="bullet">
+      <li>빵부스러기 (홈 &gt; 회원가입)</li>
+      <li>소셜 가로 3개 (네이버 / 카카오 / Apple)</li>
+      <li>회원구분 (개인회원) / 회원인증 (휴대폰 — 데모)</li>
+      <li>기본정보: 이메일 / 아이디 / 비밀번호+확인 / 이름 / 주소 / 일반전화 / 휴대전화</li>
+      <li>추가정보: 추천인 아이디 / 환불계좌</li>
+      <li>약관 동의 (필수 2개 + 선택 SMS/이메일 별도)</li>
+    </ul>
+    <h3>아이디 / 비밀번호 정책</h3>
+    <ul class="bullet">
+      <li>아이디: <code>/^[a-z0-9]{4,16}$/</code> (영문 소문자/숫자 4-16)</li>
+      <li>비밀번호: 8-16자, 영문 대소/숫자/특수 중 3가지 이상 조합</li>
+      <li>휴대전화: <code>01[016789]\d{7,8}</code></li>
+    </ul>
+    <h3>약관 ((주)퍼니뷰 명의)</h3>
+    <ul class="bullet">
+      <li>[필수] 이용약관 (제1~24조 + 부칙)</li>
+      <li>[필수] 개인정보 수집·이용 (수집목적 / 항목 / 보유기간)</li>
+      <li>[선택] 쇼핑정보 수신 (SMS / 이메일 별도)</li>
+      <li>전체 동의 마스터 체크박스</li>
+      <li>저장: <code>src/lib/terms.ts</code></li>
+    </ul>
+  </section>
+
+  <section class="block" id="sec-7">
+    <h2><span class="num">07</span> DB 스키마 (요약)</h2>
+    <p style="font-size: 13px; color: var(--gray-500);">상세는 <code>src/db/schema/*</code> 또는 <code>docs/spec.json</code> 의 <code>dbSchema</code> 참조</p>
+    <div class="grid-2">
+      <div>
+        <h3>핵심 테이블</h3>
+        <ul class="bullet">
+          <li><code>users</code> — 인증 (username/phone/email)</li>
+          <li><code>customers</code> — 고객 (1:1 users)</li>
+          <li><code>stores</code> — 가맹점 + 좌표</li>
+          <li><code>lenses</code> — 제품 마스터 (식약처+카드)</li>
+          <li><code>lens_variants</code> — 도수별 SKU (udi_di)</li>
+          <li><code>lens_barcodes</code> — 다중 바코드</li>
+          <li><code>inventory</code> + <code>inventory_movements</code></li>
+          <li><code>orders</code> + <code>order_items</code></li>
+          <li><code>home_sections</code> — CMS</li>
+        </ul>
+      </div>
+      <div>
+        <h3>SQL 뷰 (수동 적용)</h3>
+        <ul class="bullet">
+          <li><code>v_sales_daily</code> — 일별 매출</li>
+          <li><code>v_sales_monthly</code> — 월별 매출</li>
+          <li><code>v_store_settlement</code> — 가맹점 정산</li>
+          <li><code>v_low_stock_alerts</code> — 안전재고 미달</li>
+        </ul>
+        <h3>마이그레이션 0000-0007</h3>
+        <ul class="bullet">
+          <li>0000: 초기 19 테이블</li>
+          <li>0001-0004: OAuth/CMS/Push/Referral</li>
+          <li>0005: 식약처 UDI 컬럼</li>
+          <li>0006: username + 회원가입 필드</li>
+          <li>0007: 카페24 카드 컬럼</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section class="block" id="sec-8">
+    <h2><span class="num">08</span> 상품 마스터 & 편집툴</h2>
+    <h3>상품 카드 (카페24 스타일)</h3>
+    <ul class="bullet">
+      <li>4:5 모델 이미지 + 좌상단 ♡ + 우상단 NEW 핑크 뱃지 + 우하단 원형 컬러 미리보기</li>
+      <li>제품명: <code>{brand} {name} - {colorName}</code></li>
+      <li>컬러/주기/직경: <code>{colorName} | {cycle} ({diameter}mm)</code></li>
+      <li>가격 (굵게) + <code>+N가지 컬러</code> (같은 series)</li>
+      <li>컬러 미리보기: image URL 우선 → HEX radial-gradient 폴백</li>
+      <li>구현: <code>src/components/product/product-card.tsx</code></li>
+    </ul>
+    <h3>편집툴 (Admin)</h3>
+    <ul class="bullet">
+      <li>기본 정보 (브랜드 / 제품코드 / 제품명 / 렌즈유형 / 주기 / 박스당 매수)</li>
+      <li>가격 (판매가 / 원가)</li>
+      <li>렌즈 스펙 (BC / DIA / 함수율 / 재질 / 도수 범위)</li>
+      <li>식약처 UDI 참조 (품목명 / 제조원 / 허가번호 / 분류번호)</li>
+      <li><strong>쇼핑몰 카드 표시</strong> (컬러명 / 시리즈 코드 / 컬러 미리보기 / HEX / NEW 뱃지)</li>
+      <li>상세 콘텐츠 (<strong>블록 편집기</strong> — 제목 / 본문 / 이미지 / 영상 / 갤러리 / 목록 / 구분선)</li>
+      <li>YouTube/Vimeo URL 자동 embed 변환</li>
+    </ul>
+    <h3>샘플 3개 (CHRISTIN-1DAY series)</h3>
+    <table>
+      <thead><tr><th>제품 코드</th><th>제품명</th><th>컬러</th><th>직경</th><th>NEW</th></tr></thead>
+      <tbody>
+        <tr><td><code>CHR-OO-1D-BR</code></td><td>크리스틴 원앤온리 원데이</td><td>브라운 <span style="display:inline-block;width:10px;height:10px;background:#6B4423;border-radius:50%;vertical-align:middle;"></span></td><td>13.0mm</td><td>-</td></tr>
+        <tr><td><code>CHR-VEN-1D-DRIP</code></td><td>크리스틴 빈 원데이</td><td>드립 브라운 <span style="display:inline-block;width:10px;height:10px;background:#8B6F47;border-radius:50%;vertical-align:middle;"></span></td><td>13.2mm</td><td><span class="pill red">NEW</span></td></tr>
+        <tr><td><code>CHR-QUI-1D-GB</code></td><td>크리스틴 콰이어트 원데이</td><td>글로우 블랙 <span style="display:inline-block;width:10px;height:10px;background:#2C2C2C;border-radius:50%;vertical-align:middle;"></span></td><td>13.4mm</td><td><span class="pill red">NEW</span></td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="sec-9">
+    <h2><span class="num">09</span> 표시명 & 바코드</h2>
+    <h3>표시명 (계층형, 모든 화면 통일)</h3>
+    <pre>{brand} / {name} / {cycle} / {pack}매 / SPH ±X.XX / CYL ±X.XX / AX XXX / ADD ±X.XX</pre>
+    <p style="font-size: 13px;">예: <code>크리스틴 / 원앤온리 / 1day / 30매 / SPH -3.00</code></p>
+    <ul class="bullet">
+      <li>단위: 팩 (=박스), 매수 환산 동시 표시 → <code>12팩 (360매)</code></li>
+      <li>좌우 안: OS (좌) / OD (우) / 양안</li>
+      <li>적용: picklist / inventory / order detail / pickup</li>
+      <li>구현: <code>src/lib/lens/format.ts</code></li>
+    </ul>
+    <h3>바코드 (1D + 2D, GTIN-13 DI 만)</h3>
+    <ul class="bullet">
+      <li>지원: EAN-13 / GTIN-14 / GS1-128 / GS1 DataMatrix</li>
+      <li>AI: (01) GTIN / (17) 유효기간 / (10) 로트 / (21) 시리얼</li>
+      <li>GTIN-14 → GTIN-13 자동 변환 (선두 0 제거)</li>
+      <li>PI (lot/expiry) 는 참고 메타데이터만 — DB 저장 X</li>
+      <li>구현: <code>src/lib/barcode/parse.ts</code></li>
+    </ul>
+  </section>
+
+  <section class="block" id="sec-10">
+    <h2><span class="num">10</span> 식약처 UDI 참조</h2>
+    <p style="font-size: 13px;"><strong>정책</strong>: 1회/분기 일괄 적재 (런타임 호출 0)</p>
+    <h3>사용 API (data.go.kr)</h3>
+    <ol style="padding-left: 20px; font-size: 13px;">
+      <li><strong>식품의약품안전처_의료기기 표준코드별 제품정보</strong> (1순위 필수) — 품목명/분류번호/등급/허가번호</li>
+      <li><strong>식품의약품안전처_의료기기 표준코드(UDI코드)정보</strong> (2순위) — 전체 GTIN 일괄 + 업체명</li>
+    </ol>
+    <h3>활용</h3>
+    <ul class="bullet">
+      <li>분류번호 <code>A07020</code> (콘택트렌즈) 필터</li>
+      <li>환경변수: <code>MFDS_UDI_API_KEY</code></li>
+      <li>일괄 적재 스크립트: <code>scripts/import-udi.ts</code> (TODO — API 키 발급 후 구현)</li>
+    </ul>
+  </section>
+
+  <section class="block" id="sec-11">
+    <h2><span class="num">11</span> 매장 & 거리/시간</h2>
+    <h3>가맹점 (총 72개)</h3>
+    <ul class="bullet">
+      <li>기본 시드 3개 (강남 본점 / 홍대 지점 / 판교 지점)</li>
+      <li>지니스안경 import 69개 (J001 ~ J069) — <code>scripts/import-jinys-stores.ts</code></li>
+    </ul>
+    <h3>좌표 & 거리</h3>
+    <ul class="bullet">
+      <li>카카오 로컬 API geocoding (<code>KAKAO_REST_API_KEY</code>)</li>
+      <li>무료 한도: 일 100,000 / 월 3,000,000</li>
+      <li>Haversine 직선 거리 + 추정 시간 (도보 4km/h / 자동차 25km/h)</li>
+      <li>외부 길찾기 deep link (카카오 / 네이버 / T맵)</li>
+    </ul>
+    <h3>매장찾기 공개 페이지 (/stores)</h3>
+    <ul class="bullet">
+      <li>비로그인 접근 가능</li>
+      <li>📡 GPS 위치 또는 🏠 주소 입력 → 거리순 정렬</li>
+      <li>매장 카드: 거리(km) + 자동차/도보 시간 + 외부 길찾기</li>
+    </ul>
+  </section>
+
+  <section class="block" id="sec-12">
+    <h2><span class="num">12</span> 주문 & 정산</h2>
+    <h3>주문 흐름</h3>
+    <p style="font-size: 13px;"><strong>4단계</strong>: 렌즈 → 도수 → 가맹점 → 결제</p>
+    <h3>상태 전환</h3>
+    <pre>pending → paid → accepted → picking → shipped → arrived → ready → completed
+                                                         ↘ cancelled</pre>
+    <ul class="bullet">
+      <li>warehouse: <code>accepted → picking → shipped</code></li>
+      <li>store: <code>shipped → arrived → ready → completed</code></li>
+      <li>5초 폴링 (재고 변동 감지)</li>
+    </ul>
+    <h3>정산</h3>
+    <ul class="bullet">
+      <li>월별 자동 (<code>v_store_settlement</code> 뷰)</li>
+      <li>가맹점별 <code>commission_rate</code> 적용</li>
+      <li>추천인 3% 리워드 (<code>referral_rewards</code> 테이블)</li>
+    </ul>
+    <h3>결제 (현재 mock)</h3>
+    <ul class="bullet">
+      <li>venue: online (선결제) / store (매장 결제)</li>
+      <li>methods: card / cash / bank_transfer / point / mixed</li>
+      <li>실 PG (Toss/Nice/PortOne) 연동은 추후</li>
+    </ul>
+  </section>
+
+  <section class="block" id="sec-13">
+    <h2><span class="num">13</span> CMS & 알림</h2>
+    <h3>홈 CMS 섹션 6 유형</h3>
+    <table>
+      <tbody>
+        <tr><td><code>hero</code></td><td>풀와이드 배너 + CTA</td></tr>
+        <tr><td><code>product_grid</code></td><td><strong>카페24 카드 자동 적용</strong></td></tr>
+        <tr><td><code>category_chips</code></td><td>빠른 필터 칩</td></tr>
+        <tr><td><code>banner_strip</code></td><td>띠 배너 (긴급 공지)</td></tr>
+        <tr><td><code>countdown</code></td><td>한정 프로모션</td></tr>
+        <tr><td><code>brand_story</code></td><td>이미지 + 텍스트 + 링크</td></tr>
+      </tbody>
+    </table>
+    <h3>자동 큐레이션 (Redis 캐시 5분)</h3>
+    <ul class="bullet">
+      <li><code>best</code> (매출순) / <code>trending</code> (7일 가중) / <code>new</code> (최신) / <code>manual</code> (관리자 lensIds)</li>
+    </ul>
+    <h3>알림</h3>
+    <ul class="bullet">
+      <li>SSE 실시간 (Redis Pub/Sub) + NotificationBell</li>
+      <li>PWA 푸시 (VAPID)</li>
+      <li>외부: SMS / 카카오 알림톡 — Solapi 어댑터 (현재 console mode)</li>
+    </ul>
+  </section>
+
+  <section class="block" id="sec-14">
+    <h2><span class="num">14</span> 시드 데이터 요약</h2>
+    <table>
+      <thead><tr><th>테이블</th><th>건수</th><th>구성</th></tr></thead>
+      <tbody>
+        <tr><td>users</td><td>7</td><td>jiny8366 + admin + warehouse + store×3 + customer×0 (별도)</td></tr>
+        <tr><td>customers</td><td>2</td><td>데모 (성인 / 시니어)</td></tr>
+        <tr><td>stores</td><td>3 (+ 69)</td><td>기본 3개 + 지니스 import 69개</td></tr>
+        <tr><td>lenses</td><td>4 + 3</td><td>기본 4종 + 카페24 샘플 3종 (CHRISTIN)</td></tr>
+        <tr><td>lens_variants</td><td>~30</td><td>도수별 SKU 자동 생성</td></tr>
+        <tr><td>inventory</td><td>~30</td><td>각 30 팩</td></tr>
+        <tr><td>home_sections</td><td>6 + 1</td><td>기본 6 + '원데이(1D) 베스트' 데모</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="block" id="sec-15">
+    <h2><span class="num">15</span> 워크플로우</h2>
+    <h3>개발 → 배포</h3>
+    <pre>코드 수정 (~/funnyview-pickup)
+    ↓
+git commit
+    ↓
+git push origin main          # PAT 직접 (frame-ops 매개 없음)
+    ↓
+Vercel 자동 빌드 (2-4분)
+  - drizzle-kit migrate (자동)
+  - next build
+    ↓
+배포 완료</pre>
+    <h3>시드 (수동, 1회)</h3>
+    <pre>DATABASE_URL='...' npm run db:seed</pre>
+    <p style="font-size: 13px;">idempotent — 재실행 안전</p>
+    <h3>다음 세션</h3>
+    <ul class="bullet">
+      <li><strong>~/funnyview-pickup 폴더에서 Claude Code 새 세션 시작</strong></li>
+      <li>→ sandbox primary working directory 가 funnyview-pickup → UI 표시 깨끗</li>
+      <li>frame-ops 와 완전 단절</li>
+    </ul>
+  </section>
+
+  <section class="block" id="sec-16">
+    <h2><span class="num">16</span> TODO 우선순위</h2>
+    <h3>🔴 높음 (법적/필수)</h3>
+    <ul class="bullet">
+      <li>결제 PG 실연동 (Toss / Nice / PortOne)</li>
+      <li>실 SMS / 카카오 알림톡 (Solapi)</li>
+      <li>본인인증 (PASS / NICE)</li>
+      <li>Daum 우편번호 API</li>
+      <li>만 14세 미만 가입/주문 차단</li>
+      <li>처방전 6개월 유효성 체크</li>
+      <li>식약처 UDI 일괄 적재 스크립트 (API 키 발급 후)</li>
+    </ul>
+    <h3>🟡 중간</h3>
+    <ul class="bullet">
+      <li>가맹점/직원 CRUD UI (현재는 리스트만)</li>
+      <li>카카오 모빌리티 실시간 ETA</li>
+      <li>회원 등급 + 이벤트 시스템</li>
+      <li>후기/리뷰</li>
+      <li>도수별 SKU 일괄 생성 마법사</li>
+      <li>카테고리 자동 분류 (직경/기능/가격)</li>
+    </ul>
+    <h3>🟢 낮음</h3>
+    <ul class="bullet">
+      <li>자체 도메인 (funnyview.kr)</li>
+      <li>실제 모델 이미지 (picsum placeholder 교체)</li>
+      <li>S3/R2 스토리지</li>
+      <li>다국어</li>
+    </ul>
+  </section>
+
+  <div class="footer">
+    © 2026 (주)퍼니뷰 — Funnyview Pickup · v1.0 · 2026-05-19<br>
+    상세 데이터: <code>docs/spec.json</code> · 새 세션 가이드: <code>CLAUDE.md</code>
+  </div>
+
+</div>
+</body>
+</html>
