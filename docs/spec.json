@@ -325,6 +325,13 @@
         "purpose": "도수 이력 (재주문 편의)",
         "fields": ["eyeSide (left/right/both)", "sphere", "cylinder", "axis", "addPower", "source", "recordedAt"]
       },
+      "brands": {
+        "purpose": "제품 브랜드 마스터 (확정 2026-05-19)",
+        "fields": ["nameKo (unique-when-not-null)", "nameEn", "code (3자 영문 약자, unique-when-not-null, 예: CHR/ACU)", "isActive", "deletedAt"],
+        "ui": "제품 등록 폼 (/admin/products/new, /admin/products/[id]) 의 브랜드 필드가 select 드롭다운 + 옆 '등록' 버튼 → BrandManagerModal",
+        "api": ["GET /api/admin/brands (활성 목록)", "POST /api/admin/brands (영문/국문/약자, unique 검증, requireAdmin)"],
+        "note": "lenses.brand (text) 는 호환을 위해 그대로 유지 — 폼에서 선택 시 brands.nameKo 값을 lenses.brand 에 저장. 추후 lenses.brandId FK 도입 가능."
+      },
       "stores": {
         "purpose": "픽업가맹점 마스터",
         "fields": ["code (J001~)", "name", "phone", "postalCode", "addressLine1/2", "latitude", "longitude", "kakaoMapUrl", "naverMapUrl", "tmapUrl", "businessHours (jsonb)", "businessNumber", "representativeName", "commissionRate (%)", "sortOrder", "isActive"]
@@ -403,7 +410,8 @@
       "0005 — 식약처 UDI 컬럼 (lenses 5개, lens_variants.udi_di)",
       "0006 — username 컬럼 (users), 회원가입 필드 (customers landline/memberType/refundBank)",
       "0007 — 카페24 카드 컬럼 (lenses 5개: colorName/Hex/PreviewUrl/seriesCode/isNew)",
-      "0008 — RBAC users.permissions text[] (Phase C1, 확정 2026-05-19)"
+      "0008 — RBAC users.permissions text[] (Phase C1, 확정 2026-05-19)",
+      "0009 — brands 테이블 신설 (nameKo/nameEn/code 3자, 제품 등록 폼 드롭다운, 확정 2026-05-19)"
     ]
   },
 
