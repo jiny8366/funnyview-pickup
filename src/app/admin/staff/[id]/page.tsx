@@ -45,6 +45,10 @@ export default async function EditStaffPage({
   if (!['admin', 'warehouse_staff', 'store_staff'].includes(target.role)) {
     notFound();
   }
+  // 마스터 대상이면 본인만 접근 (정보 갱신용). 다른 admin 은 직접 URL 입력해도 차단.
+  if (isMasterUser(target.username) && me.id !== target.id) {
+    notFound();
+  }
 
   const storeRows = await db
     .select({ id: stores.id, name: stores.name })
