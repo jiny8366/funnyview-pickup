@@ -8,6 +8,7 @@ export * from './users';
 export * from './customers';
 export * from './stores';
 export * from './brands';
+export * from './product-codes';
 export * from './lenses';
 export * from './inventory';
 export * from './orders';
