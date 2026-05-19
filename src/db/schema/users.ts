@@ -15,6 +15,10 @@ import { userRoleEnum } from './enums';
  * - customer: 1:1 customers 행과 매핑
  * - store_staff: storeId 로 가맹점 소속 식별
  * - warehouse_staff/admin: storeId 없음
+ *
+ * permissions: NULL = role 기본값 (ROLE_DEFAULTS) 적용, 배열 = override.
+ *   - admin 은 ROLE_DEFAULTS 에서 전권 받음 → 별도 분기 불필요
+ *   - frame-ops 의 effectivePermissions(roleCode, explicit) 와 동일 시맨틱
  */
 export const users = pgTable(
   'users',
@@ -26,6 +30,7 @@ export const users = pgTable(
     passwordHash: text('password_hash'),
     role: userRoleEnum('role').notNull(),
     storeId: uuid('store_id'), // FK는 relations() 에서 선언 (순환 import 회피)
+    permissions: text('permissions').array(), // NULL = role 기본값, 배열 = override
     isActive: boolean('is_active').default(true).notNull(),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
     createdAt: timestamp('created_at', { withTimezone: true })

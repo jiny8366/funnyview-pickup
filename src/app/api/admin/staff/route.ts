@@ -35,6 +35,8 @@ const createSchema = z.object({
   passwordConfirm: z.string(),
   storeId: z.string().uuid().nullable().optional(),
   isActive: z.boolean().default(true),
+  /** null = role 기본값 사용, 배열 = override */
+  permissions: z.array(z.string()).nullable().optional(),
 });
 
 export async function POST(req: Request) {
@@ -108,6 +110,7 @@ export async function POST(req: Request) {
       role: input.role,
       storeId: input.role === 'store_staff' ? input.storeId ?? null : null,
       isActive: input.isActive,
+      permissions: input.permissions ?? null,
     })
     .returning({ id: users.id });
 

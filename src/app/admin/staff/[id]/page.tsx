@@ -32,6 +32,7 @@ export default async function EditStaffPage({
       phone: users.phone,
       storeId: users.storeId,
       isActive: users.isActive,
+      permissions: users.permissions,
     })
     .from(users)
     .where(and(eq(users.id, params.id), isNull(users.deletedAt)))
@@ -80,6 +81,7 @@ export default async function EditStaffPage({
           phone: target.phone ?? '',
           storeId: target.storeId,
           isActive: target.isActive,
+          permissions: target.permissions,
         }}
       />
     </PageWrap>

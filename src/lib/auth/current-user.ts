@@ -1,6 +1,7 @@
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { customers, users } from '@/db/schema';
+import { effectivePermissions } from './permissions';
 import { readSession } from './session';
 
 export interface CurrentUser {
@@ -9,6 +10,10 @@ export interface CurrentUser {
   phone: string | null;
   email: string | null;
   storeId: string | null;
+  /** users.permissions 의 raw 값 (NULL 가능). 권한 편집 UI 에서 사용. */
+  permissionsRaw: string[] | null;
+  /** ROLE_DEFAULTS + override 가 합쳐진 실효 권한. 가드 체크용. */
+  permissions: string[];
   customerId?: string;
   customerName?: string;
 }
@@ -24,6 +29,7 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       phone: users.phone,
       email: users.email,
       storeId: users.storeId,
+      permissions: users.permissions,
     })
     .from(users)
     .where(eq(users.id, session.uid))
@@ -52,6 +58,8 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     phone: user.phone,
     email: user.email,
     storeId: user.storeId,
+    permissionsRaw: user.permissions,
+    permissions: effectivePermissions(user.role, user.permissions),
     customerId,
     customerName,
   };
