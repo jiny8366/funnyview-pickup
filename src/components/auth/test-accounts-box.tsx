@@ -77,7 +77,7 @@ export function TestAccountsBox({
         ))}
       </ul>
       <p className="mt-2 text-[10px] text-amber-800">
-        ⚠ 운영 전환 시 .env 에 NEXT_PUBLIC_SHOW_TEST_ACCOUNTS=0 설정으로 숨김
+        🧪 dev/preview 표시 — 운영(default)에서는 숨겨집니다. .env 에 NEXT_PUBLIC_SHOW_TEST_ACCOUNTS=1 로 표시.
       </p>
     </details>
   );

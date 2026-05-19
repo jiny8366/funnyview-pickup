@@ -114,7 +114,7 @@
         "SOLAPI_API_KEY / SECRET / SENDER",
         "VAPID_PUBLIC_KEY / PRIVATE_KEY",
         "NEXT_PUBLIC_HOST_ADMIN / STAFF / STORE (자체 도메인 전환 시)",
-        "NEXT_PUBLIC_SHOW_TEST_ACCOUNTS (=0 으로 숨김)"
+        "NEXT_PUBLIC_SHOW_TEST_ACCOUNTS (=1 로 표시, default 숨김 — 확정 2026-05-19 운영 기본값 숨김 반전)"
       ]
     }
   },
@@ -192,7 +192,7 @@
         { "id": "01099990001", "pw": "pickup1234!", "role": "customer", "label": "데모 고객 (성인)" },
         { "id": "01099990002", "pw": "pickup1234!", "role": "customer", "label": "데모 고객 (시니어)" }
       ],
-      "displayPolicy": "NEXT_PUBLIC_SHOW_TEST_ACCOUNTS!=0 일 때 로그인 페이지에 박스 노출"
+      "displayPolicy": "NEXT_PUBLIC_SHOW_TEST_ACCOUNTS='1' 일 때만 로그인 페이지에 박스 노출 (default 숨김, 확정 2026-05-19)"
     }
   },
 
