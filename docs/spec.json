@@ -332,6 +332,18 @@
         "api": ["GET /api/admin/brands (활성 목록)", "POST /api/admin/brands (영문/국문/약자, unique 검증, requireAdmin)"],
         "note": "lenses.brand (text) 는 호환을 위해 그대로 유지 — 폼에서 선택 시 brands.nameKo 값을 lenses.brand 에 저장. 추후 lenses.brandId FK 도입 가능."
       },
+      "lens_promotions": {
+        "purpose": "기간/조건부 프로모션 가격 (확정 2026-05-19, Phase 1 — 테이블만 신설, UI 는 다음 chunk)",
+        "fields": [
+          "lensId (FK lenses cascade)",
+          "kind (sale/promotion/volume_bundle)",
+          "discountAmount, discountPercent",
+          "storeTier (sale 전용, NULL=전체)",
+          "buyQty, freeQty (volume_bundle 전용, 1+1: buy=1 free=1)",
+          "startsAt, endsAt (NULL=무기한)",
+          "isActive, note"
+        ]
+      },
       "product_codes": {
         "purpose": "제품 시리즈/모델 코드 마스터 (확정 2026-05-19)",
         "fields": ["nameKo (unique-when-not-null)", "nameEn (모달 리스트 영문 정렬 기준)", "code (3자 [A-Z0-9])", "suffix (2자 [A-Z0-9])", "isActive", "deletedAt"],
@@ -419,7 +431,8 @@
       "0007 — 카페24 카드 컬럼 (lenses 5개: colorName/Hex/PreviewUrl/seriesCode/isNew)",
       "0008 — RBAC users.permissions text[] (Phase C1, 확정 2026-05-19)",
       "0009 — brands 테이블 신설 (nameKo/nameEn/code 3자, 제품 등록 폼 드롭다운, 확정 2026-05-19)",
-      "0010 — product_codes 테이블 신설 (nameKo/nameEn/code 3자/suffix 2자, code+suffix unique, 영문 정렬, 확정 2026-05-19)"
+      "0010 — product_codes 테이블 신설 (nameKo/nameEn/code 3자/suffix 2자, code+suffix unique, 영문 정렬, 확정 2026-05-19)",
+      "0011 — 가격 모델 확장 (lenses 7 컬럼 + lens_promotions 테이블 신설, 부가세 포함 저장, 확정 2026-05-19)"
     ]
   },
 
@@ -586,6 +599,48 @@
       "model": "관리자가 모든 정보 직접 입력 (Phase B1). 초대 링크 기반 가입은 Phase 추후 (NOTIFICATION_PROVIDER 설정 시)",
       "note": "확정 2026-05-19 — username 은 사용자 PC 등록 흐름과 통일 (email 주소 전체)"
     }
+  },
+
+  "pricing": {
+    "purpose": "가격 모델 (확정 2026-05-19) — 매입/공급/소비자 3 영역 + 부가세 + 프로모션",
+    "vatRate": 0.1,
+    "storageBasis": "모든 가격은 부가세 포함 (KRW 정수) 으로 DB 저장 — 한국 회계 관행",
+    "vatToggle": {
+      "appliesTo": "매입/공급 영역만 (UI 표시 토글)",
+      "consumer": "소비자 영역은 항상 부가세 포함 (소매 표준)",
+      "conversion": "Math.round 정수화 — round-trip 시 ±1원 오차 가능"
+    },
+    "static": {
+      "purchase": ["standardCost", "purchaseDiscountAmount", "purchaseDiscountPercent → effectivePurchaseCost"],
+      "supply": ["standardSupplyPrice", "supplyDiscountAmount", "supplyDiscountPercent → effectiveSupplyPrice"],
+      "consumer": ["recommendedRetailPrice"]
+    },
+    "dynamic": {
+      "table": "lens_promotions",
+      "kinds": {
+        "sale": "할인판매가 — 가맹점 등급별 + 기간",
+        "promotion": "프로모션가 — 한정 행사 (기간)",
+        "volume_bundle": "물량 할증 — 1+1, 2+1 등 (buyQty/freeQty, 원가율에 반영)"
+      },
+      "ui": "다음 chunk 에서 lens 편집 페이지에 promotions 탭 신설 예정"
+    },
+    "lib": "src/lib/pricing.ts",
+    "functions": [
+      "applyDiscount(standard, discAmount, discPercent) → 실효가",
+      "effectivePurchaseCost / effectiveSupplyPrice",
+      "supplyMarginRate / retailMarginRate (소수 둘째 자리 %)",
+      "bundleAdjustedUnitCost(unitCost, buyQty, freeQty) → 1+1/2+1 반영 단위 원가",
+      "toVatIncluded / toVatExcluded / vatAmount",
+      "validatePricing(input) → PricingIssue[] (error=차단, warn=경고)"
+    ],
+    "validation": [
+      "모든 금액 ≥ 0 (error)",
+      "할인 % 는 0-100 (error)",
+      "할인 금액 ≤ 표준가 (error, 음수 가격 방지)",
+      "공급가 < 매입가 (warn, 본사 역마진)",
+      "권장소비자가 < 공급가 (warn, 가맹점 역마진)"
+    ],
+    "guards": "클라이언트 PricingCard 즉시 표시 + 서버 POST/PATCH /api/admin/lenses 에서 동일 검증"
   },
 
   "rbac": {
