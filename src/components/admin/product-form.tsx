@@ -4,6 +4,7 @@ import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { BrandManagerModal } from '@/components/admin/brand-manager-modal';
 import { ProductCodeManagerModal } from '@/components/admin/product-code-manager-modal';
+import { PowerChartModal, type PowerCell } from '@/components/admin/power-chart-modal';
 import { ImagePicker } from '@/components/admin/image-picker';
 import { ProductEditor } from '@/components/admin/product-editor';
 import { Button } from '@/components/ui/button';
@@ -162,6 +163,11 @@ export function ProductForm({
   const [tab, setTab] = useState<'productInfo' | 'saleInfo' | 'priceInfo' | 'mfdsInfo'>(
     'productInfo',
   );
+
+  /** 파워챠트 모달 + 도수 리스트 (Phase 1, lens_variants 저장 연동은 Phase 2). */
+  const [powerChartOpen, setPowerChartOpen] = useState(false);
+  const [powerList, setPowerList] = useState<PowerCell[]>([]);
+  const isToric = form.lensType === 'toric';
 
   // 자동 생성 — 브랜드/시리즈/팩 수량 변경 시 제품명 갱신
   useEffect(() => {
@@ -477,6 +483,78 @@ export function ProductForm({
               />
             </Field>
           </div>
+
+          {/* 도수 입력 — 파워챠트 + 도수 리스트 */}
+          <div className="mt-5 rounded-xl border border-gray-200 p-4">
+            <div className="mb-3 flex items-baseline justify-between gap-2">
+              <div>
+                <h3 className="text-sm font-semibold text-gray-700">도수 입력</h3>
+                <p className="mt-0.5 text-[11px] text-gray-500">
+                  파워챠트(자식창)로 sphere {isToric && '× cylinder '}범위 선택 → 적용 시 아래
+                  리스트에 추가
+                  {isToric && ' (난시 렌즈)'}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setPowerChartOpen(true)}
+                className="rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100"
+              >
+                + 파워챠트 열기
+              </button>
+            </div>
+
+            {powerList.length === 0 ? (
+              <div className="rounded-lg border border-dashed border-gray-200 py-4 text-center text-[11px] text-gray-400">
+                아직 선택된 도수가 없습니다 — 파워챠트 열기
+              </div>
+            ) : (
+              <div className="space-y-1">
+                <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                  선택된 도수 ({powerList.length})
+                </div>
+                <div className="flex max-h-48 flex-wrap gap-1 overflow-y-auto rounded-lg bg-gray-50 p-2">
+                  {powerList.map((p, i) => (
+                    <span
+                      key={`${p.sphere}-${p.cylinder}-${i}`}
+                      className="inline-flex items-center gap-1 rounded bg-white px-2 py-0.5 font-mono text-[10px] text-gray-700 shadow-sm"
+                    >
+                      SPH {p.sphere > 0 ? '+' : p.sphere < 0 ? '−' : ''}
+                      {Math.abs(p.sphere).toFixed(2)}
+                      {isToric && (
+                        <>
+                          {' '}/ CYL {p.cylinder > 0 ? '+' : p.cylinder < 0 ? '−' : ''}
+                          {Math.abs(p.cylinder).toFixed(2)}
+                        </>
+                      )}
+                      <button
+                        type="button"
+                        onClick={() =>
+                          setPowerList((prev) => prev.filter((_, idx) => idx !== i))
+                        }
+                        className="ml-0.5 text-gray-400 hover:text-red-600"
+                        title="제거"
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))}
+                </div>
+                <div className="mt-1.5 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setPowerList([])}
+                    className="text-[11px] text-gray-500 hover:text-red-600"
+                  >
+                    전체 삭제
+                  </button>
+                </div>
+              </div>
+            )}
+            <p className="mt-2 text-[11px] text-amber-600">
+              ⓘ 도수 리스트는 Phase 2 에서 lens_variants 로 저장됩니다 (현재는 폼 state 만).
+            </p>
+          </div>
         </CardBody>
       </Card>
 
@@ -679,6 +757,28 @@ export function ProductForm({
           update('productCode', `${brandCode}-${pc.code}${pc.suffix}`);
           // 시리즈명도 저장 — 제품명 자동 생성에 사용
           setSeriesNameKo(pc.nameKo);
+        }}
+      />
+
+      <PowerChartModal
+        open={powerChartOpen}
+        onClose={() => setPowerChartOpen(false)}
+        enableCylinder={isToric}
+        initial={powerList}
+        onApply={(cells) => {
+          // 기존 + 새 셀, 중복 제거
+          const seen = new Set(powerList.map((p) => `${p.sphere}|${p.cylinder}`));
+          const dedup = [...powerList];
+          for (const c of cells) {
+            const key = `${c.sphere}|${c.cylinder}`;
+            if (!seen.has(key)) {
+              seen.add(key);
+              dedup.push(c);
+            }
+          }
+          // sphere 내림차순, cyl 오름차순 정렬
+          dedup.sort((a, b) => b.sphere - a.sphere || a.cylinder - b.cylinder);
+          setPowerList(dedup);
         }}
       />
     </div>
