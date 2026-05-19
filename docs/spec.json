@@ -571,7 +571,19 @@
     },
     "form": {
       "file": "src/components/admin/product-form.tsx",
-      "cards": ["기본 정보", "가격", "렌즈 스펙", "식약처 UDI 참조", "쇼핑몰 카드 표시", "상세 콘텐츠 (블록 편집기)"]
+      "tabs": [
+        "제품 정보 (productInfo): 기본 정보 + 렌즈 스펙",
+        "판매 정보 (saleInfo): 쇼핑몰 카드 표시 + 상세 콘텐츠",
+        "가격 정보 (priceInfo): PricingCard (매입/공급/소비자 + 부가세 토글)",
+        "식약처 UDI (mfdsInfo): 허가번호/분류번호/등록 품목명/제조원"
+      ],
+      "tabsNote": "상단 sticky 탭 — 클릭 시 활성 탭 외 콘텐츠 hidden (React state 보존, 입력값 유지). 확정 2026-05-19.",
+      "basicInfoLayout": {
+        "row1": "5컬럼 (브랜드 / 제품 코드 / 렌즈 유형 / 교체 주기 / 팩당 수량) — 확정 2026-05-19",
+        "row2": "제품명 (full width) — 자동 생성 + 직접 편집 토글",
+        "row3": "대표 이미지"
+      },
+      "actionButtons": "input 옆 별도 버튼 대신 라벨 옆 파란 작은 텍스트 ('+ 등록') — 공간 절약 (확정 2026-05-19)"
     }
   },
 
