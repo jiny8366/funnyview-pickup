@@ -15,7 +15,7 @@ async function main() {
   console.log(`전체 home_sections: ${all.length}개`);
   for (const r of all) {
     console.log(
-      `  ${r.title.padEnd(20)} kind=${(r.kind ?? '').padEnd(15)} isActive=${r.isActive} deletedAt=${r.deletedAt ? 'SET' : 'null'} startsAt=${r.startsAt ? 'SET' : 'null'} endsAt=${r.endsAt ? 'SET' : 'null'} sortOrder=${r.sortOrder}`,
+      `  ${(r.title ?? '').padEnd(20)} kind=${(r.kind ?? '').padEnd(15)} isActive=${r.isActive} deletedAt=${r.deletedAt ? 'SET' : 'null'} startsAt=${r.startsAt ? 'SET' : 'null'} endsAt=${r.endsAt ? 'SET' : 'null'} sortOrder=${r.sortOrder}`,
     );
   }
 

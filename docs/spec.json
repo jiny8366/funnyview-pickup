@@ -315,7 +315,7 @@
         "purpose": "인증 마스터",
         "key": "id (uuid)",
         "uniqueWhereNotNull": ["username", "phone", "email"],
-        "fields": ["role (customer/warehouse_staff/store_staff/admin)", "storeId (store_staff)", "passwordHash", "isActive", "lastLoginAt"]
+        "fields": ["role (customer/warehouse_staff/store_staff/admin)", "storeId (store_staff)", "passwordHash", "isActive", "lastLoginAt", "permissions text[] (NULL = ROLE_DEFAULTS, 배열 = override — 마이그레이션 0008)"]
       },
       "customers": {
         "purpose": "고객 정보 (users 와 1:1)",
@@ -402,7 +402,8 @@
       "0004_0005_referral — 추천인",
       "0005 — 식약처 UDI 컬럼 (lenses 5개, lens_variants.udi_di)",
       "0006 — username 컬럼 (users), 회원가입 필드 (customers landline/memberType/refundBank)",
-      "0007 — 카페24 카드 컬럼 (lenses 5개: colorName/Hex/PreviewUrl/seriesCode/isNew)"
+      "0007 — 카페24 카드 컬럼 (lenses 5개: colorName/Hex/PreviewUrl/seriesCode/isNew)",
+      "0008 — RBAC users.permissions text[] (Phase C1, 확정 2026-05-19)"
     ]
   },
 
@@ -548,9 +549,9 @@
 
   "admin": {
     "menu": [
-      { "group": "운영", "items": ["대시보드 (/admin/dashboard)", "주문 관리 (/admin/orders)", "정산/매출 (/admin/settlement)"] },
+      { "group": "운영", "items": ["대시보드 (/admin/dashboard)", "주문 관리 (/admin/orders)", "정산/매출 (/admin/settlement)", "계정 관리 (/admin/staff) — 확정 2026-05-19 신설"] },
       { "group": "상품", "items": ["제품 마스터 (/admin/products)", "카테고리 (/admin/categories)"] },
-      { "group": "가맹점·직원", "items": ["가맹점 (/admin/stores)", "직원 (/admin/staff)"] },
+      { "group": "가맹점", "items": ["가맹점 (/admin/stores)"] },
       { "group": "CMS·마케팅", "items": ["홈 섹션 (/admin/home)", "섹션 분석 (/admin/home/analytics)"] },
       { "group": "시스템", "items": ["설정 (/admin/settings)"] }
     ],
@@ -568,6 +569,45 @@
       ],
       "model": "관리자가 모든 정보 직접 입력 (Phase B1). 초대 링크 기반 가입은 Phase 추후 (NOTIFICATION_PROVIDER 설정 시)",
       "note": "확정 2026-05-19 — username 은 사용자 PC 등록 흐름과 통일 (email 주소 전체)"
+    }
+  },
+
+  "rbac": {
+    "model": "frame-ops 패턴 채택 — permissions text[] (NULL = ROLE_DEFAULTS, 배열 = override). 확정 2026-05-19",
+    "phases": {
+      "C1": "마이그레이션 0008 + ALL_PERMISSIONS + ROLE_DEFAULTS + 메뉴 permission 필드 + 권한 편집 UI — 완료",
+      "C2": "middleware route gate (ROUTE_PERMISSIONS) + API requirePermission(slug) — 예정",
+      "C3": "role enum 확장 (store_manager/warehouse_manager) + Hierarchical scoped (사장 = 본인 매장 직원만 관리) — 예정"
+    },
+    "permissionKeys": {
+      "운영": ["dashboard_view", "orders_read", "orders_write", "settlement_read", "staff_read", "staff_manage", "staff_permissions"],
+      "상품": ["products_read", "products_write", "categories_write"],
+      "가맹점": ["stores_read", "stores_write"],
+      "CMS·마케팅": ["home_sections_read", "home_sections_write", "home_analytics_view"],
+      "시스템": ["settings_write"]
+    },
+    "naming": "snake_case <domain>_<action> (frame-ops 동일)",
+    "roleDefaults": {
+      "admin": "PERMISSION_KEYS 전권",
+      "warehouse_staff": "[] (Phase C3 에서 warehouse portal 권한 추가)",
+      "store_staff": "[] (Phase C3 에서 store portal 권한 추가)",
+      "customer": "[]"
+    },
+    "files": [
+      "src/lib/auth/permissions.ts — ALL_PERMISSIONS, ROLE_DEFAULTS, hasPermission, effectivePermissions",
+      "src/lib/auth/route-permissions.ts — ROUTE_PERMISSIONS + requiredPermissionFor (정의만, gate 는 C2)",
+      "src/lib/auth/current-user.ts — permissions/permissionsRaw 포함",
+      "src/components/layout/header-menu.tsx — MenuItem.permission 필드 + userPermissions filter",
+      "src/components/admin/admin-shell.tsx — 메뉴 + permission 매핑",
+      "src/components/admin/staff-form.tsx — 권한 설정 섹션 (사용자 지정 토글 + 그룹별 체크박스)",
+      "src/app/api/admin/staff/route.ts — POST 시 permissions 저장",
+      "src/app/api/admin/staff/[id]/route.ts — PATCH 시 permissions 갱신"
+    ],
+    "frameOpsAdoptions": ["권한 키 명명", "ROLE_DEFAULTS 코드 보관", "효과 권한 함수 시그니처", "메뉴 permission 필터", "longest-prefix route 매칭", "사용자 지정 토글 UI"],
+    "frameOpsRejections": {
+      "password_plain": "한국 개인정보보호법 + KISA 권장 위배. passwordHash 만 사용. 비밀번호 reset 으로 동일 운영 편의 달성.",
+      "fo_staff_profiles 별도 테이블": "users 단일 테이블이 우리 도메인에 충분.",
+      "fo_staff_store_scopes 다대다": "현재 spec 에 1:1 storeId 만 필요. 추후 도입 가능."
     }
   },
 
@@ -637,8 +677,9 @@
       "식약처 UDI 일괄 import 스크립트 (API 키 발급 후)"
     ],
     "mediumPriority": [
-      "직원 편집/비활성 (Phase B2)",
-      "RBAC 권한 슬러그 + hierarchical 권한 설정 (Phase C — 관리자/픽업가맹점 사장/픽업서비스 사장 각자 본인 범위)",
+      "Phase C2 — middleware route gate + API requirePermission 헬퍼 (admin portal 가드)",
+      "Phase C3 — role enum 확장 (store_manager/warehouse_manager) + hierarchical scope (사장 = 본인 매장 직원만 관리)",
+      "warehouse/store portal 의 권한 슬러그 정의 (Phase C3 과 함께)",
       "customers.defaultPickupStoreId — 주문 시 매칭 가맹점 기본값 + 변경 가능 (확정 2026-05-19)",
       "가입 절차 통일 — 일반/네이버/카카오/애플 모두 email=username + 휴대전화 인증 + 본인 패스워드 (확정 2026-05-19)",
       "초대 링크 기반 스탭 가입 (이메일 토큰, NOTIFICATION_PROVIDER 설정 후)",

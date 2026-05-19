@@ -36,6 +36,8 @@ const updateSchema = z.object({
   passwordConfirm: z.string().optional(),
   storeId: z.string().uuid().nullable().optional(),
   isActive: z.boolean().default(true),
+  /** null = role 기본값 사용, 배열 = override */
+  permissions: z.array(z.string()).nullable().optional(),
 });
 
 export async function PATCH(
@@ -132,6 +134,8 @@ export async function PATCH(
     phone: input.phone,
     storeId: input.role === 'store_staff' ? input.storeId ?? null : null,
     isActive: input.isActive,
+    // input.permissions === undefined 면 갱신 안 함, null 이면 NULL 저장, 배열이면 그대로
+    ...(input.permissions !== undefined ? { permissions: input.permissions } : {}),
   };
   if (input.password) {
     updates.passwordHash = await hashPassword(input.password);

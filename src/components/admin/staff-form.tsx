@@ -1,7 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import {
+  ALL_PERMISSIONS,
+  PERMISSION_GROUPS,
+  ROLE_DEFAULTS,
+} from '@/lib/auth/permissions';
 
 interface StoreOption {
   id: string;
@@ -17,6 +22,8 @@ interface StaffInitial {
   phone: string;
   storeId: string | null;
   isActive: boolean;
+  /** users.permissions raw 값. NULL 이면 role 기본값. */
+  permissions: string[] | null;
 }
 
 interface Props {
@@ -35,6 +42,10 @@ interface FormState {
   passwordConfirm: string;
   storeId: string;
   isActive: boolean;
+  /** 사용자 지정 권한 활성화 여부. false 면 role 기본값(NULL) 저장. */
+  useCustomPerms: boolean;
+  /** 사용자 지정 권한 set (useCustomPerms=true 일 때만 의미). */
+  perms: Set<string>;
 }
 
 const ROLE_OPTIONS: Array<{ value: StaffRole; label: string; help: string }> = [
@@ -77,33 +88,62 @@ export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
   const isEdit = mode === 'edit';
   const isSelf = isEdit && initial?.id === currentUserId;
 
-  const [f, setF] = useState<FormState>(() =>
-    initial
-      ? {
-          role: initial.role,
-          email: initial.email,
-          phone: initial.phone,
-          password: '',
-          passwordConfirm: '',
-          storeId: initial.storeId ?? '',
-          isActive: initial.isActive,
-        }
-      : {
-          role: 'admin',
-          email: '',
-          phone: '',
-          password: '',
-          passwordConfirm: '',
-          storeId: '',
-          isActive: true,
-        },
-  );
+  const [f, setF] = useState<FormState>(() => {
+    if (initial) {
+      const useCustom = Array.isArray(initial.permissions) && initial.permissions.length > 0;
+      return {
+        role: initial.role,
+        email: initial.email,
+        phone: initial.phone,
+        password: '',
+        passwordConfirm: '',
+        storeId: initial.storeId ?? '',
+        isActive: initial.isActive,
+        useCustomPerms: useCustom,
+        perms: new Set(useCustom ? initial.permissions ?? [] : ROLE_DEFAULTS[initial.role] ?? []),
+      };
+    }
+    return {
+      role: 'admin',
+      email: '',
+      phone: '',
+      password: '',
+      passwordConfirm: '',
+      storeId: '',
+      isActive: true,
+      useCustomPerms: false,
+      perms: new Set(ROLE_DEFAULTS.admin ?? []),
+    };
+  });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
 
   function set<K extends keyof FormState>(key: K, value: FormState[K]) {
     setF((prev) => ({ ...prev, [key]: value }));
   }
+
+  // role 변경 시 사용자 지정 권한 OFF 상태면 ROLE_DEFAULTS 자동 반영
+  useEffect(() => {
+    if (!f.useCustomPerms) {
+      setF((prev) => ({ ...prev, perms: new Set(ROLE_DEFAULTS[prev.role] ?? []) }));
+    }
+  }, [f.role, f.useCustomPerms]);
+
+  function togglePerm(key: string) {
+    setF((prev) => {
+      const next = new Set(prev.perms);
+      if (next.has(key)) next.delete(key);
+      else next.add(key);
+      return { ...prev, perms: next };
+    });
+  }
+
+  const permsByGroup = useMemo(() => {
+    return PERMISSION_GROUPS.map((g) => ({
+      group: g,
+      items: ALL_PERMISSIONS.filter((p) => p.group === g),
+    }));
+  }, []);
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -129,6 +169,9 @@ export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
         phone: f.phone.replace(/\D/g, ''),
         storeId: f.role === 'store_staff' ? f.storeId : null,
         isActive: f.isActive,
+        // useCustomPerms=false → null 저장 (ROLE_DEFAULTS 따름)
+        // useCustomPerms=true  → 배열 저장 (override)
+        permissions: f.useCustomPerms ? Array.from(f.perms) : null,
       };
       // 생성 모드는 비밀번호 필수, 편집 모드는 입력했을 때만 변경
       if (!isEdit) {
@@ -272,6 +315,57 @@ export function StaffForm({ stores, mode, initial, currentUserId }: Props) {
           </Field>
         </section>
       )}
+
+      <section className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
+        <div className="mb-3 flex items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-gray-700">권한 설정</h2>
+          <label className="inline-flex items-center gap-2 text-xs text-gray-600">
+            <input
+              type="checkbox"
+              checked={f.useCustomPerms}
+              onChange={(e) => set('useCustomPerms', e.target.checked)}
+            />
+            사용자 지정 권한 활성화
+          </label>
+        </div>
+        <p className="mb-4 text-[11px] text-gray-500">
+          {f.useCustomPerms
+            ? '아래 체크박스로 선택한 권한만 부여됩니다.'
+            : `해제 시 역할의 기본 권한(${
+                ROLE_DEFAULTS[f.role]?.length ?? 0
+              }개)을 따릅니다. 관리자는 전권을 갖습니다.`}
+        </p>
+
+        <div className={`grid gap-4 ${f.useCustomPerms ? '' : 'opacity-50'}`}>
+          {permsByGroup.map(({ group, items }) => (
+            <div key={group} className="rounded-xl border border-gray-100 p-3">
+              <div className="mb-2 text-xs font-semibold text-gray-600">{group}</div>
+              <div className="grid gap-1.5 md:grid-cols-2">
+                {items.map((p) => (
+                  <label
+                    key={p.key}
+                    className={`flex cursor-pointer items-start gap-2 rounded px-2 py-1.5 text-xs ${
+                      f.useCustomPerms ? 'hover:bg-gray-50' : 'cursor-not-allowed'
+                    }`}
+                  >
+                    <input
+                      type="checkbox"
+                      checked={f.perms.has(p.key)}
+                      onChange={() => togglePerm(p.key)}
+                      disabled={!f.useCustomPerms}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1">
+                      <div className="font-medium text-gray-800">{p.label}</div>
+                      <div className="font-mono text-[10px] text-gray-400">{p.key}</div>
+                    </div>
+                  </label>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      </section>
 
       <section className="rounded-2xl border border-gray-200 bg-white p-5 md:p-6">
         <h2 className="mb-4 text-sm font-semibold text-gray-700">상태</h2>

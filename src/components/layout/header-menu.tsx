@@ -7,9 +7,17 @@ import { PushToggle } from '@/components/pwa/push-toggle';
 import { cn } from '@/lib/utils/cn';
 import { NotificationBell } from './notification-bell';
 
+export interface MenuItem {
+  href: string;
+  label: string;
+  icon?: ReactNode;
+  /** 이 항목 노출에 필요한 권한 슬러그. 없으면 항상 노출. */
+  permission?: string;
+}
+
 export interface MenuSection {
   title?: string;
-  items: { href: string; label: string; icon?: ReactNode }[];
+  items: MenuItem[];
 }
 
 /**
@@ -21,16 +29,33 @@ export interface MenuSection {
 export function HeaderMenu({
   sections,
   user,
+  userPermissions,
   showNotifications = true,
   showPushToggle = true,
   accent = 'gray',
 }: {
   sections: MenuSection[];
   user?: { label: string; sub?: string };
+  /**
+   * 사용자의 실효 권한 슬러그 목록 (effectivePermissions 결과).
+   * 항목의 permission 필드가 있고 이 배열에 없으면 메뉴에서 숨김.
+   * undefined 면 권한 필터링 안 함 (모든 항목 노출).
+   */
+  userPermissions?: string[];
   showNotifications?: boolean;
   showPushToggle?: boolean;
   accent?: 'gray' | 'brand' | 'emerald' | 'amber' | 'red';
 }) {
+  const visibleSections = userPermissions
+    ? sections
+        .map((s) => ({
+          ...s,
+          items: s.items.filter(
+            (it) => !it.permission || userPermissions.includes(it.permission),
+          ),
+        }))
+        .filter((s) => s.items.length > 0)
+    : sections;
   const [open, setOpen] = useState(false);
   const ref = useRef<HTMLDivElement | null>(null);
   const pathname = usePathname();
@@ -100,7 +125,7 @@ export function HeaderMenu({
           )}
 
           <div className="max-h-[60vh] overflow-y-auto py-1">
-            {sections.map((section, si) => (
+            {visibleSections.map((section, si) => (
               <div key={si} className={si > 0 ? 'mt-1 border-t border-gray-100 pt-1' : ''}>
                 {section.title && (
                   <div className="px-4 py-1.5 text-[10px] font-semibold uppercase tracking-wider text-gray-400">

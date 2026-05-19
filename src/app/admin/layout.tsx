@@ -17,5 +17,9 @@ export default async function AdminLayout({
     redirect('/');
   }
 
-  return <AdminShell user={{ phone: user.phone ?? '' }}>{children}</AdminShell>;
+  return (
+    <AdminShell user={{ phone: user.phone ?? '' }} permissions={user.permissions}>
+      {children}
+    </AdminShell>
+  );
 }
