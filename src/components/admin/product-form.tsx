@@ -466,7 +466,11 @@ export function ProductForm({
                 className="input"
               />
             </Field>
-            <Field label="도수 최소 (구면)">
+            <Field
+              label="도수 최소 (구면)"
+              actionText="+ 파워챠트"
+              onAction={() => setPowerChartOpen(true)}
+            >
               <input
                 value={form.sphereMin}
                 onChange={(e) => update('sphereMin', e.target.value)}
@@ -474,7 +478,11 @@ export function ProductForm({
                 className="input"
               />
             </Field>
-            <Field label="도수 최대 (구면)">
+            <Field
+              label="도수 최대 (구면)"
+              actionText="+ 파워챠트"
+              onAction={() => setPowerChartOpen(true)}
+            >
               <input
                 value={form.sphereMax}
                 onChange={(e) => update('sphereMax', e.target.value)}
@@ -485,11 +493,11 @@ export function ProductForm({
           </div>
 
           {/* 도수 입력 — 파워챠트 + 도수 리스트 */}
-          <div className="mt-5 rounded-xl border border-gray-200 p-4">
+          <div className="mt-5 rounded-xl border-2 border-brand-200 bg-brand-50/40 p-4">
             <div className="mb-3 flex items-baseline justify-between gap-2">
               <div>
-                <h3 className="text-sm font-semibold text-gray-700">도수 입력</h3>
-                <p className="mt-0.5 text-[11px] text-gray-500">
+                <h3 className="text-sm font-semibold text-brand-700">📊 도수 입력 (파워챠트)</h3>
+                <p className="mt-0.5 text-[11px] text-gray-600">
                   파워챠트(자식창)로 sphere {isToric && '× cylinder '}범위 선택 → 적용 시 아래
                   리스트에 추가
                   {isToric && ' (난시 렌즈)'}
@@ -498,26 +506,26 @@ export function ProductForm({
               <button
                 type="button"
                 onClick={() => setPowerChartOpen(true)}
-                className="rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-medium text-brand-700 hover:bg-brand-100"
+                className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-brand-700"
               >
                 + 파워챠트 열기
               </button>
             </div>
 
             {powerList.length === 0 ? (
-              <div className="rounded-lg border border-dashed border-gray-200 py-4 text-center text-[11px] text-gray-400">
-                아직 선택된 도수가 없습니다 — 파워챠트 열기
+              <div className="rounded-lg border border-dashed border-brand-300 bg-white py-4 text-center text-[12px] text-gray-500">
+                아직 선택된 도수가 없습니다 — <strong className="text-brand-700">+ 파워챠트 열기</strong> 버튼으로 시작
               </div>
             ) : (
               <div className="space-y-1">
                 <div className="mb-1 text-[10px] font-semibold uppercase tracking-wider text-gray-500">
                   선택된 도수 ({powerList.length})
                 </div>
-                <div className="flex max-h-48 flex-wrap gap-1 overflow-y-auto rounded-lg bg-gray-50 p-2">
+                <div className="flex max-h-48 flex-wrap gap-1 overflow-y-auto rounded-lg bg-white p-2">
                   {powerList.map((p, i) => (
                     <span
                       key={`${p.sphere}-${p.cylinder}-${i}`}
-                      className="inline-flex items-center gap-1 rounded bg-white px-2 py-0.5 font-mono text-[10px] text-gray-700 shadow-sm"
+                      className="inline-flex items-center gap-1 rounded bg-gray-100 px-2 py-0.5 font-mono text-[10px] text-gray-700"
                     >
                       SPH {p.sphere > 0 ? '+' : p.sphere < 0 ? '−' : ''}
                       {Math.abs(p.sphere).toFixed(2)}
@@ -551,7 +559,7 @@ export function ProductForm({
                 </div>
               </div>
             )}
-            <p className="mt-2 text-[11px] text-amber-600">
+            <p className="mt-2 text-[11px] text-amber-700">
               ⓘ 도수 리스트는 Phase 2 에서 lens_variants 로 저장됩니다 (현재는 폼 state 만).
             </p>
           </div>
