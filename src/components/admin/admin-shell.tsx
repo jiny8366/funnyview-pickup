@@ -4,6 +4,7 @@ import {
   IconBox,
   IconCart,
   IconChart,
+  IconHome,
   IconLayout,
   IconSettings,
   IconStore,
@@ -11,6 +12,7 @@ import {
   IconUsers,
   IconWallet,
 } from '@/components/ui/icons';
+import { portalUrl } from '@/lib/portal';
 
 const SECTIONS: MenuSection[] = [
   {
@@ -55,16 +57,58 @@ const SECTIONS: MenuSection[] = [
  * (사이드바 제거 — 우측 상단 햄버거 통일)
  *
  * permissions prop 이 있으면 메뉴 자동 필터링 (admin role 의 권한 override 케이스).
+ * isMaster + host 가 있으면 햄버거 최상단에 4 portal 바로가기 섹션 추가.
  */
 export function AdminShell({
   user,
   permissions,
+  isMaster,
+  host,
   children,
 }: {
   user?: { phone: string };
   permissions?: string[];
+  isMaster?: boolean;
+  host?: string;
   children: React.ReactNode;
 }) {
+  // 마스터 + host 가 있으면 4 portal 바로가기 섹션을 최상단에 prepend
+  const sections: MenuSection[] =
+    isMaster && host
+      ? [
+          {
+            title: '🛡 Portal 바로가기 (마스터)',
+            items: [
+              {
+                href: portalUrl('customer', host),
+                label: '쇼핑몰 디자인 (고객)',
+                icon: <IconHome size={16} />,
+                external: true,
+              },
+              {
+                href: portalUrl('admin', host),
+                label: '관리자',
+                icon: <IconSettings size={16} />,
+                external: true,
+              },
+              {
+                href: portalUrl('staff', host),
+                label: '픽업담당자',
+                icon: <IconCart size={16} />,
+                external: true,
+              },
+              {
+                href: portalUrl('store', host),
+                label: '픽업가맹점',
+                icon: <IconStore size={16} />,
+                external: true,
+              },
+            ],
+          },
+          ...SECTIONS,
+        ]
+      : SECTIONS;
+
   return (
     <div className="min-h-screen bg-gray-50">
       <header
@@ -83,8 +127,8 @@ export function AdminShell({
           </Link>
 
           <HeaderMenu
-            sections={SECTIONS}
-            user={{ label: '관리자', sub: user?.phone ?? '' }}
+            sections={sections}
+            user={{ label: isMaster ? '🛡 마스터' : '관리자', sub: user?.phone ?? '' }}
             userPermissions={permissions}
             accent="red"
           />

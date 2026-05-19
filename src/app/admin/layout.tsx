@@ -1,3 +1,4 @@
+import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { AdminShell } from '@/components/admin/admin-shell';
 import { getCurrentUser } from '@/lib/auth/current-user';
@@ -17,8 +18,15 @@ export default async function AdminLayout({
     redirect('/');
   }
 
+  const host = headers().get('host') ?? '';
+
   return (
-    <AdminShell user={{ phone: user.phone ?? '' }} permissions={user.permissions}>
+    <AdminShell
+      user={{ phone: user.phone ?? '' }}
+      permissions={user.permissions}
+      isMaster={user.isMaster}
+      host={host}
+    >
       {children}
     </AdminShell>
   );
