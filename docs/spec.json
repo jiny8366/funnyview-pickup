@@ -973,9 +973,17 @@
   "jinysCatalog": {
     "purpose": "지니어스(지니스안경) 공급사 콘택트렌즈 바코드 정보 일괄 import (확정 2026-05-22)",
     "sourceDrive": "Google Drive '지니어스 콘택트렌즈 바코드 정보' (folder ID 17Mn0UAjAQMoQ8BjKqYU6THyMU_AP5dR5)",
-    "brands": ["아큐브", "클라렌", "쿠퍼", "미광", "바슈롬", "알콘", "클라렌O2O2"],
-    "phase1Done": "아큐브 — 41개 lens / 14,999 도수 / 16,819 바코드 (2026-05-22)",
-    "phase1Remaining": ["클라렌(27)", "쿠퍼(13)", "미광(5)", "바슈롬(45)", "알콘(32)", "클라렌O2O2(8)"],
+    "brands": ["아큐브(ACU)", "미광(MIK)", "클라렌O2O2(CO2)", "쿠퍼비전(COO)", "클라렌(CLA)", "알콘(ALC)", "바슈롬(BNL)"],
+    "completed": {
+      "ACU 아큐브":      "41 제품 / 14,999 도수 / 16,819 바코드",
+      "MIK 미광":        "5 제품 / 147 도수 / 240 바코드",
+      "CO2 클라렌O2O2":  "8 제품 / 351 도수 / 0 바코드 (공급사 양식에 바코드 미포함)",
+      "COO 쿠퍼비전":    "13 제품 / 7,730 도수 / 7,730 바코드",
+      "CLA 클라렌":      "26 제품 / 1,002 도수 / 1,002 바코드",
+      "ALC 알콘":        "32 제품 / 13,926 도수 / 13,926 바코드",
+      "BNL 바슈롬":      "44 제품 / 5,998 도수 / 5,998 바코드",
+      "total":           "169 제품 / 44,153 도수 / 45,715 바코드 (2026-05-22)"
+    },
     "fixtureFormat": "scripts/fixtures/jinys-catalog/{brand}.json — 각 브랜드별 lenses[] + 도수별 variants[] + 1:N barcodes[]",
     "importScript": "scripts/import-jinys-catalog.ts (idempotent, bulk upsert)",
     "run": [
