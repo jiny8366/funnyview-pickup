@@ -431,17 +431,6 @@ export function ProductForm({
               </p>
             </Field>
           </div>
-
-          {/* 3행: 대표 이미지 */}
-          <div>
-            <Field label="대표 이미지">
-              <ImagePicker
-                value={form.imageUrl}
-                onChange={(v) => update('imageUrl', v)}
-                folder="lenses"
-              />
-            </Field>
-          </div>
         </CardBody>
       </Card>
 
@@ -729,7 +718,16 @@ export function ProductForm({
           </div>
         </CardHeader>
         <CardBody>
-          <div className="grid gap-4 md:grid-cols-2">
+          <Field label="대표 이미지 (300×300 썸네일 · 클릭하면 확대/축소)">
+            <ImagePicker
+              value={form.imageUrl}
+              onChange={(v) => update('imageUrl', v)}
+              folder="lenses"
+              thumbnailSize={300}
+              enableZoom
+            />
+          </Field>
+          <div className="mt-5 grid gap-4 md:grid-cols-2">
             <Field label="컬러명 (카드 표시)">
               <input
                 value={form.colorName}
