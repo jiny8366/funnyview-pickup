@@ -325,7 +325,7 @@ export function ProductForm({
                 <option value="">— 선택 —</option>
                 {brands.map((b) => (
                   <option key={b.id} value={b.nameKo}>
-                    {b.nameKo} ({b.code})
+                    {b.nameEn} ({b.code})
                   </option>
                 ))}
               </select>
