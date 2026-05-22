@@ -16,6 +16,7 @@
     "db:seed": "tsx scripts/seed.ts",
     "db:import-jinys": "tsx scripts/import-jinys-stores.ts",
     "db:import-catalog": "tsx scripts/import-jinys-catalog.ts",
+    "db:cleanup-seed": "tsx scripts/cleanup-seed-products.ts",
     "vercel:build": "drizzle-kit migrate && next build"
   },
   "dependencies": {
