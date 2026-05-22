@@ -223,7 +223,7 @@ async function main() {
   // 3) Lenses
   const acuOas = await ensureLens({
     productCode: 'ACU-OAS-1D',
-    brand: 'Acuvue',
+    brand: '아큐브',
     name: '오아시스 원데이',
     lensType: 'spherical',
     replacementCycle: '1day',
@@ -238,7 +238,7 @@ async function main() {
   });
   const bioInfinity = await ensureLens({
     productCode: 'BIO-INF-2W',
-    brand: 'CooperVision',
+    brand: '쿠퍼비전',
     name: 'Biofinity 2주',
     lensType: 'spherical',
     replacementCycle: '2week',
@@ -253,7 +253,7 @@ async function main() {
   });
   const toricLens = await ensureLens({
     productCode: 'ACU-AST-1D',
-    brand: 'Acuvue',
+    brand: '아큐브',
     name: '난시용 원데이',
     lensType: 'toric',
     replacementCycle: '1day',
