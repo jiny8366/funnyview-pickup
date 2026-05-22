@@ -24,6 +24,22 @@
 3. **분리된 portal 4개** — customer / admin / staff / store. 코드 작성 시 portal 별 영향 명확히
 4. **Light 모드 고정** — 다크모드 대응 안 함 (input 가독성 보장)
 5. **PAT 사용 push** — sandbox 가 funnyview-pickup repo 에 직접 push (frame-ops 매개 X)
+6. **재고 원가 = 도수별 FIFO** — 콘택트렌즈는 같은 제품도 도수(SPH/CYL)마다 SKU 가 다르고 입고 수량·단가가 도수별로 다름. 입고는 `inbound_shipments`(1제품×1입고일 헤더) + `inventory_lots`(도수별 행) 로 기록하고, 출고는 `lens_variant` 단위로 가장 오래된 로트부터 차감(FIFO). 출고 라인(`order_items.unitCost`)에는 FIFO 단가가 기록되어 수익률 정산의 근거가 됨. 표준매입가(standardCost)는 참고용이지 원가 계산에 쓰면 안 됨. 상세는 `docs/spec.json` 의 `inventoryFifo`.
+
+## 재고/원가 핵심 정책 (FIFO)
+
+> 입고가가 시점마다 달라지는 환경에서 정확한 수익률을 내려면 출고 단가는 반드시 실제 입고 로트의 단가여야 함.
+
+| 항목 | 규칙 |
+|---|---|
+| FIFO 단위 | `lens_variants.id` (= 제품 × 도수 조합). 도수가 다르면 독립 로트 |
+| 입고 단위 | `inbound_shipments` 1건 = 1제품 × 1입고일 × N도수. 도수별 수량을 한 화면에서 입력 |
+| 출고 차감 | `inboundDate ASC` 정렬로 가장 오래된 `inventory_lots` 부터 `quantityRemaining` 차감 |
+| 출고 단가 | `order_items.unitCost` = 소진된 로트(들)의 가중평균 단가 |
+| 수익률 | `(lineTotal − unitCost × qty) / lineTotal`. **절대 `standardCost` 로 계산 금지** |
+| 반품 | 새 입고 전표로 재등록 (원 로트 복원 X) |
+
+관련 마이그레이션: `0014 — inbound_shipments + inventory_lots + lot_id 컬럼 추가`
 
 ## 통합 테스트 계정 (모든 portal 진입)
 
@@ -87,9 +103,10 @@ git push origin main         # → Vercel 자동 빌드 (2-4분)
 2. [ ] 사용자에게 "어느 부분 작업" 인지 명확히 받기
 3. [ ] 작업 영향 portal 식별 (customer / admin / staff / store)
 4. [ ] DB 스키마 변경 필요시 → 마이그레이션 0008+ 추가
-5. [ ] 코드 변경 후 `npx tsc --noEmit` 통과 확인
-6. [ ] commit + push (사용자 명시적 요청 후)
-7. [ ] Vercel 빌드 결과 사용자에게 확인 요청
+5. [ ] 재고/원가 관련 작업이면 → 도수별 FIFO 원칙(`inventoryFifo`) 준수 확인
+6. [ ] 코드 변경 후 `npx tsc --noEmit` 통과 확인
+7. [ ] commit + push (사용자 명시적 요청 후)
+8. [ ] Vercel 빌드 결과 사용자에게 확인 요청
 
 ## 빌드 실패 자주 발생하는 원인
 

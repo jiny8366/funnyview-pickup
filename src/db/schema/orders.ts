@@ -106,8 +106,9 @@ export const orderItems = pgTable(
     skuSnapshot: text('sku_snapshot').notNull(),
     barcodeSnapshot: text('barcode_snapshot'),
 
-    // 비용 스냅샷 (영업이익 계산)
+    // 비용 스냅샷 (영업이익 계산) — FIFO 도입 후 unitCost 는 소진된 로트의 가중평균 단가
     unitCost: integer('unit_cost'),
+    lotId: uuid('lot_id'), // FK 는 마이그레이션에서 inventory_lots 참조 (순환 import 회피 위해 명시적 FK 미선언)
 
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()

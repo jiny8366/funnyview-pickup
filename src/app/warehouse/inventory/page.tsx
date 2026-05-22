@@ -29,6 +29,9 @@ interface InvRow {
   safetyStock: number;
   reorderPoint: number;
   isLow: boolean;
+  lotCount: number;
+  weightedAvgCost: number;
+  oldestInboundDate: string | null;
 }
 
 export default function WarehouseInventoryPage() {
@@ -88,6 +91,9 @@ function WarehouseInventoryInner() {
               <th className="px-3 py-2 text-right">예약</th>
               <th className="px-3 py-2 text-right">가용</th>
               <th className="px-3 py-2 text-right">안전</th>
+              <th className="px-3 py-2 text-right">로트</th>
+              <th className="px-3 py-2 text-right">평균단가</th>
+              <th className="px-3 py-2 text-right">최초입고일</th>
               <th className="px-3 py-2 text-right">조정</th>
             </tr>
           </thead>
@@ -122,6 +128,19 @@ function WarehouseInventoryInner() {
                     {r.available}
                   </td>
                   <td className="px-3 py-2 text-right text-xs text-gray-500">{r.safetyStock}</td>
+                  <td className="px-3 py-2 text-right text-xs">
+                    {r.lotCount > 0 ? (
+                      <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700">{r.lotCount}</span>
+                    ) : (
+                      <span className="text-gray-300">—</span>
+                    )}
+                  </td>
+                  <td className="px-3 py-2 text-right text-xs text-gray-700">
+                    {r.weightedAvgCost > 0 ? r.weightedAvgCost.toLocaleString() + '원' : <span className="text-gray-300">—</span>}
+                  </td>
+                  <td className="px-3 py-2 text-right text-xs text-gray-500">
+                    {r.oldestInboundDate ?? <span className="text-gray-300">—</span>}
+                  </td>
                   <td className="px-3 py-2 text-right">
                     {editing === r.variantId ? (
                       <div className="flex items-center justify-end gap-1">
@@ -148,7 +167,7 @@ function WarehouseInventoryInner() {
               );
             })}
             {rows && rows.length === 0 && (
-              <tr><td colSpan={7} className="px-3 py-10 text-center text-gray-400">데이터 없음</td></tr>
+              <tr><td colSpan={10} className="px-3 py-10 text-center text-gray-400">데이터 없음</td></tr>
             )}
           </tbody>
         </table>
