@@ -36,6 +36,8 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
   const [addingBarcodeFor, setAddingBarcodeFor] = useState<string | null>(null);
   const [newBarcode, setNewBarcode] = useState('');
   const [newBarcodeType, setNewBarcodeType] = useState('EAN13');
+  const [bulkPrice, setBulkPrice] = useState<string>('');
+  const [bulkBusy, setBulkBusy] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -91,6 +93,31 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
       setError('바코드 등록 실패');
     } finally {
       setBusy(false);
+    }
+  }
+
+  async function applyBulkPrice(priceOverride: number | null) {
+    const ids = display.map((v) => v.id);
+    if (ids.length === 0) return;
+    setBulkBusy(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/lenses/${lensId}/variants/bulk-price`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ variantIds: ids, priceOverride }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setError(j.error ?? '가격 설정 실패');
+        return;
+      }
+      setBulkPrice('');
+      await load();
+    } catch {
+      setError('가격 설정 실패');
+    } finally {
+      setBulkBusy(false);
     }
   }
 
@@ -192,11 +219,39 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
         </div>
       </CardHeader>
 
-      {error && (
-        <div className="mx-4 mb-2 rounded bg-red-50 px-3 py-2 text-sm text-red-700">
-          {error}
-        </div>
-      )}
+      {/* 가격 일괄 설정 */}
+      <div className="flex flex-wrap items-center gap-2 border-b border-gray-100 px-4 py-2.5">
+        <span className="shrink-0 text-xs font-medium text-gray-600">
+          표시된 {display.length}개 도수 가격:
+        </span>
+        <input
+          type="number"
+          min={0}
+          value={bulkPrice}
+          onChange={(e) => setBulkPrice(e.target.value)}
+          placeholder="₩ 입력"
+          className="h-8 w-32 rounded-lg border border-gray-300 px-2 text-sm focus:outline-none focus:ring-2 focus:ring-brand-100"
+        />
+        <Button
+          size="sm"
+          disabled={bulkBusy || bulkPrice === ''}
+          onClick={() => {
+            const n = Number(bulkPrice);
+            if (!Number.isNaN(n) && n >= 0) applyBulkPrice(n);
+          }}
+        >
+          적용
+        </Button>
+        <Button
+          size="sm"
+          variant="secondary"
+          disabled={bulkBusy}
+          onClick={() => applyBulkPrice(null)}
+        >
+          초기화
+        </Button>
+        {error && <span className="text-xs text-red-600">{error}</span>}
+      </div>
 
       <CardBody className="p-0">
         <div className="overflow-x-auto">
