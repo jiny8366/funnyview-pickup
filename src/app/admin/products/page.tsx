@@ -156,7 +156,7 @@ export default function AdminProductsPage() {
       if (qLower) {
         const match =
           it.brand.toLowerCase().includes(qLower) ||
-          toBrandEn(it.brand).toLowerCase().includes(qLower) ||
+          (brandMap[it.brand] ?? it.brand).toLowerCase().includes(qLower) ||
           it.name.toLowerCase().includes(qLower) ||
           it.productCode.toLowerCase().includes(qLower) ||
           (it.seriesCode?.toLowerCase().includes(qLower) ?? false);
@@ -172,7 +172,7 @@ export default function AdminProductsPage() {
       if (priceFilter === 'set' && it.price === 0) return false;
       return true;
     });
-  }, [items, q, brands, types, cycles, packs, activeFilter, priceFilter]);
+  }, [items, q, brands, types, cycles, packs, activeFilter, priceFilter, brandMap]);
 
   // 정렬
   const sorted = useMemo(() => {
@@ -180,7 +180,7 @@ export default function AdminProductsPage() {
     const arr = [...filtered];
     arr.sort((a, b) => {
       let cmp = 0;
-      if (sortKey === 'brand') cmp = toBrandEn(a.brand).localeCompare(toBrandEn(b.brand)) || a.name.localeCompare(b.name);
+      if (sortKey === 'brand') cmp = (brandMap[a.brand] ?? a.brand).localeCompare(brandMap[b.brand] ?? b.brand) || a.name.localeCompare(b.name);
       else if (sortKey === 'name') cmp = a.name.localeCompare(b.name);
       else if (sortKey === 'productCode') cmp = a.productCode.localeCompare(b.productCode);
       else if (sortKey === 'price') cmp = a.price - b.price;
@@ -188,7 +188,7 @@ export default function AdminProductsPage() {
       return sortDir === 'asc' ? cmp : -cmp;
     });
     return arr;
-  }, [filtered, sortKey, sortDir]);
+  }, [filtered, sortKey, sortDir, brandMap]);
 
   // 페이지네이션
   const totalPages = sorted ? Math.max(1, Math.ceil(sorted.length / PAGE_SIZE)) : 1;

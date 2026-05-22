@@ -121,6 +121,14 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
     [variants],
   );
 
+  const display = useMemo(() => {
+    if (!variants) return [];
+    let list = showInactive ? variants : variants.filter((v) => v.isActive);
+    if (filterCyl !== '') list = list.filter((v) => v.cylinder === filterCyl);
+    if (filterAxis !== '') list = list.filter((v) => String(v.axis) === filterAxis);
+    return list;
+  }, [variants, showInactive, filterCyl, filterAxis]);
+
   if (!variants) {
     return (
       <Card>
@@ -130,12 +138,6 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
   }
 
   const activeCount = variants.filter((v) => v.isActive).length;
-  const display = useMemo(() => {
-    let list = showInactive ? variants : variants.filter((v) => v.isActive);
-    if (filterCyl !== '') list = list.filter((v) => v.cylinder === filterCyl);
-    if (filterAxis !== '') list = list.filter((v) => String(v.axis) === filterAxis);
-    return list;
-  }, [variants, showInactive, filterCyl, filterAxis]);
 
   return (
     <Card>
