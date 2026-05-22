@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { asc, eq, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { inventory, inventoryMovements, lensVariants, lenses } from '@/db/schema';
+import { inventory, inventoryLots, inventoryMovements, inboundShipments, lensVariants, lenses } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 
 export const dynamic = 'force-dynamic';
@@ -15,6 +15,20 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const onlyLow = url.searchParams.get('low') === '1';
+
+  // FIFO lot aggregates via correlated subqueries (confirmed lots only)
+  const lotSubquery = db
+    .select({
+      variantId: inventoryLots.variantId,
+      lotCount: sql<number>`COUNT(*)::int`.as('lot_count'),
+      weightedAvgCost: sql<number>`CASE WHEN SUM(${inventoryLots.quantityRemaining}) = 0 THEN 0 ELSE ROUND(SUM(${inventoryLots.quantityRemaining}::numeric * ${inventoryLots.unitCostIncVat}) / SUM(${inventoryLots.quantityRemaining})) END`.as('weighted_avg_cost'),
+      oldestInboundDate: sql<string | null>`MIN(${inboundShipments.inboundDate})`.as('oldest_inbound_date'),
+    })
+    .from(inventoryLots)
+    .innerJoin(inboundShipments, eq(inventoryLots.shipmentId, inboundShipments.id))
+    .where(sql`${inventoryLots.quantityRemaining} > 0 AND ${inboundShipments.status} = 'confirmed'`)
+    .groupBy(inventoryLots.variantId)
+    .as('lot_agg');
 
   const rows = await db
     .select({
@@ -36,10 +50,14 @@ export async function GET(req: Request) {
       reorderPoint: inventory.reorderPoint,
       available: sql<number>`${inventory.quantityOnHand} - ${inventory.quantityReserved}`,
       isLow: sql<boolean>`(${inventory.quantityOnHand} - ${inventory.quantityReserved}) < GREATEST(${inventory.safetyStock}, ${inventory.reorderPoint})`,
+      lotCount: sql<number>`COALESCE(${lotSubquery.lotCount}, 0)`,
+      weightedAvgCost: sql<number>`COALESCE(${lotSubquery.weightedAvgCost}, 0)`,
+      oldestInboundDate: lotSubquery.oldestInboundDate,
     })
     .from(inventory)
     .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
     .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
+    .leftJoin(lotSubquery, eq(lotSubquery.variantId, lensVariants.id))
     .where(
       onlyLow
         ? sql`(${inventory.quantityOnHand} - ${inventory.quantityReserved}) < GREATEST(${inventory.safetyStock}, ${inventory.reorderPoint})`

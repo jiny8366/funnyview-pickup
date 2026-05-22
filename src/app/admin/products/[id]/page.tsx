@@ -6,6 +6,7 @@ import { lenses } from '@/db/schema';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { ProductForm } from '@/components/admin/product-form';
 import { LensPromotionsCard } from '@/components/admin/lens-promotions-card';
+import { LensVariantsCard } from '@/components/admin/lens-variants-card';
 import { IconArrowLeft } from '@/components/ui/icons';
 import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
@@ -73,6 +74,9 @@ export default async function EditProductPage({
           description: row.description,
         }}
       />
+      <div className="mt-6">
+        <LensVariantsCard lensId={row.id} />
+      </div>
       <div className="mt-6">
         <LensPromotionsCard lensId={row.id} />
       </div>
