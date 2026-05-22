@@ -21,7 +21,7 @@
 import 'dotenv/config';
 import { readFileSync, readdirSync, existsSync } from 'fs';
 import { join } from 'path';
-import { and, eq } from 'drizzle-orm';
+import { and, eq, sql } from 'drizzle-orm';
 import { db } from '../src/db/client';
 import {
   brands,
@@ -185,7 +185,7 @@ async function importLensVariants(
     return { varCount: variantRows.length, barCount: totalBars, barSkipped: 0 };
   }
 
-  // 2. 도수 bulk upsert (sku 기준)
+  // 2. 도수 bulk upsert (sku 기준) — INSERT ... ON CONFLICT (sku) DO UPDATE SET col = EXCLUDED.col
   //    배치: PostgreSQL 65535 파라미터 제한, 행당 ~7 컬럼 → 한 번에 ~9000 행. 안전하게 1000.
   const VARIANT_BATCH = 1000;
   const skuToId = new Map<string, string>();
@@ -197,41 +197,17 @@ async function importLensVariants(
       .onConflictDoUpdate({
         target: lensVariants.sku,
         set: {
-          sphere: slice[0].sphere, // dummy — 실제로는 EXCLUDED.x 가 필요
-          cylinder: slice[0].cylinder,
-          axis: slice[0].axis,
-          addPower: slice[0].addPower,
-          udiDi: slice[0].udiDi,
-          isActive: true,
-          updatedAt: new Date(),
+          sphere: sql`EXCLUDED.sphere`,
+          cylinder: sql`EXCLUDED.cylinder`,
+          axis: sql`EXCLUDED.axis`,
+          addPower: sql`EXCLUDED.add_power`,
+          udiDi: sql`EXCLUDED.udi_di`,
+          isActive: sql`EXCLUDED.is_active`,
+          updatedAt: sql`now()`,
         },
       })
       .returning({ id: lensVariants.id, sku: lensVariants.sku });
     for (const r of ret) skuToId.set(r.sku, r.id);
-  }
-
-  // 위 onConflictDoUpdate.set 은 SQL 의 SET v = EXCLUDED.v 패턴 표현이 까다로움.
-  // 실제로 슬라이스 단위로 첫 row 의 값을 set 으로 쓰면 잘못된 업데이트가 됨.
-  // 안전한 방법: 충돌 시 무시(onConflictDoNothing) + 후처리 UPDATE 또는 sku 별 UPDATE.
-  // 여기서는 행별로 UPDATE 호출 — 양이 많지 않은 1차 import 한정.
-  for (let i = 0; i < variantRows.length; i++) {
-    const v = variantRows[i];
-    if (skuToId.has(v.sku)) continue; // 이미 INSERT 됐으면 OK
-    // 충돌이라 UPDATE 필요
-    const ret = await db
-      .update(lensVariants)
-      .set({
-        sphere: v.sphere,
-        cylinder: v.cylinder,
-        axis: v.axis,
-        addPower: v.addPower,
-        udiDi: v.udiDi,
-        isActive: true,
-        updatedAt: new Date(),
-      })
-      .where(eq(lensVariants.sku, v.sku))
-      .returning({ id: lensVariants.id });
-    if (ret[0]) skuToId.set(v.sku, ret[0].id);
   }
 
   // 3. 바코드 1:N bulk insert (conflict 무시)
