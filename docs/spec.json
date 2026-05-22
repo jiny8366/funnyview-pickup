@@ -799,13 +799,20 @@
       "admin portal 재고 현황 (/warehouse/inventory) — 도수별 로트 잔여 수량·입고가·입고일 열람"
     ],
 
-    "lib": "src/lib/inventory-fifo.ts (미래 구현)",
+    "lib": "src/lib/inventory-fifo.ts (구현 완료 2026-05-22)",
     "functions": [
-      "createInboundShipment(input, variantLines[], tx) → { shipment, lots[] }",
-      "consumeLotsForVariant(variantId, qty, tx) → FifoConsumeResult[] (로트별 소진 내역)",
-      "weightedAvgCost(consumes: FifoConsumeResult[]) → int (가중평균 단가)",
-      "getLotSummary(variantId) → { totalQty, weightedCost, oldestInboundDate, lotCount }"
-    ]
+      "createInboundShipment(tx, input) → { shipment, lots[] } — 전표 + 도수별 로트 + 재고 + movements 일괄 처리",
+      "confirmInboundShipment(tx, shipmentId, performedBy) → void — draft 전표 확정 (재고 반영)",
+      "consumeLotsForVariant(tx, variantId, qty) → FifoConsumeResult[] — FIFO 차감 + inventory 감소",
+      "weightedAvgCost(consumes) → int — 가중평균 단가 (order_items.unitCost 용)",
+      "getLotSummary(tx, variantId) → { totalQty, weightedAvgCost, oldestInboundDate, lotCount }"
+    ],
+    "implementationStatus": {
+      "step1_dbInfra": "✅ 완료 — schema(inbound_shipments, inventory_lots, inventory_movements.lot_id/unitCostSnapshot, order_items.lot_id) + FIFO 라이브러리",
+      "step2_inboundUi": "⏳ 진행 예정 — /warehouse/inbound 전표 + 도수 테이블 입력 화면",
+      "step3_outbound": "⏳ 진행 예정 — 픽리스트 confirm 시 자동 FIFO 차감",
+      "step4_inventoryView": "⏳ 진행 예정 — /warehouse/inventory 도수별 로트 잔여 표시"
+    }
   },
 
   "rbac": {
