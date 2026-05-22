@@ -1,0 +1,1697 @@
+{
+  "brand": {
+    "nameKo": "미광",
+    "nameEn": "Mikwang",
+    "code": "MIK"
+  },
+  "sourceFolder": "지니어스 콘택트렌즈 바코드 정보 / 미광 바코드 정보",
+  "driveFolderId": "1b3vyZY5zae_Y0SZYlENmv0WTmB7o8Im3",
+  "fileCount": 5,
+  "totalVariants": 147,
+  "totalBarcodes": 240,
+  "lenses": [
+    {
+      "sourceProductName": "클리어 에스쁘리 브라운(30p)",
+      "productCode": "MIK-CESBR-30P",
+      "displayName": "클리어 에스쁘리 브라운(30p)",
+      "seriesCode": "MIK-CESBR",
+      "series": {
+        "code": "CES",
+        "suffix": "BR",
+        "nameKo": "클리어 에스쁘리 브라운",
+        "nameEn": "Clear Esprit Brown"
+      },
+      "brand": "미광",
+      "brandCode": "MIK",
+      "lensType": "color",
+      "replacementCycle": "1day",
+      "piecesPerBox": 30,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 27,
+      "barcodeCount": 27,
+      "variants": [
+        {
+          "sphere": 0.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700332"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700356"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700363"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700370"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700387"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700394"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700400"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700417"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700424"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700431"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700448"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700455"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700462"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700479"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700486"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700493"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700509"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700516"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700523"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700530"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700547"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700554"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700578"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700585"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700592"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700608"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700615"
+          ],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "클리어 에스쁘리 그레이(30p)",
+      "productCode": "MIK-CESGR-30P",
+      "displayName": "클리어 에스쁘리 그레이(30p)",
+      "seriesCode": "MIK-CESGR",
+      "series": {
+        "code": "CES",
+        "suffix": "GR",
+        "nameKo": "클리어 에스쁘리 그레이",
+        "nameEn": "Clear Esprit Gray"
+      },
+      "brand": "미광",
+      "brandCode": "MIK",
+      "lensType": "color",
+      "replacementCycle": "1day",
+      "piecesPerBox": 30,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 27,
+      "barcodeCount": 27,
+      "variants": [
+        {
+          "sphere": 0.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700684"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700707"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700714"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700721"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700738"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700745"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700752"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700769"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700776"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700783"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700790"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700806"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700813"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700820"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700837"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700844"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700851"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700868"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700875"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700882"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700899"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700905"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700929"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700936"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700943"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700950"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8807200700967"
+          ],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "미광 클리어원데이(10p)",
+      "productCode": "MIK-MCD1D-10P",
+      "displayName": "미광 클리어원데이(10p)",
+      "seriesCode": "MIK-MCD1D",
+      "series": {
+        "code": "MCD",
+        "suffix": "1D",
+        "nameKo": "미광 클리어원데이",
+        "nameEn": "Mikwang Clear 1Day"
+      },
+      "brand": "미광",
+      "brandCode": "MIK",
+      "lensType": "spherical",
+      "replacementCycle": "1day",
+      "piecesPerBox": 10,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 31,
+      "barcodeCount": 62,
+      "variants": [
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956363",
+            "8886435956363"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956370",
+            "8886435956370"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956387",
+            "8886435956387"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956394",
+            "8886435956394"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956400",
+            "8886435956400"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956417",
+            "8886435956417"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956424",
+            "8886435956424"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956431",
+            "8886435956431"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956448",
+            "8886435956448"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956455",
+            "8886435956455"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956462",
+            "8886435956462"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956479",
+            "8886435956479"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956486",
+            "8886435956486"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956493",
+            "8886435956493"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956509",
+            "8886435956509"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956516",
+            "8886435956516"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956523",
+            "8886435956523"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956530",
+            "8886435956530"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956547",
+            "8886435956547"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8886435956554",
+            "08886435956554"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8886435956561",
+            "08886435956561"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956578",
+            "8886435956578"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956585",
+            "8886435956585"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8886435956592",
+            "08886435956592"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956608",
+            "8886435956608"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956615",
+            "8886435956615"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956622",
+            "8886435956622"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956639",
+            "8886435956639"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8886435956646",
+            "08886435956646"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "8886435956653",
+            "08886435956653"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -10.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956660",
+            "8886435956660"
+          ],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "미광 클리어원데이(30p)",
+      "productCode": "MIK-MCD1D-30P",
+      "displayName": "미광 클리어원데이(30p)",
+      "seriesCode": "MIK-MCD1D",
+      "series": {
+        "code": "MCD",
+        "suffix": "1D",
+        "nameKo": "미광 클리어원데이",
+        "nameEn": "Mikwang Clear 1Day"
+      },
+      "brand": "미광",
+      "brandCode": "MIK",
+      "lensType": "spherical",
+      "replacementCycle": "1day",
+      "piecesPerBox": 30,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 31,
+      "barcodeCount": 62,
+      "variants": [
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955823",
+            "8886435955823"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955830",
+            "8886435955830"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955847",
+            "8886435955847"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955854",
+            "8886435955854"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955861",
+            "8886435955861"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955878",
+            "8886435955878"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955885",
+            "8886435955885"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955892",
+            "8886435955892"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955908",
+            "8886435955908"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955915",
+            "8886435955915"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955922",
+            "8886435955922"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955939",
+            "8886435955939"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955946",
+            "8886435955946"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955953",
+            "8886435955953"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955960",
+            "8886435955960"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955977",
+            "8886435955977"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955984",
+            "8886435955984"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435955991",
+            "8886435955991"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956004",
+            "8886435956004"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956011",
+            "8886435956011"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956028",
+            "8886435956028"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956035",
+            "8886435956035"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956042",
+            "8886435956042"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956059",
+            "8886435956059"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956066",
+            "8886435956066"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956073",
+            "8886435956073"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956080",
+            "8886435956080"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956097",
+            "8886435956097"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956103",
+            "8886435956103"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956110",
+            "8886435956110"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -10.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956127",
+            "8886435956127"
+          ],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "미광 클리어원데이(90p)",
+      "productCode": "MIK-MCD1D-90P",
+      "displayName": "미광 클리어원데이(90p)",
+      "seriesCode": "MIK-MCD1D",
+      "series": {
+        "code": "MCD",
+        "suffix": "1D",
+        "nameKo": "미광 클리어원데이",
+        "nameEn": "Mikwang Clear 1Day"
+      },
+      "brand": "미광",
+      "brandCode": "MIK",
+      "lensType": "spherical",
+      "replacementCycle": "1day",
+      "piecesPerBox": 90,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 31,
+      "barcodeCount": 62,
+      "variants": [
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956905",
+            "8886435956905"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956912",
+            "8886435956912"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956929",
+            "8886435956929"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956936",
+            "8886435956936"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956943",
+            "8886435956943"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956950",
+            "8886435956950"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956967",
+            "8886435956967"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956974",
+            "8886435956974"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956981",
+            "8886435956981"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435956998",
+            "8886435956998"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957001",
+            "8886435957001"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957018",
+            "8886435957018"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957025",
+            "8886435957025"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957032",
+            "8886435957032"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957049",
+            "8886435957049"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957056",
+            "8886435957056"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957063",
+            "8886435957063"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957070",
+            "8886435957070"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957087",
+            "8886435957087"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957094",
+            "8886435957094"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957100",
+            "8886435957100"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957117",
+            "8886435957117"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957124",
+            "8886435957124"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957131",
+            "8886435957131"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957148",
+            "8886435957148"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957155",
+            "8886435957155"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957162",
+            "8886435957162"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957179",
+            "8886435957179"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957186",
+            "8886435957186"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957193",
+            "8886435957193"
+          ],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -10.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [
+            "08886435957209",
+            "8886435957209"
+          ],
+          "supplierUnitNos": []
+        }
+      ]
+    }
+  ]
+}
