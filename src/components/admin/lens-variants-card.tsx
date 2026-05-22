@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { formatLensSpec } from '@/lib/lens/format';
@@ -30,6 +30,8 @@ interface VariantRow {
 export function LensVariantsCard({ lensId }: { lensId: string }) {
   const [variants, setVariants] = useState<VariantRow[] | null>(null);
   const [showInactive, setShowInactive] = useState(false);
+  const [filterCyl, setFilterCyl] = useState<string>('');
+  const [filterAxis, setFilterAxis] = useState<string>('');
   const [expanded, setExpanded] = useState<Set<string>>(new Set());
   const [addingBarcodeFor, setAddingBarcodeFor] = useState<string | null>(null);
   const [newBarcode, setNewBarcode] = useState('');
@@ -100,6 +102,25 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
     });
   }
 
+  const isToric = useMemo(
+    () => variants?.some((v) => v.cylinder !== null) ?? false,
+    [variants],
+  );
+
+  const uniqueCyls = useMemo(
+    () =>
+      [...new Set(variants?.filter((v) => v.cylinder !== null).map((v) => v.cylinder as string) ?? [])]
+        .sort((a, b) => Number(a) - Number(b)),
+    [variants],
+  );
+
+  const uniqueAxes = useMemo(
+    () =>
+      [...new Set(variants?.filter((v) => v.axis !== null).map((v) => String(v.axis)) ?? [])]
+        .sort((a, b) => Number(a) - Number(b)),
+    [variants],
+  );
+
   if (!variants) {
     return (
       <Card>
@@ -109,7 +130,12 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
   }
 
   const activeCount = variants.filter((v) => v.isActive).length;
-  const display = showInactive ? variants : variants.filter((v) => v.isActive);
+  const display = useMemo(() => {
+    let list = showInactive ? variants : variants.filter((v) => v.isActive);
+    if (filterCyl !== '') list = list.filter((v) => v.cylinder === filterCyl);
+    if (filterAxis !== '') list = list.filter((v) => String(v.axis) === filterAxis);
+    return list;
+  }, [variants, showInactive, filterCyl, filterAxis]);
 
   return (
     <Card>
@@ -118,17 +144,50 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
           <CardTitle>도수별 SKU</CardTitle>
           <CardDescription>
             전체 {variants.length}개 도수 · 활성 {activeCount}개
+            {display.length !== variants.length && (
+              <span className="ml-1 text-brand-600">· 필터 {display.length}개 표시</span>
+            )}
           </CardDescription>
         </div>
-        <label className="flex items-center gap-1.5 text-sm text-gray-600">
-          <input
-            type="checkbox"
-            checked={showInactive}
-            onChange={(e) => setShowInactive(e.target.checked)}
-            className="h-4 w-4"
-          />
-          비활성 포함
-        </label>
+        <div className="flex flex-wrap items-center gap-2">
+          {isToric && uniqueCyls.length > 0 && (
+            <select
+              value={filterCyl}
+              onChange={(e) => { setFilterCyl(e.target.value); setFilterAxis(''); }}
+              className="h-8 rounded-lg border border-gray-200 px-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            >
+              <option value="">CYL 전체</option>
+              {uniqueCyls.map((c) => (
+                <option key={c} value={c}>
+                  CYL {Number(c) >= 0 ? '+' : ''}{Number(c).toFixed(2)}
+                </option>
+              ))}
+            </select>
+          )}
+          {isToric && uniqueAxes.length > 0 && (
+            <select
+              value={filterAxis}
+              onChange={(e) => setFilterAxis(e.target.value)}
+              className="h-8 rounded-lg border border-gray-200 px-2 text-xs text-gray-700 focus:outline-none focus:ring-2 focus:ring-brand-100"
+            >
+              <option value="">AXIS 전체</option>
+              {uniqueAxes.map((a) => (
+                <option key={a} value={a}>
+                  AXIS {a}°
+                </option>
+              ))}
+            </select>
+          )}
+          <label className="flex items-center gap-1.5 text-sm text-gray-600">
+            <input
+              type="checkbox"
+              checked={showInactive}
+              onChange={(e) => setShowInactive(e.target.checked)}
+              className="h-4 w-4"
+            />
+            비활성 포함
+          </label>
+        </div>
       </CardHeader>
 
       {error && (
