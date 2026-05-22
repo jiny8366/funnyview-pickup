@@ -449,7 +449,7 @@
       "0011 — 가격 모델 확장 (lenses 7 컬럼 + lens_promotions 테이블 신설, 부가세 포함 저장, 확정 2026-05-19)",
       "0012 — lens_price_entries 테이블 신설 (매입/공급/소비자 기간 적용 가격 시계열, 확정 2026-05-19)",
       "0013 — lens_price_entries.created_by uuid 추가 (가격변동이력의 담당자 컬럼, 확정 2026-05-19)",
-      "0014 — inventory_lots 테이블 신설 + inventory_movements.lot_id/unit_cost_snapshot + order_items.lot_id (FIFO 원가 추적, 확정 2026-05-22)"
+      "0014 — inbound_shipments 테이블 신설 + inventory_lots 테이블 신설(shipmentId 포함, 도수별 FIFO) + inventory_movements.lot_id/unit_cost_snapshot + order_items.lot_id (FIFO 도수별 원가 추적, 확정 2026-05-22)"
     ]
   },
 
@@ -696,76 +696,115 @@
     "rationale": "표준매입가(standardCost) 는 현재 계약 단가이나, 실제 입고 시점마다 단가가 달라질 수 있다. 출고 시 해당 재고가 어떤 입고 로트에서 소진됐는지를 추적해야 정확한 COGS(매출원가) 와 수익률 산출 가능.",
     "principle": "먼저 입고된 로트를 먼저 소진(FIFO). 출고 시 가장 오래된 로트부터 차감하며, 출고 라인에 로트별 단가를 기록해 수익률 정산 근거로 활용.",
 
+    "fifoGranularity": {
+      "unit": "lens_variant (variantId) — 도수 조합(sphere × cylinder × axis) 단위로 FIFO 독립 적용",
+      "rationale": "같은 제품(lens)이라도 도수별로 수요·회전율이 다르고, 입고 수량도 도수별로 다름. 예: '크리스틴 원앤온리' SPH -1.00: 20팩, SPH -1.25: 15팩, SPH -2.00: 8팩 → 각각 독립 FIFO 로트.",
+      "NOT": "제품(lens) 단위 또는 브랜드 단위 FIFO X — 도수가 다르면 물리적으로 다른 재고"
+    },
+
     "dbDesign": {
-      "newTable": {
-        "name": "inventory_lots",
-        "purpose": "입고 로트 원장 — 입고 건별 수량·단가 기록 + FIFO 잔여 추적",
+      "newTable1": {
+        "name": "inbound_shipments",
+        "purpose": "입고 전표 — 한 번의 납품(배송)을 묶는 헤더 레코드. 1전표 = 1공급처 × 1입고일 × N개 도수 품목",
         "fields": [
           "id (uuid PK)",
-          "variantId (FK → lens_variants.id)",
-          "inboundDate (date — 입고 실물 날짜, 정산·FIFO 순서 기준)",
-          "receivedAt (timestamptz — 시스템 등록 일시)",
-          "quantityReceived (int — 입고 수량)",
-          "quantityRemaining (int — FIFO 소진 후 잔여; 초기 = quantityReceived)",
-          "unitCostIncVat (int — 입고 단가 부가세포함 KRW, 실제 지불 금액 기준)",
+          "lensId (FK → lenses.id — 입고 제품, 전표는 단일 제품 단위)",
+          "inboundDate (date — 실물 입고 날짜, FIFO 순서 기준)",
           "supplierId (uuid nullable — 공급처 FK, 추후 suppliers 테이블)",
-          "invoiceRef (text nullable — 세금계산서 또는 거래명세서 번호)",
+          "invoiceRef (text nullable — 세금계산서/거래명세서 번호, 전표 공통)",
           "note (text nullable)",
+          "status (text: draft/confirmed — draft 는 수량 수정 가능, confirmed 는 잠금)",
+          "confirmedAt (timestamptz nullable)",
           "createdBy (uuid FK → users.id)",
           "createdAt (timestamptz)"
         ],
-        "index": ["variantId + inboundDate ASC (FIFO 소진 순서)", "variantId + quantityRemaining > 0 (미소진 로트 조회)"]
+        "note": "1전표에 제품 1개 제한 이유: 도수 구성이 제품마다 다르고, 입고 단가도 제품별로 결정됨. 여러 제품을 한 납품으로 받을 경우 전표를 제품 수만큼 생성."
       },
-      "modifiedTable": {
+      "newTable2": {
+        "name": "inventory_lots",
+        "purpose": "입고 로트 원장 — 도수(variantId) 단위 수량·단가 + FIFO 잔여 추적",
+        "fields": [
+          "id (uuid PK)",
+          "shipmentId (FK → inbound_shipments.id — 소속 전표)",
+          "variantId (FK → lens_variants.id — 도수 단위, FIFO 키)",
+          "quantityReceived (int — 해당 도수 입고 수량)",
+          "quantityRemaining (int — FIFO 소진 후 잔여; 초기 = quantityReceived)",
+          "unitCostIncVat (int — 해당 도수 입고 단가 부가세포함 KRW; 도수별 단가가 동일하면 전표 공통, 다를 경우 행별 입력)",
+          "createdAt (timestamptz)"
+        ],
+        "index": [
+          "variantId + shipment.inboundDate ASC (FIFO 소진 순서 — JOIN 또는 denormalized inboundDate 컬럼)",
+          "variantId WHERE quantityRemaining > 0 (미소진 로트 빠른 조회)"
+        ],
+        "note": "단가(unitCostIncVat) 는 보통 도수에 무관하게 동일하나, 예외(단종 도수 재고 처리 등) 대비 행별 저장."
+      },
+      "modifiedTable1": {
         "name": "inventory_movements",
         "addedField": "lotId (uuid nullable FK → inventory_lots.id) — 출고/예약/조정 시 소진 대상 로트 참조",
-        "addedField2": "unitCostSnapshot (int nullable) — 출고 시점 로트 단가 스냅샷 (로트 삭제·수정 후에도 이력 보존)"
+        "addedField2": "unitCostSnapshot (int nullable) — 출고 시점 로트 단가 스냅샷 (로트 수정 후에도 이력 보존)"
       },
       "modifiedTable2": {
         "name": "order_items",
         "existingField": "unitCost — 이미 존재. 주문 확정 시 FIFO 로트 단가로 채움 (기존 standardCost 기본값 → FIFO 단가로 교체)",
-        "addedField": "lotId (uuid nullable FK → inventory_lots.id) — 어느 로트에서 출고됐는지 추적"
+        "addedField": "lotId (uuid nullable FK → inventory_lots.id) — 어느 로트(도수·전표)에서 출고됐는지 추적"
       }
     },
 
     "algorithm": {
       "inbound": [
-        "1. 입고 처리 시 inventory_lots 에 새 행 INSERT (quantityRemaining = quantityReceived)",
-        "2. inventory.quantityOnHand += quantityReceived",
-        "3. inventory_movements 에 movementType='inbound' + lotId 기록"
+        "1. 입고 전표 생성: inbound_shipments INSERT (제품·입고일·공급처·전표번호)",
+        "2. 도수별 수량 입력: 제품의 활성 lens_variants 목록을 표시 → 각 도수에 입고 수량 입력 (0은 제외)",
+        "3. 확정(confirm) 시 입력된 도수별로 inventory_lots INSERT (quantityRemaining = quantityReceived, unitCostIncVat 기록)",
+        "4. inventory.quantityOnHand += quantityReceived (variantId 별)",
+        "5. inventory_movements INSERT: movementType='inbound', lotId, quantity(+)"
       ],
       "outbound": [
-        "1. 출고 대상 variantId 의 inventory_lots 를 inboundDate ASC 정렬로 조회 (quantityRemaining > 0)",
-        "2. 출고 수량을 오래된 로트부터 순차 차감: lot.quantityRemaining -= consumed",
-        "3. 차감된 수량과 해당 로트 unitCostSnapshot 을 inventory_movements / order_items.unitCost 에 기록",
-        "4. 한 출고가 여러 로트에 걸쳐 소진될 경우 → 가중평균 단가로 order_items.unitCost 기록 (로트별 movements 는 각각)"
+        "1. 피킹(picking) 시 주문 라인의 variantId + 필요 수량 결정",
+        "2. 해당 variantId 의 inventory_lots 를 inboundDate ASC (→ shipment.inboundDate) 정렬로 조회 (quantityRemaining > 0)",
+        "3. 오래된 로트부터 순차 차감: lot.quantityRemaining -= consumed",
+        "4. 차감된 각 로트의 unitCostSnapshot 을 inventory_movements 에 기록",
+        "5. 한 주문 라인이 여러 로트에 걸칠 경우 → 로트별 movements 각각 기록, order_items.unitCost = 가중평균 단가",
+        "6. inventory.quantityOnHand -= totalConsumed (variantId 별)"
       ],
-      "adjust": "재고 실사(adjust) 시 quantityRemaining 직접 수정 + 조정 note 필수. unitCost 는 직전 로트 단가 인계.",
-      "return": "반품(return) 은 새 inbound 로트로 재등록 (단가 = 원 출고 로트 단가). 원 로트 복원 X."
+      "adjust": "재고 실사(adjust): inventory_lots.quantityRemaining 직접 수정 + 조정 note 필수. unitCost 는 해당 로트 원가 유지.",
+      "return": "반품(return): 새 inbound_shipments(status=confirmed) + inventory_lots 생성. unitCostIncVat = 원 출고 로트 단가. 원 로트 복원 X (이미 소진 처리된 로트는 되돌리지 않음)."
+    },
+
+    "inboundUi": {
+      "page": "/warehouse/inbound (staff portal)",
+      "flow": [
+        "1. 제품 검색 (렌즈명 또는 제품코드) → 선택",
+        "2. 전표 헤더 입력: 입고일, 공급처, 전표번호(선택), 기본 단가(전 도수 공통 적용, 이후 개별 수정 가능)",
+        "3. 해당 제품의 활성 도수 목록(파워챠트 또는 테이블) 표시 → 각 도수별 입고 수량 입력",
+        "4. 도수별 단가 개별 조정 필요 시 수량 옆 단가 셀 직접 편집",
+        "5. 미리보기(합계 수량·금액) → '확정' 버튼 → DB 저장 + 재고 즉시 반영",
+        "6. 확정 후 수정 불가 (오류 시 조정(adjust) 이동 처리)"
+      ],
+      "display": "도수 테이블: SPH 행 × CYL 열 또는 단순 리스트 (도수 조합이 많을 경우 리스트 권장). 수량 0 행은 저장 제외."
     },
 
     "profitCalculation": {
-      "formula": "수익 = (order_items.lineTotal — order_items.unitCost × quantity) per 라인, SUM per 주문/기간",
+      "formula": "수익 = (order_items.lineTotal − order_items.unitCost × quantity) per 라인, SUM per 주문/기간",
       "margin": "수익률 = 수익 / lineTotal × 100",
-      "groupBy": ["주문별", "제품별", "가맹점별", "월별"],
-      "note": "unitCost 는 FIFO 로트 단가이므로 standardCost 와 다를 수 있음. 수익률 리포트는 항상 order_items.unitCost 기준 사용."
+      "groupBy": ["주문별", "제품별", "도수별(variantId)", "가맹점별", "월별"],
+      "note": "unitCost 는 FIFO 로트 단가이므로 standardCost 와 다를 수 있음. 수익률 리포트는 항상 order_items.unitCost 기준 사용. 도수별 수익률 편차를 통해 인기 도수·재고 전략 수립 가능."
     },
 
-    "migration": "0014 — inventory_lots 테이블 신설 + inventory_movements.lot_id/unit_cost_snapshot 컬럼 추가 + order_items.lot_id 컬럼 추가 (FIFO 원가 추적, 확정 2026-05-22)",
+    "migration": "0014 — inbound_shipments 테이블 신설 + inventory_lots 테이블 신설(shipmentId 포함) + inventory_movements.lot_id/unit_cost_snapshot + order_items.lot_id (FIFO 도수별 원가 추적, 확정 2026-05-22)",
 
     "uiTouchpoints": [
-      "staff portal 입고 처리 (/warehouse/inbound) — 입고일·수량·단가 입력 → inventory_lots INSERT",
-      "staff portal 픽리스트 (/warehouse/picklist) — 피킹 시 FIFO 로트 자동 차감",
-      "admin portal 수익률 리포트 (/admin/profit-report) — 기간·가맹점·제품 필터, FIFO 단가 기반",
-      "admin portal 재고 현황 (/warehouse/inventory) — 로트별 잔여 수량·단가 열람"
+      "staff portal 입고 처리 (/warehouse/inbound) — 제품 선택 → 전표 헤더 → 도수별 수량 입력 → 확정",
+      "staff portal 픽리스트 (/warehouse/picklist) — 피킹 시 도수(variantId) 단위 FIFO 로트 자동 차감",
+      "admin portal 수익률 리포트 (/admin/profit-report) — 기간·가맹점·제품·도수 필터, FIFO 단가 기반",
+      "admin portal 재고 현황 (/warehouse/inventory) — 도수별 로트 잔여 수량·입고가·입고일 열람"
     ],
 
     "lib": "src/lib/inventory-fifo.ts (미래 구현)",
     "functions": [
+      "createInboundShipment(input, variantLines[], tx) → { shipment, lots[] }",
       "consumeLotsForVariant(variantId, qty, tx) → FifoConsumeResult[] (로트별 소진 내역)",
       "weightedAvgCost(consumes: FifoConsumeResult[]) → int (가중평균 단가)",
-      "createInboundLot(input, tx) → inventory_lots row",
-      "getLotSummary(variantId) → { totalQty, weightedCost, oldestDate }"
+      "getLotSummary(variantId) → { totalQty, weightedCost, oldestInboundDate, lotCount }"
     ]
   },
 
@@ -910,7 +949,7 @@
       "후기/리뷰",
       "도수별 SKU 일괄 생성 마법사",
       "카테고리 자동 분류 (직경/기능/가격)",
-      "FIFO 원가 추적 구현 — migration 0014 + src/lib/inventory-fifo.ts + staff 입고 UI + 수익률 리포트 (/admin/profit-report)"
+      "FIFO 원가 추적 구현 — migration 0014 + src/lib/inventory-fifo.ts + staff 입고 UI(/warehouse/inbound, 도수별 수량 입력) + admin 수익률 리포트(/admin/profit-report, 도수별 그룹)"
     ],
     "lowPriority": [
       "자체 도메인 (funnyview.kr) 전환",
