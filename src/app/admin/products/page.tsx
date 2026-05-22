@@ -55,6 +55,7 @@ const PAGE_SIZE = 50;
 
 export default function AdminProductsPage() {
   const [items, setItems] = useState<LensRow[] | null>(null);
+  const [brandMap, setBrandMap] = useState<Record<string, string>>({});
   const [q, setQ] = useState('');
   const [brands, setBrands] = useState<Set<string>>(new Set());
   const [types, setTypes] = useState<Set<string>>(new Set());
@@ -77,6 +78,16 @@ export default function AdminProductsPage() {
 
   useEffect(() => {
     loadItems();
+    fetch('/api/admin/brands')
+      .then((r) => r.json())
+      .then((j) => {
+        const map: Record<string, string> = {};
+        (j.brands ?? []).forEach((b: { nameKo: string; nameEn: string }) => {
+          map[b.nameKo] = b.nameEn;
+        });
+        setBrandMap(map);
+      })
+      .catch(() => {});
   }, []);
 
   async function bulkActivate() {
@@ -106,12 +117,15 @@ export default function AdminProductsPage() {
   }
 
   // 사용 가능한 필터 옵션 (실제 데이터에서 추출)
+  const toBrandEn = (nameKo: string) => brandMap[nameKo] ?? nameKo;
+
   const availableBrands = useMemo(() => {
     if (!items) return [];
     const s = new Set<string>();
     items.forEach((it) => s.add(it.brand));
-    return Array.from(s).sort();
-  }, [items]);
+    return Array.from(s).sort((a, b) => toBrandEn(a).localeCompare(toBrandEn(b)));
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [items, brandMap]);
 
   const availableTypes = useMemo(() => {
     if (!items) return [];
@@ -142,6 +156,7 @@ export default function AdminProductsPage() {
       if (qLower) {
         const match =
           it.brand.toLowerCase().includes(qLower) ||
+          toBrandEn(it.brand).toLowerCase().includes(qLower) ||
           it.name.toLowerCase().includes(qLower) ||
           it.productCode.toLowerCase().includes(qLower) ||
           (it.seriesCode?.toLowerCase().includes(qLower) ?? false);
@@ -165,7 +180,7 @@ export default function AdminProductsPage() {
     const arr = [...filtered];
     arr.sort((a, b) => {
       let cmp = 0;
-      if (sortKey === 'brand') cmp = a.brand.localeCompare(b.brand) || a.name.localeCompare(b.name);
+      if (sortKey === 'brand') cmp = toBrandEn(a.brand).localeCompare(toBrandEn(b.brand)) || a.name.localeCompare(b.name);
       else if (sortKey === 'name') cmp = a.name.localeCompare(b.name);
       else if (sortKey === 'productCode') cmp = a.productCode.localeCompare(b.productCode);
       else if (sortKey === 'price') cmp = a.price - b.price;
@@ -343,7 +358,7 @@ export default function AdminProductsPage() {
                   setBrands(s);
                 }}
               >
-                {b}
+                {toBrandEn(b)}
               </Chip>
             ))}
           </FilterRow>
@@ -470,11 +485,12 @@ export default function AdminProductsPage() {
           sortKey={sortKey}
           sortDir={sortDir}
           onSort={toggleSort}
+          toBrandEn={toBrandEn}
         />
       ) : (
         <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-3">
           {paged.map((it) => (
-            <ProductCard key={it.id} item={it} />
+            <ProductCard key={it.id} item={it} brandEn={toBrandEn(it.brand)} />
           ))}
         </div>
       )}
@@ -601,11 +617,13 @@ function ProductTable({
   sortKey,
   sortDir,
   onSort,
+  toBrandEn,
 }: {
   rows: LensRow[];
   sortKey: SortKey;
   sortDir: SortDir;
   onSort: (k: SortKey) => void;
+  toBrandEn: (nameKo: string) => string;
 }) {
   return (
     <div className="overflow-x-auto rounded-xl border border-gray-200 bg-white">
@@ -640,7 +658,7 @@ function ProductTable({
                   )}
                 </div>
               </td>
-              <td className="px-3 py-2 text-xs text-gray-700">{it.brand}</td>
+              <td className="px-3 py-2 text-xs text-gray-700">{toBrandEn(it.brand)}</td>
               <td className="px-3 py-2">
                 <Link href={`/admin/products/${it.id}`} className="font-medium text-gray-900 hover:text-brand-600">
                   {it.name}
@@ -712,7 +730,7 @@ function TypeBadge({ type }: { type: string }) {
   );
 }
 
-function ProductCard({ item }: { item: LensRow }) {
+function ProductCard({ item, brandEn }: { item: LensRow; brandEn: string }) {
   return (
     <Link
       href={`/admin/products/${item.id}`}
@@ -736,7 +754,7 @@ function ProductCard({ item }: { item: LensRow }) {
       <div className="flex flex-1 flex-col gap-1.5 p-4">
         <div className="flex flex-wrap items-center gap-1.5">
           <span className="rounded bg-brand-50 px-1.5 py-0.5 text-[10px] font-medium text-brand-700">
-            {item.brand}
+            {brandEn}
           </span>
           <TypeBadge type={item.lensType} />
           <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">

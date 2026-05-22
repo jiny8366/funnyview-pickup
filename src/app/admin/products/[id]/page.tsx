@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { lenses } from '@/db/schema';
+import { lenses, brands } from '@/db/schema';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { ProductForm } from '@/components/admin/product-form';
 import { LensPromotionsCard } from '@/components/admin/lens-promotions-card';
@@ -21,10 +21,17 @@ export default async function EditProductPage({
   const [row] = await db.select().from(lenses).where(eq(lenses.id, params.id)).limit(1);
   if (!row) notFound();
 
+  const [brandRow] = await db
+    .select({ nameEn: brands.nameEn })
+    .from(brands)
+    .where(eq(brands.nameKo, row.brand))
+    .limit(1);
+  const brandDisplayName = brandRow?.nameEn ?? row.brand;
+
   return (
     <PageWrap>
       <PageHeader
-        title={`${row.brand} ${row.name}`}
+        title={`${brandDisplayName} ${row.name}`}
         description={`제품 코드: ${row.productCode}`}
         actions={
           <Link

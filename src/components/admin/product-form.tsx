@@ -169,7 +169,26 @@ export function ProductForm({
   const [powerList, setPowerList] = useState<
     Array<{ sphere: number; cylinder: number; isActive: boolean }>
   >([]);
+  const [filterCyl, setFilterCyl] = useState<string>('');
   const isToric = form.lensType === 'toric';
+
+  const uniqueCyls = useMemo(
+    () =>
+      isToric
+        ? [...new Set(powerList.map((p) => String(p.cylinder)))].sort(
+            (a, b) => Number(a) - Number(b),
+          )
+        : [],
+    [isToric, powerList],
+  );
+
+  const displayedPowerList = useMemo(
+    () =>
+      filterCyl === ''
+        ? powerList
+        : powerList.filter((p) => String(p.cylinder) === filterCyl),
+    [powerList, filterCyl],
+  );
 
   // 자동 생성 — 브랜드/시리즈/팩 수량 변경 시 제품명 갱신
   useEffect(() => {
@@ -325,7 +344,7 @@ export function ProductForm({
                 <option value="">— 선택 —</option>
                 {brands.map((b) => (
                   <option key={b.id} value={b.nameKo}>
-                    {b.nameKo} ({b.code})
+                    {b.nameEn} ({b.code})
                   </option>
                 ))}
               </select>
@@ -520,16 +539,32 @@ export function ProductForm({
               </div>
             ) : (
               <div className="space-y-2">
-                <div className="flex items-baseline justify-between gap-2">
-                  <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
-                    제품 도수 리스트 ({powerList.length}) ·{' '}
-                    <span className="text-emerald-700">
-                      사용 {powerList.filter((p) => p.isActive).length}
-                    </span>{' '}
-                    /{' '}
-                    <span className="text-gray-400">
-                      제외 {powerList.filter((p) => !p.isActive).length}
-                    </span>
+                <div className="flex flex-wrap items-center justify-between gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <div className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                      제품 도수 리스트 ({powerList.length}) ·{' '}
+                      <span className="text-emerald-700">
+                        사용 {powerList.filter((p) => p.isActive).length}
+                      </span>{' '}
+                      /{' '}
+                      <span className="text-gray-400">
+                        제외 {powerList.filter((p) => !p.isActive).length}
+                      </span>
+                    </div>
+                    {isToric && uniqueCyls.length > 0 && (
+                      <select
+                        value={filterCyl}
+                        onChange={(e) => setFilterCyl(e.target.value)}
+                        className="h-6 rounded border border-gray-300 px-1.5 text-[11px] text-gray-700 focus:outline-none focus:ring-1 focus:ring-brand-300"
+                      >
+                        <option value="">CYL 전체</option>
+                        {uniqueCyls.map((c) => (
+                          <option key={c} value={c}>
+                            CYL {Number(c) >= 0 ? '+' : ''}{Number(c).toFixed(2)}
+                          </option>
+                        ))}
+                      </select>
+                    )}
                   </div>
                   <div className="flex gap-1.5">
                     <button
@@ -587,7 +622,7 @@ export function ProductForm({
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50">
-                      {powerList.map((p, i) => (
+                      {displayedPowerList.map((p, i) => (
                         <tr
                           key={`${p.sphere}-${p.cylinder}-${i}`}
                           className={`hover:bg-gray-50 ${
