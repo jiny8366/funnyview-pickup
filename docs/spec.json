@@ -966,7 +966,36 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:seed": "tsx scripts/seed.ts",
-    "db:import-jinys": "tsx scripts/import-jinys-stores.ts"
+    "db:import-jinys": "tsx scripts/import-jinys-stores.ts",
+    "db:import-catalog": "tsx scripts/import-jinys-catalog.ts"
+  },
+
+  "jinysCatalog": {
+    "purpose": "지니어스(지니스안경) 공급사 콘택트렌즈 바코드 정보 일괄 import (확정 2026-05-22)",
+    "sourceDrive": "Google Drive '지니어스 콘택트렌즈 바코드 정보' (folder ID 17Mn0UAjAQMoQ8BjKqYU6THyMU_AP5dR5)",
+    "brands": ["아큐브", "클라렌", "쿠퍼", "미광", "바슈롬", "알콘", "클라렌O2O2"],
+    "phase1Done": "아큐브 — 41개 lens / 14,999 도수 / 16,819 바코드 (2026-05-22)",
+    "phase1Remaining": ["클라렌(27)", "쿠퍼(13)", "미광(5)", "바슈롬(45)", "알콘(32)", "클라렌O2O2(8)"],
+    "fixtureFormat": "scripts/fixtures/jinys-catalog/{brand}.json — 각 브랜드별 lenses[] + 도수별 variants[] + 1:N barcodes[]",
+    "importScript": "scripts/import-jinys-catalog.ts (idempotent, bulk upsert)",
+    "run": [
+      "vercel env pull .env.local --environment=production  (Neon DB 자격증명)",
+      "npm run db:import-catalog                              (전체)",
+      "npm run db:import-catalog acuvue                       (특정 브랜드)",
+      "npm run db:import-catalog acuvue --dry-run             (미리보기)"
+    ],
+    "codingConvention": {
+      "brand": "brands.code = 3자 영문 (ACU, CLA, COO, MIK, BNL, ALC, O22)",
+      "series": "product_codes.code(3자) + suffix(2자). 예: OAX+1D = 오아시스 MAX 원데이, OAM+1D = 오아시스 MAX 멀티포컬",
+      "productCode": "lenses.productCode = {brand}-{code}{suffix}-{pack}[-{addCat}|-BC{bc*10}]. 예: ACU-OAM1D-30P-L (LOW ADD)",
+      "sku": "lens_variants.sku = generateSku(productCode, {sph,cyl,axis,addPower}) — 결정적 생성",
+      "barcode": "lens_barcodes — 같은 도수에 GTIN-13 여러 개(재포장/리브랜드) 1:N 지원"
+    },
+    "fields": {
+      "filled": ["productCode", "brand", "name", "lensType", "replacementCycle", "piecesPerBox", "baseCurve (있는 경우)", "seriesCode", "udi_di(첫 바코드)"],
+      "placeholder": ["price=0 (admin 추후 설정)", "standardCost, recommendedRetailPrice 등 가격 정보 (사용자 입력 대기)"],
+      "notFilled": ["diameter, waterContent, material, mfdsPermitNo (식약처 별도 import 필요)"]
+    }
   },
 
   "workflow": {
