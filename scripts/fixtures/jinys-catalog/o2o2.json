@@ -1,0 +1,3014 @@
+{
+  "brand": {
+    "nameKo": "클라렌O2O2",
+    "nameEn": "Clalen O2O2",
+    "code": "CO2"
+  },
+  "sourceFolder": "지니어스 콘택트렌즈 바코드 정보 / 클라렌O2O2 바코드 정보",
+  "driveFolderId": "1_0S0K9D_FyyqV4DRGYOXfp_uvcq79Nl5",
+  "fileCount": 8,
+  "totalVariants": 351,
+  "totalBarcodes": 0,
+  "lenses": [
+    {
+      "sourceProductName": "O2O2 애쉬브라운EX",
+      "productCode": "CO2-O2BEX-1P",
+      "displayName": "O2O2 애쉬브라운EX",
+      "seriesCode": "CO2-O2BEX",
+      "series": {
+        "code": "O2B",
+        "suffix": "EX",
+        "nameKo": "O2O2 애쉬브라운 EX",
+        "nameEn": "O2O2 Ash Brown EX"
+      },
+      "brand": "클라렌O2O2",
+      "brandCode": "CO2",
+      "lensType": "color",
+      "replacementCycle": "1day",
+      "piecesPerBox": 1,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 30,
+      "barcodeCount": 0,
+      "variants": [
+        {
+          "sphere": 0.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -10.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "O2O2 애쉬브라운 토릭",
+      "productCode": "CO2-O2BTR-1P",
+      "displayName": "O2O2 애쉬브라운 토릭",
+      "seriesCode": "CO2-O2BTR",
+      "series": {
+        "code": "O2B",
+        "suffix": "TR",
+        "nameKo": "O2O2 애쉬브라운 토릭",
+        "nameEn": "O2O2 Ash Brown Toric"
+      },
+      "brand": "클라렌O2O2",
+      "brandCode": "CO2",
+      "lensType": "toric",
+      "replacementCycle": "1day",
+      "piecesPerBox": 1,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 84,
+      "barcodeCount": 0,
+      "variants": [
+        {
+          "sphere": 0.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": 0.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": 0.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "O2O2 오투오투원데이 투명",
+      "productCode": "CO2-O2C1D-1P",
+      "displayName": "O2O2 오투오투원데이 투명",
+      "seriesCode": "CO2-O2C1D",
+      "series": {
+        "code": "O2C",
+        "suffix": "1D",
+        "nameKo": "O2O2 클리어 원데이",
+        "nameEn": "O2O2 Clear 1Day"
+      },
+      "brand": "클라렌O2O2",
+      "brandCode": "CO2",
+      "lensType": "spherical",
+      "replacementCycle": "1day",
+      "piecesPerBox": 1,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 33,
+      "barcodeCount": 0,
+      "variants": [
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -10.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -10.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -11.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -11.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -12.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "O2O2 애쉬그레이EX",
+      "productCode": "CO2-O2GEX-1P",
+      "displayName": "O2O2 애쉬그레이EX",
+      "seriesCode": "CO2-O2GEX",
+      "series": {
+        "code": "O2G",
+        "suffix": "EX",
+        "nameKo": "O2O2 애쉬그레이 EX",
+        "nameEn": "O2O2 Ash Gray EX"
+      },
+      "brand": "클라렌O2O2",
+      "brandCode": "CO2",
+      "lensType": "color",
+      "replacementCycle": "1day",
+      "piecesPerBox": 1,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 30,
+      "barcodeCount": 0,
+      "variants": [
+        {
+          "sphere": 0.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -10.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "O2O2 블랜딩헤이즐EX",
+      "productCode": "CO2-O2HEX-1P",
+      "displayName": "O2O2 블랜딩헤이즐EX",
+      "seriesCode": "CO2-O2HEX",
+      "series": {
+        "code": "O2H",
+        "suffix": "EX",
+        "nameKo": "O2O2 블랜딩 헤이즐 EX",
+        "nameEn": "O2O2 Blending Hazel EX"
+      },
+      "brand": "클라렌O2O2",
+      "brandCode": "CO2",
+      "lensType": "color",
+      "replacementCycle": "1day",
+      "piecesPerBox": 1,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 30,
+      "barcodeCount": 0,
+      "variants": [
+        {
+          "sphere": 0.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -10.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "O2O2 블랜딩로즈EX",
+      "productCode": "CO2-O2REX-1P",
+      "displayName": "O2O2 블랜딩로즈EX",
+      "seriesCode": "CO2-O2REX",
+      "series": {
+        "code": "O2R",
+        "suffix": "EX",
+        "nameKo": "O2O2 블랜딩 로즈 EX",
+        "nameEn": "O2O2 Blending Rose EX"
+      },
+      "brand": "클라렌O2O2",
+      "brandCode": "CO2",
+      "lensType": "color",
+      "replacementCycle": "1day",
+      "piecesPerBox": 1,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 30,
+      "barcodeCount": 0,
+      "variants": [
+        {
+          "sphere": 0.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -10.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "O2O2 세피아초코EX",
+      "productCode": "CO2-O2SEX-1P",
+      "displayName": "O2O2 세피아초코EX",
+      "seriesCode": "CO2-O2SEX",
+      "series": {
+        "code": "O2S",
+        "suffix": "EX",
+        "nameKo": "O2O2 세피아초코 EX",
+        "nameEn": "O2O2 Sepia Choco EX"
+      },
+      "brand": "클라렌O2O2",
+      "brandCode": "CO2",
+      "lensType": "color",
+      "replacementCycle": "1day",
+      "piecesPerBox": 1,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 30,
+      "barcodeCount": 0,
+      "variants": [
+        {
+          "sphere": 0.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.5,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -10.0,
+          "cylinder": null,
+          "axis": null,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        }
+      ]
+    },
+    {
+      "sourceProductName": "O2O2 세피아초코 토릭",
+      "productCode": "CO2-O2STR-1P",
+      "displayName": "O2O2 세피아초코 토릭",
+      "seriesCode": "CO2-O2STR",
+      "series": {
+        "code": "O2S",
+        "suffix": "TR",
+        "nameKo": "O2O2 세피아초코 토릭",
+        "nameEn": "O2O2 Sepia Choco Toric"
+      },
+      "brand": "클라렌O2O2",
+      "brandCode": "CO2",
+      "lensType": "toric",
+      "replacementCycle": "1day",
+      "piecesPerBox": 1,
+      "baseCurve": null,
+      "addCategory": null,
+      "addPowerValue": null,
+      "variantCount": 84,
+      "barcodeCount": 0,
+      "variants": [
+        {
+          "sphere": 0.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": 0.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": 0.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -0.75,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.25,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -1.75,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.25,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -2.75,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.25,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -3.75,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.25,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -4.75,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -5.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -6.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -7.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -8.5,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": -0.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": -1.25,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        },
+        {
+          "sphere": -9.0,
+          "cylinder": -1.75,
+          "axis": 180,
+          "addPower": null,
+          "barcodes": [],
+          "supplierUnitNos": []
+        }
+      ]
+    }
+  ]
+}
