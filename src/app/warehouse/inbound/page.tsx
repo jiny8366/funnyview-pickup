@@ -40,8 +40,12 @@ interface InboundLog {
   id: string;
   displayName: string;
   quantity: number;
+  unitCost: number;
   at: string;
-  newOnHand: number;
+}
+
+function todayISO(): string {
+  return new Date().toISOString().slice(0, 10);
 }
 
 export default function WarehouseInboundPage() {
@@ -50,6 +54,9 @@ export default function WarehouseInboundPage() {
   const [result, setResult] = useState<LookupResult | null>(null);
   const [busy, setBusy] = useState(false);
   const [quantity, setQuantity] = useState(1);
+  const [unitCost, setUnitCost] = useState<number>(0);
+  const [inboundDate, setInboundDate] = useState<string>(todayISO());
+  const [invoiceRef, setInvoiceRef] = useState<string>('');
   const [continuous, setContinuous] = useState(true);
   const [note, setNote] = useState('');
   const [logs, setLogs] = useState<InboundLog[]>([]);
@@ -89,6 +96,10 @@ export default function WarehouseInboundPage() {
 
   async function commit() {
     if (!result?.match) return;
+    if (!Number.isFinite(unitCost) || unitCost < 0) {
+      setError('단가를 입력하세요 (부가세 포함 KRW)');
+      return;
+    }
     setBusy(true);
     setError(null);
     try {
@@ -98,28 +109,32 @@ export default function WarehouseInboundPage() {
         body: JSON.stringify({
           variantId: result.match.variant.id,
           quantity,
+          unitCostIncVat: unitCost,
+          inboundDate,
+          invoiceRef: invoiceRef || null,
           note: note || null,
         }),
       });
       const j = await res.json();
       if (!res.ok) {
-        setError(j.error ?? '입고 실패');
+        setError(j.detail || j.error || '입고 실패');
         return;
       }
       setLogs((p) => [
         {
-          id: j.movement.id,
+          id: j.lot.id,
           displayName: result.match!.displayName,
           quantity,
+          unitCost,
           at: new Date().toLocaleTimeString('ko-KR'),
-          newOnHand: j.inventory.quantityOnHand,
         },
         ...p,
       ]);
-      // 다음 스캔 준비
+      // 다음 스캔 준비 (전표 정보는 유지, 도수/수량/단가만 리셋)
       setRaw('');
       setResult(null);
       setQuantity(1);
+      // unitCost 는 유지 — 같은 전표에서 도수만 다른 케이스 빈번
       inputRef.current?.focus();
     } finally {
       setBusy(false);
@@ -153,6 +168,55 @@ export default function WarehouseInboundPage() {
         </label>
       </header>
 
+      {/* 전표 헤더 (입고일 + 전표번호 + 단가 — 같은 전표 동안 유지) */}
+      <Card>
+        <CardHeader>
+          <div>
+            <CardTitle>전표 정보</CardTitle>
+            <CardDescription>같은 입고일/전표는 아래 정보를 한 번만 설정 — 도수만 바꿔가며 연속 스캔</CardDescription>
+          </div>
+        </CardHeader>
+        <CardBody>
+          <div className="grid gap-3 sm:grid-cols-3">
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">입고일</label>
+              <input
+                type="date"
+                value={inboundDate}
+                onChange={(e) => setInboundDate(e.target.value)}
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">전표번호 (선택)</label>
+              <input
+                type="text"
+                value={invoiceRef}
+                onChange={(e) => setInvoiceRef(e.target.value)}
+                placeholder="세금계산서 / 거래명세서 번호"
+                className="input"
+              />
+            </div>
+            <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">
+                단가 (부가세 포함 KRW) <span className="text-amber-600">*</span>
+              </label>
+              <input
+                type="number"
+                min={0}
+                value={unitCost || ''}
+                onChange={(e) => setUnitCost(Math.max(0, Number(e.target.value) || 0))}
+                placeholder="예: 8500"
+                className="input"
+              />
+            </div>
+          </div>
+          <p className="mt-2 text-[11px] text-gray-500">
+            ⓘ 단가는 FIFO 원가 정산에 사용됩니다. 도수마다 단가가 다르면 매 스캔 후 수정 가능.
+          </p>
+        </CardBody>
+      </Card>
+
       {/* 스캔 입력 */}
       <Card>
         <CardBody>
@@ -181,14 +245,29 @@ export default function WarehouseInboundPage() {
       </Card>
 
       {/* 매칭 결과 */}
-      {result && <MatchPanel result={result} quantity={quantity} setQuantity={setQuantity} note={note} setNote={setNote} onCommit={commit} onCancel={cancel} busy={busy} />}
+      {result && (
+        <MatchPanel
+          result={result}
+          quantity={quantity}
+          setQuantity={setQuantity}
+          unitCost={unitCost}
+          setUnitCost={setUnitCost}
+          note={note}
+          setNote={setNote}
+          onCommit={commit}
+          onCancel={cancel}
+          busy={busy}
+        />
+      )}
 
       {/* 이번 세션 입고 큐 */}
       <Card>
         <CardHeader>
           <div>
             <CardTitle>이번 세션 입고 ({logs.length})</CardTitle>
-            <CardDescription>오늘 처리된 입고 — 새로고침 시 초기화 (감사로그는 영구 보관)</CardDescription>
+            <CardDescription>
+              오늘 처리된 입고 — 새로고침 시 화면 초기화 (DB inbound_shipments 는 영구 보관)
+            </CardDescription>
           </div>
           {logs.length > 0 && (
             <button
@@ -214,7 +293,7 @@ export default function WarehouseInboundPage() {
                   <div className="min-w-0 flex-1">
                     <div className="truncate text-sm text-gray-900">{l.displayName}</div>
                     <div className="text-xs text-gray-500">
-                      {l.at} · 재고 {l.newOnHand}팩
+                      {l.at} · 단가 ₩{l.unitCost.toLocaleString()}
                     </div>
                   </div>
                   <span className="rounded-full bg-emerald-50 px-2.5 py-1 text-xs font-medium text-emerald-700">
@@ -234,6 +313,8 @@ function MatchPanel({
   result,
   quantity,
   setQuantity,
+  unitCost,
+  setUnitCost,
   note,
   setNote,
   onCommit,
@@ -243,6 +324,8 @@ function MatchPanel({
   result: LookupResult;
   quantity: number;
   setQuantity: (n: number) => void;
+  unitCost: number;
+  setUnitCost: (n: number) => void;
   note: string;
   setNote: (s: string) => void;
   onCommit: () => void;
@@ -344,7 +427,7 @@ function MatchPanel({
           </button>
         </div>
 
-        <div className="mt-4 grid gap-3 sm:grid-cols-[120px_1fr_auto]">
+        <div className="mt-4 grid gap-3 sm:grid-cols-[120px_140px_1fr_auto]">
           <div>
             <label className="mb-1 block text-xs font-medium text-gray-700">
               입고 수량 (팩)
@@ -375,30 +458,61 @@ function MatchPanel({
           </div>
 
           <div>
+            <label className="mb-1 block text-xs font-medium text-gray-700">
+              단가 (₩, VAT 포함)
+            </label>
+            <input
+              type="number"
+              min={0}
+              value={unitCost || ''}
+              onChange={(e) => setUnitCost(Math.max(0, Number(e.target.value) || 0))}
+              placeholder="8,500"
+              className={`h-10 w-full rounded-lg border bg-white px-2 text-center font-mono text-sm focus:outline-none focus:ring-2 ${
+                unitCost > 0
+                  ? 'border-gray-300 focus:border-brand-500 focus:ring-brand-100'
+                  : 'border-amber-300 focus:border-amber-500 focus:ring-amber-100'
+              }`}
+            />
+          </div>
+
+          <div>
             <label className="mb-1 block text-xs font-medium text-gray-700">메모 (선택)</label>
             <input
               type="text"
               value={note}
               onChange={(e) => setNote(e.target.value)}
-              placeholder="공급사·전표번호 등"
+              placeholder="비고"
               className="input"
             />
           </div>
 
           <div className="flex items-end">
-            <Button onClick={onCommit} disabled={busy} className="w-full gap-1.5 sm:w-auto">
+            <Button onClick={onCommit} disabled={busy || unitCost <= 0} className="w-full gap-1.5 sm:w-auto">
               <IconPlus size={16} />
               {busy ? '입고 중...' : `+${quantity}팩 입고`}
             </Button>
           </div>
         </div>
 
-        <div className="mt-3 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">
-          입고 후 재고: <span className="font-semibold text-gray-900">{onHand} → {onHand + quantity}팩</span>
-          {match.lens.piecesPerBox > 0 && (
-            <span className="ml-2 text-gray-400">
-              = {((onHand + quantity) * match.lens.piecesPerBox).toLocaleString()}매
+        <div className="mt-3 grid gap-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600 sm:grid-cols-2">
+          <div>
+            입고 후 재고:{' '}
+            <span className="font-semibold text-gray-900">
+              {onHand} → {onHand + quantity}팩
             </span>
+            {match.lens.piecesPerBox > 0 && (
+              <span className="ml-2 text-gray-400">
+                = {((onHand + quantity) * match.lens.piecesPerBox).toLocaleString()}매
+              </span>
+            )}
+          </div>
+          {unitCost > 0 && (
+            <div className="sm:text-right">
+              로트 총액:{' '}
+              <span className="font-semibold text-gray-900">
+                ₩{(unitCost * quantity).toLocaleString()}
+              </span>
+            </div>
           )}
         </div>
       </CardBody>

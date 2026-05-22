@@ -10,6 +10,7 @@ import {
   stores,
   users,
 } from '@/db/schema';
+import { consumeLotsForVariant, weightedAvgCost } from '@/lib/inventory-fifo';
 import { dispatchNotification } from '@/lib/notifications/dispatcher';
 import {
   accrueReferralRewardOnComplete,
@@ -134,27 +135,52 @@ export async function markShipped(orderId: string, byUserId: string) {
     }
 
     const items = await tx
-      .select({ variantId: orderItems.variantId, quantity: orderItems.quantity })
+      .select({
+        id: orderItems.id,
+        variantId: orderItems.variantId,
+        quantity: orderItems.quantity,
+      })
       .from(orderItems)
       .where(eq(orderItems.orderId, orderId));
 
+    // FIFO 차감 — 도수별로 가장 오래된 로트부터 소진.
+    // consumeLotsForVariant 가 inventory.quantityOnHand 자동 차감.
+    // quantityReserved 는 별도 감소 (피킹 시 이미 예약된 수량).
     for (const it of items) {
+      const consumes = await consumeLotsForVariant(tx, it.variantId, it.quantity);
+      const avgCost = weightedAvgCost(consumes);
+
+      // 주문 라인에 FIFO 단가 + 첫 로트 ID 기록 (여러 로트일 경우 movements 가 상세)
+      await tx
+        .update(orderItems)
+        .set({
+          unitCost: avgCost,
+          lotId: consumes[0]?.lotId ?? null,
+        })
+        .where(eq(orderItems.id, it.id));
+
+      // 로트별 movements 기록 (감사 / 정산 근거)
+      for (const c of consumes) {
+        await tx.insert(inventoryMovements).values({
+          variantId: it.variantId,
+          movementType: 'outbound',
+          quantity: -c.consumed,
+          lotId: c.lotId,
+          unitCostSnapshot: c.unitCostIncVat,
+          referenceType: 'order',
+          referenceId: orderId,
+          performedBy: byUserId,
+        });
+      }
+
+      // 예약 수량 해제 (피킹 시 reserved 됐던 분)
       await tx
         .update(inventory)
         .set({
-          quantityOnHand: sql`${inventory.quantityOnHand} - ${it.quantity}`,
-          quantityReserved: sql`${inventory.quantityReserved} - ${it.quantity}`,
+          quantityReserved: sql`GREATEST(${inventory.quantityReserved} - ${it.quantity}, 0)`,
           updatedAt: new Date(),
         })
         .where(eq(inventory.variantId, it.variantId));
-      await tx.insert(inventoryMovements).values({
-        variantId: it.variantId,
-        movementType: 'outbound',
-        quantity: -it.quantity,
-        referenceType: 'order',
-        referenceId: orderId,
-        performedBy: byUserId,
-      });
     }
 
     await tx

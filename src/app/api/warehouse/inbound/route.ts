@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
-import { eq, sql } from 'drizzle-orm';
+import { eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { inventory, inventoryMovements, lensVariants } from '@/db/schema';
+import { lensVariants } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { createInboundShipment } from '@/lib/inventory-fifo';
 
 export const dynamic = 'force-dynamic';
 
@@ -16,15 +17,22 @@ async function requireStaff() {
 /**
  * POST /api/warehouse/inbound
  *   body: {
- *     variantId: string,
- *     quantity:  number (팩 수, 양수),
- *     note?:     string,
- *     supplier?: string,  // 공급사 (note 에 부가 정보로 기록)
+ *     variantId:        string,
+ *     quantity:         number  (팩 수, 양수),
+ *     unitCostIncVat:   number  (단위 입고가, 부가세포함 KRW),
+ *     inboundDate?:     string  (YYYY-MM-DD, 기본 오늘),
+ *     invoiceRef?:      string  (전표번호),
+ *     supplierId?:      string,
+ *     note?:            string,
  *   }
  *
- *   결과:
- *     - inventory.quantity_on_hand += quantity
- *     - inventory_movements 에 inbound 기록
+ *   동작 (FIFO 백엔드 사용):
+ *     - inbound_shipments: 1행 INSERT (lensId 자동 도출)
+ *     - inventory_lots:    1행 INSERT (quantityRemaining = quantity)
+ *     - inventory:         quantity_on_hand += quantity (upsert)
+ *     - inventory_movements: 'inbound' 이동 1행 (lot_id, unit_cost_snapshot 포함)
+ *
+ *   결과: { ok, shipment, lot, inventory, movement }
  */
 export async function POST(req: Request) {
   const user = await requireStaff();
@@ -33,14 +41,28 @@ export async function POST(req: Request) {
   const body = await req.json().catch(() => ({}));
   const variantId = typeof body.variantId === 'string' ? body.variantId : '';
   const quantity = Number(body.quantity);
+  const unitCostIncVat = Number(body.unitCostIncVat);
+  const inboundDate =
+    typeof body.inboundDate === 'string' && body.inboundDate
+      ? body.inboundDate
+      : new Date().toISOString().slice(0, 10);
+  const invoiceRef = typeof body.invoiceRef === 'string' ? body.invoiceRef : null;
+  const supplierId = typeof body.supplierId === 'string' ? body.supplierId : null;
   const note = typeof body.note === 'string' ? body.note : null;
 
   if (!variantId || !Number.isInteger(quantity) || quantity <= 0) {
     return NextResponse.json({ error: 'INVALID_PARAMS' }, { status: 400 });
   }
+  if (!Number.isFinite(unitCostIncVat) || unitCostIncVat < 0) {
+    return NextResponse.json(
+      { error: 'INVALID_UNIT_COST', detail: '단가는 0 이상의 숫자여야 합니다' },
+      { status: 400 },
+    );
+  }
 
+  // variant → lensId 도출
   const [variant] = await db
-    .select()
+    .select({ id: lensVariants.id, lensId: lensVariants.lensId })
     .from(lensVariants)
     .where(eq(lensVariants.id, variantId))
     .limit(1);
@@ -48,43 +70,34 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'VARIANT_NOT_FOUND' }, { status: 404 });
   }
 
-  // upsert inventory
-  await db
-    .insert(inventory)
-    .values({
-      variantId,
-      quantityOnHand: quantity,
-    })
-    .onConflictDoUpdate({
-      target: inventory.variantId,
-      set: {
-        quantityOnHand: sql`${inventory.quantityOnHand} + ${quantity}`,
-        updatedAt: new Date(),
-      },
+  try {
+    const result = await db.transaction(async (tx) => {
+      return await createInboundShipment(tx, {
+        lensId: variant.lensId,
+        inboundDate,
+        supplierId,
+        invoiceRef,
+        note,
+        createdBy: user.id,
+        items: [
+          {
+            variantId,
+            quantity,
+            unitCostIncVat: Math.round(unitCostIncVat),
+          },
+        ],
+        confirm: true,
+      });
     });
 
-  const [invRow] = await db
-    .select()
-    .from(inventory)
-    .where(eq(inventory.variantId, variantId))
-    .limit(1);
-
-  // 이동 기록 (append-only audit log)
-  const [movement] = await db
-    .insert(inventoryMovements)
-    .values({
-      variantId,
-      movementType: 'inbound',
-      quantity, // 양수 (입고)
-      referenceType: 'inbound',
-      note,
-      performedBy: user.id,
-    })
-    .returning();
-
-  return NextResponse.json({
-    ok: true,
-    inventory: invRow,
-    movement,
-  });
+    return NextResponse.json({
+      ok: true,
+      shipment: result.shipment,
+      lot: result.lots[0],
+    });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : 'UNKNOWN';
+    console.error('inbound error:', e);
+    return NextResponse.json({ error: 'INBOUND_FAILED', detail: msg }, { status: 500 });
+  }
 }
