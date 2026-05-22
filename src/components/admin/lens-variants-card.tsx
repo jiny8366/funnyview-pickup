@@ -55,19 +55,27 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
   useEffect(() => { load(); }, [load]);
 
   async function toggleActive(v: VariantRow) {
-    setBusy(true);
+    const next = !v.isActive;
+    // 낙관적 업데이트: 즉시 화면에 반영
+    setVariants((prev) =>
+      prev?.map((item) => (item.id === v.id ? { ...item, isActive: next } : item)) ?? null,
+    );
+    // 비활성화 시 비활성 항목도 표시해 결과를 확인할 수 있도록
+    if (!next) setShowInactive(true);
     setError(null);
     try {
       await fetch(`/api/admin/lenses/${lensId}/variants`, {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ variantId: v.id, isActive: !v.isActive }),
+        body: JSON.stringify({ variantId: v.id, isActive: next }),
       });
       await load();
     } catch {
+      // 실패 시 롤백
+      setVariants((prev) =>
+        prev?.map((item) => (item.id === v.id ? { ...item, isActive: v.isActive } : item)) ?? null,
+      );
       setError('변경 실패');
-    } finally {
-      setBusy(false);
     }
   }
 
