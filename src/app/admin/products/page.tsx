@@ -67,12 +67,43 @@ export default function AdminProductsPage() {
   const [sortKey, setSortKey] = useState<SortKey>('brand');
   const [sortDir, setSortDir] = useState<SortDir>('asc');
   const [page, setPage] = useState(1);
+  const [bulkBusy, setBulkBusy] = useState(false);
 
-  useEffect(() => {
+  const loadItems = () => {
     fetch('/api/admin/lenses', { cache: 'no-store' })
       .then((r) => r.json())
       .then((j) => setItems(j.lenses ?? []));
+  };
+
+  useEffect(() => {
+    loadItems();
   }, []);
+
+  async function bulkActivate() {
+    const inactiveCount = items?.filter((it) => !it.isActive).length ?? 0;
+    if (inactiveCount === 0) {
+      alert('이미 모두 활성 상태입니다.');
+      return;
+    }
+    if (!confirm(`비활성 제품 ${inactiveCount}개와 해당 도수를 모두 활성화합니다. 진행할까요?`)) return;
+    setBulkBusy(true);
+    try {
+      const res = await fetch('/api/admin/lenses/bulk-activate', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ activate: true, includeVariants: true }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        alert('실패: ' + (j.error ?? j.detail ?? '알 수 없음'));
+        return;
+      }
+      alert(`활성화 완료: 제품 ${j.updatedLenses}개 · 도수 ${j.updatedVariants}개`);
+      loadItems();
+    } finally {
+      setBulkBusy(false);
+    }
+  }
 
   // 사용 가능한 필터 옵션 (실제 데이터에서 추출)
   const availableBrands = useMemo(() => {
@@ -200,12 +231,24 @@ export default function AdminProductsPage() {
         title="제품 마스터"
         description="콘택트렌즈 제품군을 등록하고 관리합니다. 도수별 SKU 는 제품별 상세에서 관리합니다."
         actions={
-          <Link href="/admin/products/new">
-            <Button className="gap-1.5">
-              <IconPlus size={16} />
-              새 제품 등록
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {stats && stats.inactive > 0 && (
+              <Button
+                variant="secondary"
+                className="gap-1.5"
+                disabled={bulkBusy}
+                onClick={bulkActivate}
+              >
+                {bulkBusy ? '처리 중...' : `비활성 ${stats.inactive}개 일괄 활성화`}
+              </Button>
+            )}
+            <Link href="/admin/products/new">
+              <Button className="gap-1.5">
+                <IconPlus size={16} />
+                새 제품 등록
+              </Button>
+            </Link>
+          </div>
         }
       />
 
