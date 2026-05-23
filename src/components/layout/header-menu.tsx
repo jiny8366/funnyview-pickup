@@ -34,10 +34,15 @@ export function HeaderMenu({
   userPermissions,
   showNotifications = true,
   showPushToggle = true,
+  showLogout = true,
+  loggedOutFooter,
   accent = 'gray',
 }: {
   sections: MenuSection[];
   user?: { label: string; sub?: string };
+  showLogout?: boolean;
+  /** showLogout=false 일 때 하단에 표시할 대체 콘텐츠 (로그인 버튼 등) */
+  loggedOutFooter?: ReactNode;
   /**
    * 사용자의 실효 권한 슬러그 목록 (effectivePermissions 결과).
    * 항목의 permission 필드가 있고 이 배열에 없으면 메뉴에서 숨김.
@@ -182,14 +187,18 @@ export function HeaderMenu({
 
           <div className="flex items-center justify-between gap-2 border-t border-gray-100 bg-gray-50 px-4 py-3">
             {showPushToggle ? <PushToggle /> : <span />}
-            <form action="/api/auth/logout" method="post">
-              <button
-                type="submit"
-                className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
-              >
-                로그아웃
-              </button>
-            </form>
+            {showLogout ? (
+              <form action="/api/auth/logout" method="post">
+                <button
+                  type="submit"
+                  className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-100"
+                >
+                  로그아웃
+                </button>
+              </form>
+            ) : (
+              loggedOutFooter ?? <span />
+            )}
           </div>
         </div>
       )}
