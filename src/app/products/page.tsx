@@ -3,6 +3,7 @@
 import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
+import { ShopHeaderNav } from '@/components/shop/shop-header-nav';
 
 interface LensItem {
   id: string;
@@ -171,15 +172,15 @@ function ProductsInner() {
     <div className="min-h-screen bg-white">
       {/* ── Header ─────────────────────────────────────── */}
       <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-sm">
-        <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-3 px-4 py-3.5 md:px-8">
-          <Link href="/" className="text-base font-bold tracking-tight text-gray-900 hover:opacity-70 transition-opacity">
+        <div className="mx-auto flex max-w-screen-xl items-center justify-between gap-3 px-4 py-2 md:px-8 md:py-2.5">
+          <Link href="/" className="text-base font-bold tracking-tight text-gray-900 hover:opacity-70 transition-opacity md:text-lg">
             Funnyview Pickup
           </Link>
-          <nav className="flex items-center gap-5 text-sm">
-            <Link href="/products" className="font-semibold text-gray-900 underline underline-offset-4">
+          <div className="flex items-center gap-3">
+            <Link href="/products" className="hidden text-sm font-semibold text-gray-900 underline underline-offset-4 md:inline">
               렌즈
             </Link>
-            <Link href="/stores" className="text-gray-500 hover:text-gray-900 transition-colors">
+            <Link href="/stores" className="hidden text-sm text-gray-500 hover:text-gray-900 transition-colors md:inline">
               매장찾기
             </Link>
             <Link
@@ -188,13 +189,8 @@ function ProductsInner() {
             >
               주문하기
             </Link>
-            <Link
-              href="/login"
-              className="text-gray-500 hover:text-gray-900 transition-colors"
-            >
-              로그인
-            </Link>
-          </nav>
+            <ShopHeaderNav />
+          </div>
         </div>
       </header>
 
