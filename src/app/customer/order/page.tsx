@@ -44,6 +44,31 @@ interface EyeSelection {
   quantity: number;
 }
 
+type TypeKey = 'all' | 'color' | '1day' | 'extended' | 'toric' | 'multifocal';
+
+const TYPE_TABS: { key: TypeKey; label: string }[] = [
+  { key: 'all',        label: '전체' },
+  { key: 'color',      label: '컬러렌즈' },
+  { key: '1day',       label: '원데이' },
+  { key: 'extended',   label: '장기착용' },
+  { key: 'toric',      label: '난시용' },
+  { key: 'multifocal', label: '다초점' },
+];
+
+function isColored(l: Lens) {
+  return l.lensType === 'color' || l.lensType === 'circle';
+}
+
+function matchesType(l: Lens, key: TypeKey) {
+  if (key === 'all') return true;
+  if (key === 'color') return isColored(l);
+  if (key === '1day') return l.replacementCycle === '1day' && !isColored(l);
+  if (key === 'extended') return l.replacementCycle !== '1day' && !isColored(l) && l.lensType !== 'multifocal';
+  if (key === 'toric') return l.lensType === 'toric';
+  if (key === 'multifocal') return l.lensType === 'multifocal';
+  return true;
+}
+
 export default function CustomerOrderPage() {
   const router = useRouter();
   const [lenses, setLenses] = useState<Lens[]>([]);
@@ -56,6 +81,11 @@ export default function CustomerOrderPage() {
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  // 제품 찾기 필터
+  const [query, setQuery] = useState('');
+  const [typeKey, setTypeKey] = useState<TypeKey>('all');
+  const [brand, setBrand] = useState('');
 
   useEffect(() => {
     Promise.all([
@@ -73,6 +103,27 @@ export default function CustomerOrderPage() {
     () => lenses.find((l) => l.lensId === selectedLensId) ?? null,
     [lenses, selectedLensId],
   );
+
+  const brands = useMemo(
+    () => [...new Set(lenses.map((l) => l.brand))].sort(),
+    [lenses],
+  );
+
+  const filteredLenses = useMemo(() => {
+    let list = lenses;
+    if (brand) list = list.filter((l) => l.brand === brand);
+    list = list.filter((l) => matchesType(l, typeKey));
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      list = list.filter((l) =>
+        l.name.toLowerCase().includes(q) ||
+        l.brand.toLowerCase().includes(q),
+      );
+    }
+    return list;
+  }, [lenses, brand, typeKey, query]);
+
+  const hasFilter = Boolean(brand || typeKey !== 'all' || query.trim());
 
   const total = useMemo(() => {
     let sum = 0;
@@ -128,9 +179,129 @@ export default function CustomerOrderPage() {
 
       {/* 1. 상품 선택 */}
       <section className="space-y-3">
-        <h2 className="text-sm font-semibold text-gray-700">1. 상품 선택</h2>
+        <div className="flex items-baseline justify-between">
+          <h2 className="text-sm font-semibold text-gray-700">1. 상품 선택</h2>
+          {lenses.length > 0 && (
+            <span className="text-xs text-gray-400">
+              {filteredLenses.length === lenses.length
+                ? `${lenses.length}종`
+                : `${filteredLenses.length} / ${lenses.length}종`}
+            </span>
+          )}
+        </div>
+
+        {/* 선택된 제품 요약 (선택 후에도 항상 보임) */}
+        {selectedLens && (
+          <div className="flex items-center gap-3 rounded-2xl border-2 border-brand-600 bg-brand-50 p-2.5">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src={selectedLens.imageUrl ?? `/api/lens-image/${selectedLens.productCode}`}
+              alt={selectedLens.name}
+              className="h-14 w-14 shrink-0 rounded-lg bg-white object-cover"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-[10px] font-medium uppercase tracking-wider text-brand-700">
+                {selectedLens.brand} · 선택됨
+              </p>
+              <p className="truncate text-sm font-semibold text-gray-900">{selectedLens.name}</p>
+              <p className="text-[11px] text-gray-500">
+                {selectedLens.replacementCycle} · {selectedLens.piecesPerBox}매 · {formatKRW(selectedLens.price)}
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={() => {
+                setSelectedLensId(null);
+                setLeftSel({ variantId: null, quantity: 1 });
+                setRightSel({ variantId: null, quantity: 1 });
+              }}
+              className="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:border-gray-400"
+            >
+              변경
+            </button>
+          </div>
+        )}
+
+        {/* 검색바 */}
+        <div className="relative">
+          <svg
+            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+          >
+            <circle cx="11" cy="11" r="7" />
+            <path d="m21 21-4.3-4.3" />
+          </svg>
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="제품명, 브랜드로 검색"
+            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none"
+          />
+          {query && (
+            <button
+              type="button"
+              onClick={() => setQuery('')}
+              aria-label="검색 지우기"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+            >
+              ✕
+            </button>
+          )}
+        </div>
+
+        {/* 타입 필터 */}
+        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
+          {TYPE_TABS.map((t) => (
+            <button
+              key={t.key}
+              type="button"
+              onClick={() => setTypeKey(t.key)}
+              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
+                typeKey === t.key
+                  ? 'bg-gray-900 text-white'
+                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+              }`}
+            >
+              {t.label}
+            </button>
+          ))}
+        </div>
+
+        {/* 브랜드 필터 */}
+        {brands.length > 1 && (
+          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
+            <button
+              type="button"
+              onClick={() => setBrand('')}
+              className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                brand === ''
+                  ? 'border-gray-900 bg-gray-900 text-white'
+                  : 'border-gray-200 text-gray-500 hover:border-gray-400'
+              }`}
+            >
+              전체
+            </button>
+            {brands.map((b) => (
+              <button
+                key={b}
+                type="button"
+                onClick={() => setBrand(brand === b ? '' : b)}
+                className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                  brand === b
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-200 text-gray-500 hover:border-gray-400'
+                }`}
+              >
+                {b}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {/* 결과 */}
         <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {lenses.map((l) => {
+          {filteredLenses.map((l) => {
             const imageSrc = l.imageUrl ?? `/api/lens-image/${l.productCode}`;
             const selected = selectedLensId === l.lensId;
             return (
@@ -181,7 +352,38 @@ export default function CustomerOrderPage() {
               등록된 렌즈가 없습니다
             </div>
           )}
+          {lenses.length > 0 && filteredLenses.length === 0 && (
+            <div className="col-span-full rounded-2xl border border-dashed border-gray-300 p-8 text-center">
+              <p className="text-4xl">🔍</p>
+              <p className="mt-3 text-sm font-medium text-gray-600">조건에 맞는 제품이 없습니다</p>
+              <button
+                type="button"
+                onClick={() => {
+                  setQuery('');
+                  setTypeKey('all');
+                  setBrand('');
+                }}
+                className="mt-3 rounded-full bg-gray-900 px-4 py-1.5 text-xs font-medium text-white hover:bg-gray-700"
+              >
+                필터 초기화
+              </button>
+            </div>
+          )}
         </div>
+
+        {hasFilter && filteredLenses.length > 0 && (
+          <button
+            type="button"
+            onClick={() => {
+              setQuery('');
+              setTypeKey('all');
+              setBrand('');
+            }}
+            className="text-xs text-gray-500 underline hover:text-gray-700"
+          >
+            필터 초기화
+          </button>
+        )}
       </section>
 
       {/* 2. 도수 선택 (좌/우) */}
