@@ -244,6 +244,7 @@ function ShopCard({ lens, featured }: { lens: LensItem; featured?: boolean }) {
   const [liked, setLiked] = useState(false);
   const cycleLabel = CYCLE_LABEL[lens.replacementCycle] ?? lens.replacementCycle;
   const colored = isColored(lens);
+  const imageSrc = lens.imageUrl ?? `/api/lens-image/${lens.productCode}`;
 
   return (
     <Link
@@ -254,17 +255,13 @@ function ShopCard({ lens, featured }: { lens: LensItem; featured?: boolean }) {
     >
       {/* Image */}
       <div className={`relative overflow-hidden bg-gray-100 ${featured ? 'aspect-square sm:aspect-[4/3]' : 'aspect-[3/4]'}`}>
-        {lens.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={lens.imageUrl}
-            alt={lens.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
-            loading="lazy"
-          />
-        ) : (
-          <NoImagePlaceholder lens={lens} />
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageSrc}
+          alt={lens.name}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+          loading="lazy"
+        />
 
         {/* Gradient */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
@@ -333,30 +330,6 @@ function ShopCard({ lens, featured }: { lens: LensItem; featured?: boolean }) {
         </span>
       </div>
     </Link>
-  );
-}
-
-/* ── No-image placeholder ──────────────────────────────── */
-function NoImagePlaceholder({ lens }: { lens: LensItem }) {
-  const colored = isColored(lens);
-  if (colored && lens.colorHex) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-        <div
-          className="relative h-28 w-28 rounded-full shadow-2xl ring-4 ring-white/10"
-          style={{
-            background: `radial-gradient(circle at 35% 35%, ${lens.colorHex}30 0%, ${lens.colorHex}cc 60%, ${lens.colorHex} 100%)`,
-          }}
-        >
-          <div className="absolute inset-0 m-auto h-10 w-10 rounded-full bg-black/40" />
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200">
-      <div className="h-24 w-24 rounded-full border-[3px] border-gray-300 opacity-40" />
-    </div>
   );
 }
 

@@ -32,22 +32,19 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
   const [liked, setLiked] = useState(false);
   const cycle = CYCLE_LABEL[product.replacementCycle] ?? product.replacementCycle;
   const linkHref = href ?? `/customer/order`;
+  const imageSrc = product.imageUrl ?? `/api/lens-image/${product.productCode}`;
 
   return (
     <Link href={linkHref} className="group block focus:outline-none">
       {/* ── Image block ── */}
       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-0.5">
-        {product.imageUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.imageUrl}
-            alt={product.name}
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
-            loading="lazy"
-          />
-        ) : (
-          <NoImage product={product} />
-        )}
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={imageSrc}
+          alt={product.name}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          loading="lazy"
+        />
 
         {/* Dark gradient for text */}
         <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
@@ -108,30 +105,6 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
         </div>
       </div>
     </Link>
-  );
-}
-
-/* ── No-image placeholder ── */
-function NoImage({ product }: { product: ProductCardData }) {
-  const isColor = product.colorHex != null;
-  if (isColor) {
-    return (
-      <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-800 to-gray-900">
-        <div
-          className="relative h-28 w-28 rounded-full shadow-2xl ring-4 ring-white/10"
-          style={{
-            background: `radial-gradient(circle at 35% 35%, ${product.colorHex}30 0%, ${product.colorHex}cc 60%, ${product.colorHex} 100%)`,
-          }}
-        >
-          <div className="absolute inset-0 m-auto h-10 w-10 rounded-full bg-black/40" />
-        </div>
-      </div>
-    );
-  }
-  return (
-    <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-gray-50 to-gray-200">
-      <div className="h-24 w-24 rounded-full border-[3px] border-gray-300 opacity-40" />
-    </div>
   );
 }
 
