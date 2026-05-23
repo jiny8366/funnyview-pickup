@@ -6,6 +6,7 @@ import {
   IconChart,
   IconHome,
   IconLayout,
+  IconPlus,
   IconSettings,
   IconStore,
   IconTag,
@@ -35,7 +36,8 @@ const SECTIONS: MenuSection[] = [
   {
     title: '가맹점',
     items: [
-      { href: '/admin/stores', label: '가맹점', icon: <IconStore size={16} />, permission: 'stores_read' },
+      { href: '/admin/stores', label: '가맹점 목록', icon: <IconStore size={16} />, permission: 'stores_read' },
+      { href: '/admin/stores/new', label: '가맹점 등록', icon: <IconPlus size={16} />, permission: 'stores_write' },
     ],
   },
   {
