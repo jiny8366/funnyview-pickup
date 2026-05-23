@@ -2,6 +2,29 @@
 
 브랜드 제품 이미지를 이 폴더에 넣으면 자동으로 DB의 `lenses.image_url` 에 반영됩니다.
 
+## 🤖 자동 스크래핑 (Mac M1 등에서)
+
+브랜드/리테일러 사이트에서 이미지를 자동 다운로드하는 스크립트가 있습니다:
+
+```bash
+# 1회 설치 (Playwright headless Chrome)
+npm install -D playwright
+npx playwright install chromium
+
+# 스크래핑 실행
+npx tsx scripts/scrape-product-images.ts
+```
+
+동작:
+1. 한국 리테일러 (klenspop 등) 의 컬러렌즈 컬렉션을 순회
+2. 제품 이미지 다운로드 (Cloudflare 등 봇 차단 Playwright 가 우회)
+3. DB 카탈로그와 Korean/English 토큰 fuzzy match
+4. 매칭된 것 → `public/products/{productCode}.jpg`
+5. 매칭 못 한 것 → `public/products/_review/` (사람이 검토 후 이름 바꿔서 옮기기)
+6. 자동으로 마이그레이션 생성기 호출
+
+샌드박스에서는 외부 차단으로 실행 불가. **Mac M1Max 등 외부 네트워크 가능한 환경에서 실행**.
+
 ## 워크플로우 (3단계)
 
 ### 1. 이미지 다운로드 + 저장
