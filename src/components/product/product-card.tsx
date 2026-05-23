@@ -31,7 +31,7 @@ const CYCLE_LABEL: Record<string, string> = {
 export function ProductCard({ product, href }: { product: ProductCardData; href?: string }) {
   const [liked, setLiked] = useState(false);
   const cycle = CYCLE_LABEL[product.replacementCycle] ?? product.replacementCycle;
-  const linkHref = href ?? `/customer/order`;
+  const linkHref = href ?? `/products/${product.productCode}`;
   const imageSrc = product.imageUrl ?? `/api/lens-image/${product.productCode}`;
 
   return (
