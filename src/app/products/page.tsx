@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 
@@ -57,6 +57,14 @@ function matchesType(l: LensItem, key: TypeKey) {
 }
 
 export default function ProductsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-screen bg-white" />}>
+      <ProductsInner />
+    </Suspense>
+  );
+}
+
+function ProductsInner() {
   const params = useSearchParams();
   const [all, setAll] = useState<LensItem[]>([]);
   const [loading, setLoading] = useState(true);
