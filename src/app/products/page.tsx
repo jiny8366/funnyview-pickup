@@ -451,7 +451,7 @@ function FeaturedHero({ lens }: { lens: LensItem }) {
 
   return (
     <Link
-      href="/customer/order"
+      href={`/products/${lens.productCode}`}
       className="group block overflow-hidden rounded-3xl bg-gray-900 transition-all hover:shadow-2xl"
     >
       <div className="grid grid-cols-1 md:grid-cols-5">
@@ -506,7 +506,7 @@ function ShopCard({ lens, compact }: { lens: LensItem; compact?: boolean }) {
 
   return (
     <Link
-      href="/customer/order"
+      href={`/products/${lens.productCode}`}
       className="group block overflow-hidden rounded-2xl bg-gray-50 transition-all hover:shadow-xl hover:-translate-y-0.5"
     >
       <div className={`relative overflow-hidden bg-gray-100 ${compact ? 'aspect-square' : 'aspect-[3/4]'}`}>

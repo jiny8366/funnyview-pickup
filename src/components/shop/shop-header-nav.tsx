@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { HeaderMenu, type MenuSection } from '@/components/layout/header-menu';
+import { CartButton } from './cart-button';
 import { portalUrl } from '@/lib/portal-url';
 
 interface MeUser {
@@ -160,14 +161,17 @@ export function ShopHeaderNav() {
   );
 
   return (
-    <HeaderMenu
-      sections={sections}
-      user={loaded && user ? { label: userLabel ?? '', sub: user.username ?? undefined } : undefined}
-      showNotifications={false}
-      showPushToggle={false}
-      showLogout={Boolean(user)}
-      loggedOutFooter={loggedOutFooter}
-      accent="gray"
-    />
+    <div className="flex items-center gap-1">
+      <CartButton />
+      <HeaderMenu
+        sections={sections}
+        user={loaded && user ? { label: userLabel ?? '', sub: user.username ?? undefined } : undefined}
+        showNotifications={false}
+        showPushToggle={false}
+        showLogout={Boolean(user)}
+        loggedOutFooter={loggedOutFooter}
+        accent="gray"
+      />
+    </div>
   );
 }
