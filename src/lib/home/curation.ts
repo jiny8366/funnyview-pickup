@@ -7,6 +7,7 @@ export type CurationMode = 'best' | 'trending' | 'new' | 'manual';
 
 export interface CuratedLens {
   id: string;
+  productCode: string;
   brand: string;
   name: string;
   lensType: string;
@@ -24,6 +25,7 @@ export interface CuratedLens {
 
 const CURATION_SELECT = {
   id: lenses.id,
+  productCode: lenses.productCode,
   brand: lenses.brand,
   name: lenses.name,
   lensType: lenses.lensType,
@@ -86,6 +88,7 @@ export async function curateLenses(
     const result = await db
       .select({
         id: lenses.id,
+        productCode: lenses.productCode,
         brand: lenses.brand,
         name: lenses.name,
         lensType: lenses.lensType,
@@ -110,6 +113,7 @@ export async function curateLenses(
     const result = await db
       .select({
         id: lenses.id,
+        productCode: lenses.productCode,
         brand: lenses.brand,
         name: lenses.name,
         lensType: lenses.lensType,
@@ -135,6 +139,7 @@ export async function curateLenses(
     const result = await db
       .select({
         id: lenses.id,
+        productCode: lenses.productCode,
         brand: lenses.brand,
         name: lenses.name,
         lensType: lenses.lensType,
@@ -171,6 +176,7 @@ export async function curateLenses(
     const result = await db
       .select({
         id: lenses.id,
+        productCode: lenses.productCode,
         brand: lenses.brand,
         name: lenses.name,
         lensType: lenses.lensType,

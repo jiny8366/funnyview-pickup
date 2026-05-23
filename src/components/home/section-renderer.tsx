@@ -16,6 +16,7 @@ interface BaseSection {
 interface ProductGridSection extends BaseSection {
   lenses?: Array<{
     id: string;
+    productCode?: string;
     brand: string;
     name: string;
     price: number;
@@ -194,7 +195,7 @@ function ProductGridRender({ section }: { section: ProductGridSection }) {
 
   const products = items.map((l) => ({
     id: l.id,
-    productCode: l.id,
+    productCode: l.productCode ?? l.id,
     brand: l.brand,
     name: l.name,
     imageUrl: l.imageUrl ?? null,

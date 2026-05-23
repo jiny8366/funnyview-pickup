@@ -129,32 +129,55 @@ export default function CustomerOrderPage() {
       {/* 1. 상품 선택 */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-700">1. 상품 선택</h2>
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {lenses.map((l) => (
-            <button
-              key={l.lensId}
-              type="button"
-              onClick={() => {
-                setSelectedLensId(l.lensId);
-                setLeftSel({ variantId: null, quantity: 1 });
-                setRightSel({ variantId: null, quantity: 1 });
-              }}
-              className={`rounded-2xl border p-4 text-left transition ${
-                selectedLensId === l.lensId
-                  ? 'border-brand-600 bg-brand-50'
-                  : 'border-gray-200 bg-white hover:border-brand-300'
-              }`}
-            >
-              <div className="text-xs text-gray-500">{l.brand}</div>
-              <div className="font-semibold">{l.name}</div>
-              <div className="mt-1 text-xs text-gray-500">
-                {l.lensType} · {l.replacementCycle} · {l.piecesPerBox}매/박스
-              </div>
-              <div className="mt-2 font-medium text-brand-700">{formatKRW(l.price)}</div>
-            </button>
-          ))}
+        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+          {lenses.map((l) => {
+            const imageSrc = l.imageUrl ?? `/api/lens-image/${l.productCode}`;
+            const selected = selectedLensId === l.lensId;
+            return (
+              <button
+                key={l.lensId}
+                type="button"
+                onClick={() => {
+                  setSelectedLensId(l.lensId);
+                  setLeftSel({ variantId: null, quantity: 1 });
+                  setRightSel({ variantId: null, quantity: 1 });
+                }}
+                className={`group overflow-hidden rounded-2xl border text-left transition ${
+                  selected
+                    ? 'border-brand-600 ring-2 ring-brand-600'
+                    : 'border-gray-200 hover:border-brand-300'
+                }`}
+              >
+                <div className="relative aspect-[3/4] w-full overflow-hidden bg-gray-100">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={imageSrc}
+                    alt={l.name}
+                    loading="lazy"
+                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                  />
+                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
+                  <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5 text-white">
+                    <p className="truncate text-[10px] font-medium opacity-70">{l.brand}</p>
+                    <p className="line-clamp-2 text-xs font-semibold leading-tight">{l.name}</p>
+                  </div>
+                  {selected && (
+                    <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-brand-600 text-white text-sm font-bold shadow">
+                      ✓
+                    </span>
+                  )}
+                </div>
+                <div className="flex items-center justify-between px-3 py-2">
+                  <span className="text-[10px] text-gray-400">
+                    {l.replacementCycle} · {l.piecesPerBox}매
+                  </span>
+                  <span className="text-xs font-bold text-brand-700">{formatKRW(l.price)}</span>
+                </div>
+              </button>
+            );
+          })}
           {lenses.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400 md:col-span-2">
+            <div className="col-span-full rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
               등록된 렌즈가 없습니다
             </div>
           )}
