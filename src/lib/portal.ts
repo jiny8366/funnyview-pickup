@@ -73,10 +73,13 @@ const PORTAL_ALLOWED: Record<Portal, string[]> = {
     '/onboarding',
     '/order',
     '/my',
-    '/stores', // 매장찾기 공개 페이지 (추후 추가 시)
+    '/stores', // 매장찾기 공개 페이지
+    '/products', // 쇼핑 페이지 (필터/검색/추천)
     '/api/auth',
     '/api/orders',
     '/api/lenses',
+    '/api/lens-image', // 동적 SVG placeholder
+    '/api/catalog', // 쇼핑 카탈로그 (컬러 메타데이터 포함)
     '/api/stores',
     '/api/home',
     '/api/notifications',
