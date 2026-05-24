@@ -158,23 +158,28 @@ async function main() {
     console.warn('[jinys-build] 테스트 매장 정리 실패:', (e as Error).message);
   }
 
-  // 4) Jinys 매장 insert
+  // 4) Jinys 매장 일괄 insert (배치 — N+1 회피)
+  const values = unique.map((s, i) => ({
+    code: `J${String(i + 1).padStart(3, '0')}`,
+    name: normalizeName(s.name),
+    phone: s.phone,
+    addressLine1: s.address,
+    commissionRate: '10.00',
+    sortOrder: i,
+  }));
   let inserted = 0;
-  for (let i = 0; i < unique.length; i++) {
-    const s = unique[i];
-    const code = `J${String(i + 1).padStart(3, '0')}`;
-    try {
-      await db.insert(stores).values({
-        code,
-        name: normalizeName(s.name),
-        phone: s.phone,
-        addressLine1: s.address,
-        commissionRate: '10.00',
-        sortOrder: i,
-      });
-      inserted++;
-    } catch (e) {
-      console.warn(`[jinys-build] ${code} insert 실패:`, (e as Error).message);
+  try {
+    const result = await db.insert(stores).values(values).returning({ id: stores.id });
+    inserted = result.length;
+  } catch (e) {
+    console.warn('[jinys-build] 일괄 insert 실패, 개별 fallback:', (e as Error).message);
+    for (const v of values) {
+      try {
+        await db.insert(stores).values(v);
+        inserted++;
+      } catch (err) {
+        console.warn(`[jinys-build] ${v.code} insert 실패:`, (err as Error).message);
+      }
     }
   }
 

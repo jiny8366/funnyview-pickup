@@ -86,23 +86,7 @@ export async function curateLenses(
   if (mode === 'manual') {
     if (manualIds.length === 0) return [];
     const result = await db
-      .select({
-        id: lenses.id,
-        productCode: lenses.productCode,
-        brand: lenses.brand,
-        name: lenses.name,
-        lensType: lenses.lensType,
-        replacementCycle: lenses.replacementCycle,
-        piecesPerBox: lenses.piecesPerBox,
-        price: lenses.price,
-        imageUrl: lenses.imageUrl,
-        diameter: lenses.diameter,
-        colorName: lenses.colorName,
-        colorHex: lenses.colorHex,
-        colorPreviewUrl: lenses.colorPreviewUrl,
-        seriesCode: lenses.seriesCode,
-        isNew: lenses.isNew,
-      })
+      .select(CURATION_SELECT)
       .from(lenses)
       .where(and(eq(lenses.isActive, true), inArray(lenses.id, manualIds)))
       .limit(cap);
@@ -110,51 +94,17 @@ export async function curateLenses(
     const byId = new Map(result.map((r) => [r.id, r]));
     rows = manualIds.map((id) => byId.get(id)).filter(Boolean) as CuratedLens[];
   } else if (mode === 'new') {
-    const result = await db
-      .select({
-        id: lenses.id,
-        productCode: lenses.productCode,
-        brand: lenses.brand,
-        name: lenses.name,
-        lensType: lenses.lensType,
-        replacementCycle: lenses.replacementCycle,
-        piecesPerBox: lenses.piecesPerBox,
-        price: lenses.price,
-        imageUrl: lenses.imageUrl,
-        diameter: lenses.diameter,
-        colorName: lenses.colorName,
-        colorHex: lenses.colorHex,
-        colorPreviewUrl: lenses.colorPreviewUrl,
-        seriesCode: lenses.seriesCode,
-        isNew: lenses.isNew,
-      })
+    rows = await db
+      .select(CURATION_SELECT)
       .from(lenses)
       .where(eq(lenses.isActive, true))
       .orderBy(desc(lenses.createdAt))
       .limit(cap);
-    rows = result;
   } else if (mode === 'trending') {
     // 최근 7일 주문량 가중치 (취소 제외)
     const since = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
-    const result = await db
-      .select({
-        id: lenses.id,
-        productCode: lenses.productCode,
-        brand: lenses.brand,
-        name: lenses.name,
-        lensType: lenses.lensType,
-        replacementCycle: lenses.replacementCycle,
-        piecesPerBox: lenses.piecesPerBox,
-        price: lenses.price,
-        imageUrl: lenses.imageUrl,
-        diameter: lenses.diameter,
-        colorName: lenses.colorName,
-        colorHex: lenses.colorHex,
-        colorPreviewUrl: lenses.colorPreviewUrl,
-        seriesCode: lenses.seriesCode,
-        isNew: lenses.isNew,
-        score: sql<number>`COALESCE(SUM(${orderItems.quantity}), 0)::int`,
-      })
+    rows = await db
+      .select(CURATION_SELECT)
       .from(lenses)
       .leftJoin(lensVariants, eq(lensVariants.lensId, lenses.id))
       .leftJoin(orderItems, eq(orderItems.variantId, lensVariants.id))
@@ -170,27 +120,10 @@ export async function curateLenses(
       .groupBy(lenses.id)
       .orderBy(sql`COALESCE(SUM(${orderItems.quantity}), 0) DESC`, sql`${lenses.createdAt} DESC`)
       .limit(cap);
-    rows = result.map(({ score: _score, ...r }) => r);
   } else {
     // best: 전체 기간 주문량 (취소 제외) → 동률 시 가용재고 큰 순
     const result = await db
-      .select({
-        id: lenses.id,
-        productCode: lenses.productCode,
-        brand: lenses.brand,
-        name: lenses.name,
-        lensType: lenses.lensType,
-        replacementCycle: lenses.replacementCycle,
-        piecesPerBox: lenses.piecesPerBox,
-        price: lenses.price,
-        imageUrl: lenses.imageUrl,
-        diameter: lenses.diameter,
-        colorName: lenses.colorName,
-        colorHex: lenses.colorHex,
-        colorPreviewUrl: lenses.colorPreviewUrl,
-        seriesCode: lenses.seriesCode,
-        isNew: lenses.isNew,
-      })
+      .select(CURATION_SELECT)
       .from(lenses)
       .leftJoin(lensVariants, eq(lensVariants.lensId, lenses.id))
       .leftJoin(inventory, eq(inventory.variantId, lensVariants.id))

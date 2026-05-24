@@ -112,18 +112,32 @@ const PORTAL_ALLOWED: Record<Portal, string[]> = {
 /**
  * 모든 portal 에서 항상 허용 (정적 자산은 matcher 에서 제외되어 여기 도달 안 함).
  */
-const ALWAYS_ALLOWED = [
+const ALWAYS_ALLOWED = new Set([
   '/api/health',
   '/manifest.json',
   '/sw.js',
   '/favicon.ico',
   '/robots.txt',
-];
+]);
+
+// portal 별 정확 일치 (Set) + prefix 매칭 (array) 으로 분리 — 매 요청 O(1) ~ O(prefix수) 룩업
+const PORTAL_EXACT: Record<Portal, Set<string>> = {
+  customer: new Set(PORTAL_ALLOWED.customer),
+  admin: new Set(PORTAL_ALLOWED.admin),
+  staff: new Set(PORTAL_ALLOWED.staff),
+  store: new Set(PORTAL_ALLOWED.store),
+};
 
 export function isPathAllowedOnPortal(portal: Portal, pathname: string): boolean {
-  if (ALWAYS_ALLOWED.includes(pathname)) return true;
+  if (ALWAYS_ALLOWED.has(pathname)) return true;
+  const exact = PORTAL_EXACT[portal];
+  if (exact.has(pathname)) return true;
+  // prefix 매칭 — '/products' 가 allowlist 면 '/products/abc' 도 허용
   const allowed = PORTAL_ALLOWED[portal];
-  return allowed.some((p) => pathname === p || pathname.startsWith(p + '/'));
+  for (let i = 0; i < allowed.length; i++) {
+    if (pathname.startsWith(allowed[i] + '/')) return true;
+  }
+  return false;
 }
 
 /**
