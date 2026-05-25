@@ -1,8 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
-import { use, useEffect, useMemo, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import { useEffect, useMemo, useState } from 'react';
 import { ShopHeaderNav } from '@/components/shop/shop-header-nav';
 import { addItem } from '@/lib/cart/store';
 
@@ -71,12 +71,9 @@ const LENS_TYPE_LABEL: Record<string, string> = {
   circle: '서클렌즈',
 };
 
-export default function ProductDetailPage({
-  params,
-}: {
-  params: Promise<{ productCode: string }>;
-}) {
-  const { productCode } = use(params);
+export default function ProductDetailPage() {
+  const params = useParams<{ productCode: string }>();
+  const productCode = params.productCode;
   const router = useRouter();
   const [product, setProduct] = useState<Product | null>(null);
   const [loading, setLoading] = useState(true);
