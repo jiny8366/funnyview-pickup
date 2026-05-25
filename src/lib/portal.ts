@@ -78,6 +78,7 @@ const PORTAL_ALLOWED: Record<Portal, string[]> = {
     '/cart', // 장바구니
     '/api/auth',
     '/api/orders',
+    '/api/customer', // 고객 본인 데이터 (시력정보 등)
     '/api/lenses',
     '/api/products', // 단일 제품 상세 API
     '/api/lens-image', // 동적 SVG placeholder

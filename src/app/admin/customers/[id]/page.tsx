@@ -4,6 +4,7 @@ import { and, desc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { customers, orders } from '@/db/schema';
 import { CustomerEditForm } from '@/components/admin/customer-edit-form';
+import { PrescriptionManager } from '@/components/prescription/prescription-manager';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { Button } from '@/components/ui/button';
 import { requirePermissionOrRedirect, userHasPermissionOrIsMaster } from '@/lib/auth/guards';
@@ -74,7 +75,7 @@ export default async function AdminCustomerDetailPage({
       />
 
       <div className="grid gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
+        <div className="space-y-6 lg:col-span-2">
           <CustomerEditForm
             customerId={c.id}
             canWrite={canWrite}
@@ -90,6 +91,10 @@ export default async function AdminCustomerDetailPage({
               memberType: c.memberType,
               adminMemo: c.adminMemo,
             }}
+          />
+          <PrescriptionManager
+            endpoint={`/api/admin/customers/${c.id}/prescriptions`}
+            canEdit={canWrite}
           />
         </div>
 

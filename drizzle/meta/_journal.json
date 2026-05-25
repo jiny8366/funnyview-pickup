@@ -120,6 +120,13 @@
       "when": 1779900000000,
       "tag": "0016_admin_memo",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1779900100000,
+      "tag": "0017_prescription_kind",
+      "breakpoints": true
     }
   ]
 }

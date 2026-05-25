@@ -87,6 +87,7 @@ export const customerPrescriptions = pgTable(
       .notNull()
       .references(() => customers.id, { onDelete: 'cascade' }),
     eyeSide: eyeSideEnum('eye_side').notNull(), // 'left' | 'right' (애플리케이션에서 강제)
+    kind: text('kind').default('contact').notNull(), // 'glasses'(안경) | 'contact'(콘택트)
     sphere: numeric('sphere', { precision: 4, scale: 2 }).notNull(), // 원용 (-12.00 ~ +6.00)
     cylinder: numeric('cylinder', { precision: 4, scale: 2 }), // 난시 (-2.75 ~ 0)
     axis: integer('axis'), // 축 (0 ~ 180)

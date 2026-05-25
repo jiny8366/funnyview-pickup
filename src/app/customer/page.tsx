@@ -25,6 +25,13 @@ export default function CustomerHomePage() {
           <h2 className="font-semibold">내 주문 현황</h2>
           <p className="mt-1 text-sm text-gray-500">주문완료 · 배송 중 · 픽업완료</p>
         </Link>
+        <Link
+          href="/customer/prescriptions"
+          className="rounded-2xl border border-gray-200 bg-white p-6 hover:border-brand-500"
+        >
+          <h2 className="font-semibold">내 시력정보</h2>
+          <p className="mt-1 text-sm text-gray-500">안경 · 콘택트 도수 기록 및 변환</p>
+        </Link>
       </section>
     </div>
   );

@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/badge';
 import { Card, CardBody } from '@/components/ui/card';
 import { IconArrowLeft, IconClose, IconSearch } from '@/components/ui/icons';
+import { PrescriptionManager } from '@/components/prescription/prescription-manager';
 import { parseBarcode } from '@/lib/barcode/parse';
 import { formatLensDisplayName, formatPackQuantity } from '@/lib/lens/format';
 import { formatDateTime, formatKRW } from '@/lib/utils/format';
@@ -216,6 +217,12 @@ export default function StorePickupDetailPage() {
           </div>
         </CardBody>
       </Card>
+
+      {/* 고객 시력정보 (도수 확인·기록) */}
+      <PrescriptionManager
+        endpoint={`/api/store/customers/${customer.id}/prescriptions`}
+        canEdit
+      />
 
       {/* 스캔 진행 */}
       <Card>
