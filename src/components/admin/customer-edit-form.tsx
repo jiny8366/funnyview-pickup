@@ -2,6 +2,7 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
+import { AddressSearchButton } from '@/components/ui/address-search';
 
 export interface CustomerEditInitial {
   name: string;
@@ -16,6 +17,20 @@ export interface CustomerEditInitial {
   adminMemo: string | null;
 }
 
+/** 한국 전화번호 자동 하이픈 (숫자만 입력 → 표시는 010-1234-5678 / 02-123-4567). */
+function formatPhoneKR(v: string): string {
+  const d = v.replace(/\D/g, '').slice(0, 11);
+  if (d.startsWith('02')) {
+    if (d.length <= 2) return d;
+    if (d.length <= 5) return `${d.slice(0, 2)}-${d.slice(2)}`;
+    if (d.length <= 9) return `${d.slice(0, 2)}-${d.slice(2, 5)}-${d.slice(5)}`;
+    return `${d.slice(0, 2)}-${d.slice(2, 6)}-${d.slice(6, 10)}`;
+  }
+  if (d.length <= 3) return d;
+  if (d.length <= 7) return `${d.slice(0, 3)}-${d.slice(3)}`;
+  return `${d.slice(0, 3)}-${d.slice(3, 7)}-${d.slice(7, 11)}`;
+}
+
 export function CustomerEditForm({
   customerId,
   canWrite,
@@ -28,13 +43,14 @@ export function CustomerEditForm({
   const router = useRouter();
   const [form, setForm] = useState({
     name: initial.name ?? '',
-    phone: initial.phone ?? '',
-    gender: initial.gender ?? '',
+    phone: formatPhoneKR(initial.phone ?? ''),
+    // 기본 여성 — 미설정(null/other) 고객도 여성으로 표시
+    gender: initial.gender === 'male' ? 'male' : 'female',
     birthDate: initial.birthDate ?? '',
     postalCode: initial.postalCode ?? '',
     addressLine1: initial.addressLine1 ?? '',
     addressLine2: initial.addressLine2 ?? '',
-    landlinePhone: initial.landlinePhone ?? '',
+    landlinePhone: formatPhoneKR(initial.landlinePhone ?? ''),
     memberType: initial.memberType ?? 'individual',
     adminMemo: initial.adminMemo ?? '',
   });
@@ -61,7 +77,7 @@ export function CustomerEditForm({
       body: JSON.stringify({
         name: form.name.trim(),
         phone: form.phone.trim(),
-        gender: form.gender || null,
+        gender: form.gender,
         birthDate: form.birthDate || null,
         postalCode: form.postalCode || null,
         addressLine1: form.addressLine1 || null,
@@ -93,42 +109,51 @@ export function CustomerEditForm({
       )}
 
       <Section title="기본 정보">
-        <Grid2>
-          <Field label="이름" required>
+        <Field label="이름" required>
+          <div className="flex items-center gap-2">
             <input
               type="text"
               value={form.name}
               onChange={(e) => update('name', e.target.value)}
-              className={inputCls}
+              className={`${inputCls} flex-1`}
               disabled={disabled}
               required
             />
-          </Field>
+            <GenderToggle
+              value={form.gender}
+              onChange={(g) => update('gender', g)}
+              disabled={disabled}
+            />
+          </div>
+        </Field>
+
+        <Grid2>
           <Field label="전화번호" required>
             <input
               type="tel"
+              inputMode="numeric"
               value={form.phone}
-              onChange={(e) => update('phone', e.target.value)}
+              onChange={(e) => update('phone', formatPhoneKR(e.target.value))}
+              placeholder="01012345678"
               className={inputCls}
               disabled={disabled}
               required
             />
           </Field>
-        </Grid2>
-        <Grid2>
-          <Field label="성별">
-            <select
-              value={form.gender}
-              onChange={(e) => update('gender', e.target.value)}
+          <Field label="일반전화">
+            <input
+              type="tel"
+              inputMode="numeric"
+              value={form.landlinePhone}
+              onChange={(e) => update('landlinePhone', formatPhoneKR(e.target.value))}
+              placeholder="0212345678"
               className={inputCls}
               disabled={disabled}
-            >
-              <option value="">선택 안 함</option>
-              <option value="male">남성</option>
-              <option value="female">여성</option>
-              <option value="other">기타</option>
-            </select>
+            />
           </Field>
+        </Grid2>
+
+        <Grid2>
           <Field label="생년월일">
             <input
               type="date"
@@ -138,8 +163,6 @@ export function CustomerEditForm({
               disabled={disabled}
             />
           </Field>
-        </Grid2>
-        <Grid2>
           <Field label="회원유형">
             <select
               value={form.memberType}
@@ -151,37 +174,34 @@ export function CustomerEditForm({
               <option value="business">사업자</option>
             </select>
           </Field>
-          <Field label="일반전화">
-            <input
-              type="tel"
-              value={form.landlinePhone}
-              onChange={(e) => update('landlinePhone', e.target.value)}
-              className={inputCls}
-              disabled={disabled}
-            />
-          </Field>
         </Grid2>
       </Section>
 
       <Section title="주소">
-        <Grid2>
-          <Field label="우편번호">
+        <Field label="우편번호">
+          <div className="flex gap-2">
             <input
               type="text"
               value={form.postalCode}
-              onChange={(e) => update('postalCode', e.target.value)}
-              className={inputCls}
-              disabled={disabled}
+              readOnly
+              placeholder="주소검색을 눌러주세요"
+              className={`${inputCls} max-w-[160px] bg-gray-50`}
             />
-          </Field>
-        </Grid2>
+            <AddressSearchButton
+              disabled={disabled}
+              onComplete={({ zonecode, address }) =>
+                setForm((f) => ({ ...f, postalCode: zonecode, addressLine1: address }))
+              }
+            />
+          </div>
+        </Field>
         <Field label="주소">
           <input
             type="text"
             value={form.addressLine1}
-            onChange={(e) => update('addressLine1', e.target.value)}
-            className={inputCls}
-            disabled={disabled}
+            readOnly
+            placeholder="주소검색으로 입력됩니다"
+            className={`${inputCls} bg-gray-50`}
           />
         </Field>
         <Field label="상세 주소">
@@ -189,6 +209,7 @@ export function CustomerEditForm({
             type="text"
             value={form.addressLine2}
             onChange={(e) => update('addressLine2', e.target.value)}
+            placeholder="동·호수 등"
             className={inputCls}
             disabled={disabled}
           />
@@ -231,6 +252,38 @@ export function CustomerEditForm({
         </div>
       )}
     </form>
+  );
+}
+
+function GenderToggle({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: string;
+  onChange: (g: 'female' | 'male') => void;
+  disabled?: boolean;
+}) {
+  return (
+    <div className="inline-flex shrink-0 rounded-lg border border-gray-200 bg-gray-50 p-0.5">
+      {(['female', 'male'] as const).map((g) => (
+        <button
+          key={g}
+          type="button"
+          onClick={() => onChange(g)}
+          disabled={disabled}
+          className={`rounded-md px-3 py-1.5 text-sm font-medium transition disabled:opacity-50 ${
+            value === g
+              ? g === 'female'
+                ? 'bg-pink-500 text-white shadow-sm'
+                : 'bg-blue-500 text-white shadow-sm'
+              : 'text-gray-500 hover:text-gray-700'
+          }`}
+        >
+          {g === 'female' ? '여성' : '남성'}
+        </button>
+      ))}
+    </div>
   );
 }
 
