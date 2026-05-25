@@ -113,6 +113,13 @@
       "when": 1779642684735,
       "tag": "0015_product_image_paths",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1779900000000,
+      "tag": "0016_admin_memo",
+      "breakpoints": true
     }
   ]
 }

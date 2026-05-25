@@ -32,6 +32,8 @@ export const ALL_PERMISSIONS: PermissionDef[] = [
   { key: 'staff_read', label: '계정 조회', group: '운영' },
   { key: 'staff_manage', label: '계정 신규/변경 (비밀번호 reset 포함)', group: '운영' },
   { key: 'staff_permissions', label: '계정 권한 설정 (위임)', group: '운영' },
+  { key: 'customers_read', label: '고객 조회', group: '운영' },
+  { key: 'customers_write', label: '고객 정보 수정/메모', group: '운영' },
 
   // 상품
   { key: 'products_read', label: '제품 조회', group: '상품' },

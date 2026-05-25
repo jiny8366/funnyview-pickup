@@ -49,6 +49,12 @@ export const IconUsers = (p: IconProps) => (
     <path d="M16 3.13a4 4 0 0 1 0 7.75" />
   </Svg>
 );
+export const IconUser = (p: IconProps) => (
+  <Svg {...p}>
+    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+    <circle cx="12" cy="7" r="4" />
+  </Svg>
+);
 export const IconCart = (p: IconProps) => (
   <Svg {...p}>
     <circle cx="9" cy="21" r="1" />

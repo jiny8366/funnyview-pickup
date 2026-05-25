@@ -16,6 +16,8 @@ export const ROUTE_PERMISSIONS: Record<string, string> = {
   '/admin/staff/new': 'staff_manage',
   '/admin/staff/[id]': 'staff_manage',
 
+  '/admin/customers': 'customers_read',
+
   '/admin/products': 'products_read',
   '/admin/products/new': 'products_write',
   '/admin/products/[id]': 'products_write',

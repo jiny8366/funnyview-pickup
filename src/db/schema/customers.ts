@@ -54,6 +54,9 @@ export const customers = pgTable(
     ),
     referredByCode: text('referred_by_code'), // 가입 시 입력한 추천인 코드 (텍스트 보존)
 
+    // 관리자 메모 (admin 전용 — 고객에게 노출 안 함)
+    adminMemo: text('admin_memo'),
+
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),

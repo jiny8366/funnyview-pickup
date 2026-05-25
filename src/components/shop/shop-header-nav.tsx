@@ -19,6 +19,7 @@ const ADMIN_ITEMS = [
   { href: '/admin/orders',        label: '주문 관리' },
   { href: '/admin/settlement',    label: '정산 / 매출' },
   { href: '/admin/staff',         label: '계정 관리' },
+  { href: '/admin/customers',     label: '고객 관리' },
   { href: '/admin/products',      label: '제품 마스터' },
   { href: '/admin/categories',    label: '카테고리' },
   { href: '/admin/price-history', label: '가격 변동 이력' },

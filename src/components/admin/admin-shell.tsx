@@ -10,6 +10,7 @@ import {
   IconSettings,
   IconStore,
   IconTag,
+  IconUser,
   IconUsers,
   IconWallet,
 } from '@/components/ui/icons';
@@ -23,6 +24,7 @@ const SECTIONS: MenuSection[] = [
       { href: '/admin/orders', label: '주문 관리', icon: <IconCart size={16} />, permission: 'orders_read' },
       { href: '/admin/settlement', label: '정산 / 매출', icon: <IconWallet size={16} />, permission: 'settlement_read' },
       { href: '/admin/staff', label: '계정 관리', icon: <IconUsers size={16} />, permission: 'staff_read' },
+      { href: '/admin/customers', label: '고객 관리', icon: <IconUser size={16} />, permission: 'customers_read' },
     ],
   },
   {
