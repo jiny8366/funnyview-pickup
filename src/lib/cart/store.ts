@@ -43,6 +43,39 @@ export function readCart(): CartItem[] {
   }
 }
 
+// useSyncExternalStore 용 안정 snapshot — localStorage raw 가 그대로면 같은 배열 참조를
+// 돌려줘 무한 리렌더(React #185)를 막는다. raw 가 바뀌어야만 새로 파싱.
+const EMPTY_CART: CartItem[] = [];
+let snapshotRaw: string | null = null;
+let snapshotItems: CartItem[] = EMPTY_CART;
+
+export function getCartSnapshot(): CartItem[] {
+  if (!isBrowser()) return EMPTY_CART;
+  let raw: string | null;
+  try {
+    raw = window.localStorage.getItem(KEY);
+  } catch {
+    return EMPTY_CART;
+  }
+  if (raw === snapshotRaw) return snapshotItems;
+  snapshotRaw = raw;
+  if (!raw) {
+    snapshotItems = EMPTY_CART;
+    return snapshotItems;
+  }
+  try {
+    const arr = JSON.parse(raw);
+    snapshotItems = Array.isArray(arr) ? (arr as CartItem[]) : EMPTY_CART;
+  } catch {
+    snapshotItems = EMPTY_CART;
+  }
+  return snapshotItems;
+}
+
+export function getCartServerSnapshot(): CartItem[] {
+  return EMPTY_CART;
+}
+
 function writeCart(items: CartItem[]) {
   if (!isBrowser()) return;
   window.localStorage.setItem(KEY, JSON.stringify(items));
