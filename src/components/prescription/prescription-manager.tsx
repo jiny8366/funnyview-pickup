@@ -12,6 +12,7 @@ import {
 } from '@/lib/prescription/convert';
 
 type Kind = 'glasses' | 'contact';
+type Source = 'manual' | 'converted' | 'se';
 
 interface EyeData {
   sphere: string;
@@ -47,8 +48,8 @@ function eyeDataToForm(e: EyeData | null): EyeForm {
 
 /**
  * 고객 시력(도수) 관리 — admin/customer/store 공용.
- * 안경·콘택트 입력을 함께 표시. 안경 입력 후 변환하면 콘택트 도수가 자동 계산되어 함께 저장된다.
- * 이력 항목을 클릭하면 해당 기록을 수정할 수 있다.
+ * 안경·콘택트 입력을 함께 표시. 변환 버튼은 안경 도수를 콘택트 칸에 채워 넣기만 하고(저장 X),
+ * 저장 버튼이 안경·콘택트 입력값을 한 번에 기록한다. 이력 항목 클릭으로 수정 가능.
  */
 export function PrescriptionManager({
   endpoint,
@@ -65,6 +66,7 @@ export function PrescriptionManager({
   const [cRight, setCRight] = useState<EyeForm>(EMPTY_EYE);
   const [cLeft, setCLeft] = useState<EyeForm>(EMPTY_EYE);
   const [cEditAt, setCEditAt] = useState<string | null>(null);
+  const [cSource, setCSource] = useState<Source>('manual');
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -96,7 +98,7 @@ export function PrescriptionManager({
 
   function flash(setter: (v: string | null) => void, text: string) {
     setter(text);
-    setTimeout(() => setter(null), 2800);
+    setTimeout(() => setter(null), 3000);
   }
 
   async function post(body: Record<string, unknown>): Promise<boolean> {
@@ -129,31 +131,8 @@ export function PrescriptionManager({
     };
   }
 
-  // 안경 도수만 저장
-  async function handleSaveGlasses() {
-    setErr(null);
-    const r = eyePayload(gRight);
-    const l = eyePayload(gLeft);
-    if (!r && !l) {
-      setErr('안경 도수를 입력하세요 (좌/우 중 하나 이상).');
-      return;
-    }
-    setSaving(true);
-    const ok = await post({ kind: 'glasses', source: 'manual', right: r, left: l, replaceAt: gEditAt });
-    setSaving(false);
-    if (!ok) {
-      setErr('안경 도수 저장에 실패했습니다.');
-      return;
-    }
-    setGRight(EMPTY_EYE);
-    setGLeft(EMPTY_EYE);
-    setGEditAt(null);
-    load();
-    flash(setMsg, '안경 도수를 저장했습니다.');
-  }
-
-  // 안경 → 콘택트 변환 후 둘 다 저장
-  async function handleConvert() {
+  // 변환 — 콘택트 칸을 채우기만 (저장은 별도)
+  function convert(mode: 'toric' | 'se') {
     setErr(null);
     const r = eyePayload(gRight);
     const l = eyePayload(gLeft);
@@ -161,84 +140,54 @@ export function PrescriptionManager({
       setErr('변환할 안경 도수를 먼저 입력하세요.');
       return;
     }
-    const cr = r ? contactFormFromGlasses(r, 'toric') : EMPTY_EYE;
-    const cl = l ? contactFormFromGlasses(l, 'toric') : EMPTY_EYE;
-    setCRight(cr);
-    setCLeft(cl);
-    setSaving(true);
-    const ok1 = await post({ kind: 'glasses', source: 'manual', right: r, left: l, replaceAt: gEditAt });
-    const ok2 = await post({
-      kind: 'contact',
-      source: 'converted',
-      right: eyePayload(cr),
-      left: eyePayload(cl),
-    });
-    setSaving(false);
-    if (!ok1 || !ok2) {
-      setErr('변환·저장에 실패했습니다.');
-      return;
-    }
-    setGRight(EMPTY_EYE);
-    setGLeft(EMPTY_EYE);
-    setGEditAt(null);
-    load();
-    flash(setMsg, '안경 도수를 난시용(토릭) 콘택트로 변환해 저장했습니다.');
+    setCRight(r ? contactFormFromGlasses(r, mode) : EMPTY_EYE);
+    setCLeft(l ? contactFormFromGlasses(l, mode) : EMPTY_EYE);
+    setCSource(mode === 'se' ? 'se' : 'converted');
+    flash(
+      setMsg,
+      mode === 'se'
+        ? '구면등가 도수로 변환했습니다. 확인 후 저장하세요.'
+        : '난시용(토릭) 콘택트 도수로 변환했습니다. 확인 후 저장하세요.',
+    );
   }
 
-  // 안경 → 구면등가(SE) 변환 후 둘 다 저장 (구면 콘택트용, 난시 제거)
-  async function handleSphericalEquivalent() {
+  // 저장 — 안경·콘택트 입력값을 모두 기록 (편집 중이면 해당 기록 교체)
+  async function handleSave() {
     setErr(null);
-    const r = eyePayload(gRight);
-    const l = eyePayload(gLeft);
-    if (!r && !l) {
-      setErr('변환할 안경 도수를 먼저 입력하세요.');
-      return;
-    }
-    const cr = r ? contactFormFromGlasses(r, 'se') : EMPTY_EYE;
-    const cl = l ? contactFormFromGlasses(l, 'se') : EMPTY_EYE;
-    setCRight(cr);
-    setCLeft(cl);
-    setSaving(true);
-    const ok1 = await post({ kind: 'glasses', source: 'manual', right: r, left: l, replaceAt: gEditAt });
-    const ok2 = await post({
-      kind: 'contact',
-      source: 'se',
-      right: eyePayload(cr),
-      left: eyePayload(cl),
-    });
-    setSaving(false);
-    if (!ok1 || !ok2) {
-      setErr('변환·저장에 실패했습니다.');
-      return;
-    }
-    setGRight(EMPTY_EYE);
-    setGLeft(EMPTY_EYE);
-    setGEditAt(null);
-    load();
-    flash(setMsg, '구면등가 도수로 변환해 저장했습니다 (난시 제거).');
-  }
-
-  // 콘택트 도수 저장 (직접 입력 또는 수정)
-  async function handleSaveContact() {
-    setErr(null);
-    const r = eyePayload(cRight);
-    const l = eyePayload(cLeft);
-    if (!r && !l) {
-      setErr('콘택트 도수를 입력하세요 (좌/우 중 하나 이상).');
+    const gr = eyePayload(gRight);
+    const gl = eyePayload(gLeft);
+    const cr = eyePayload(cRight);
+    const cl = eyePayload(cLeft);
+    if (!gr && !gl && !cr && !cl) {
+      setErr('저장할 도수를 입력하세요.');
       return;
     }
     setSaving(true);
-    const ok = await post({ kind: 'contact', source: 'manual', right: r, left: l, replaceAt: cEditAt });
+    let ok = true;
+    if (gr || gl) {
+      ok = (await post({ kind: 'glasses', source: 'manual', right: gr, left: gl, replaceAt: gEditAt })) && ok;
+    }
+    if (cr || cl) {
+      ok = (await post({ kind: 'contact', source: cSource, right: cr, left: cl, replaceAt: cEditAt })) && ok;
+    }
     setSaving(false);
     if (!ok) {
-      setErr('콘택트 도수 저장에 실패했습니다.');
+      setErr('저장에 실패했습니다.');
       return;
     }
+    resetForm();
+    load();
+    flash(setMsg, '도수를 저장했습니다.');
+  }
+
+  function resetForm() {
+    setGRight(EMPTY_EYE);
+    setGLeft(EMPTY_EYE);
+    setGEditAt(null);
     setCRight(EMPTY_EYE);
     setCLeft(EMPTY_EYE);
     setCEditAt(null);
-    load();
-    flash(setMsg, '콘택트 도수를 저장했습니다.');
+    setCSource('manual');
   }
 
   function handleEdit(g: PrescriptionGroup) {
@@ -251,21 +200,12 @@ export function PrescriptionManager({
       setCRight(eyeDataToForm(g.right));
       setCLeft(eyeDataToForm(g.left));
       setCEditAt(g.recordedAt);
+      setCSource((g.source as Source) ?? 'manual');
     }
     flash(setMsg, '기록을 불러왔습니다. 수정 후 저장하세요.');
   }
 
-  function cancelGlasses() {
-    setGRight(EMPTY_EYE);
-    setGLeft(EMPTY_EYE);
-    setGEditAt(null);
-  }
-  function cancelContact() {
-    setCRight(EMPTY_EYE);
-    setCLeft(EMPTY_EYE);
-    setCEditAt(null);
-  }
-
+  const editing = Boolean(gEditAt || cEditAt);
   const glassesHistory = groups.filter((g) => g.kind === 'glasses');
   const contactHistory = groups.filter((g) => g.kind === 'contact');
 
@@ -277,8 +217,7 @@ export function PrescriptionManager({
       </p>
 
       {canEdit && (
-        <div className="space-y-5">
-          {/* 안경 도수 */}
+        <div className="space-y-4">
           <PowerSection
             title="안경 도수"
             editing={Boolean(gEditAt)}
@@ -286,35 +225,29 @@ export function PrescriptionManager({
             left={gLeft}
             onRight={setGRight}
             onLeft={setGLeft}
-          >
-            <button
-              type="button"
-              onClick={handleConvert}
-              disabled={saving}
-              className="rounded-xl border border-brand-300 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100 disabled:opacity-50"
-            >
-              콘택트로 변환 후 저장 →
-            </button>
-            <button
-              type="button"
-              onClick={handleSaveGlasses}
-              disabled={saving}
-              className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
-            >
-              {gEditAt ? '안경 수정 저장' : '안경만 저장'}
-            </button>
-            {gEditAt && (
-              <button
-                type="button"
-                onClick={cancelGlasses}
-                className="rounded-xl px-3 py-2 text-sm text-gray-500 hover:text-gray-700"
-              >
-                취소
-              </button>
-            )}
-          </PowerSection>
+          />
 
-          {/* 콘택트 도수 */}
+          {/* 변환 (콘택트 칸 채우기) */}
+          <div className="flex flex-wrap items-center gap-2">
+            <span className="text-[11px] text-gray-400">안경 → 콘택트</span>
+            <button
+              type="button"
+              onClick={() => convert('toric')}
+              disabled={saving}
+              className="rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 disabled:opacity-50"
+            >
+              콘택트도수 변환 (난시)
+            </button>
+            <button
+              type="button"
+              onClick={() => convert('se')}
+              disabled={saving}
+              className="rounded-lg border border-brand-300 bg-brand-50 px-3 py-1.5 text-xs font-semibold text-brand-700 hover:bg-brand-100 disabled:opacity-50"
+            >
+              구면도수로만 적용
+            </button>
+          </div>
+
           <PowerSection
             title="콘택트 도수"
             editing={Boolean(cEditAt)}
@@ -322,37 +255,29 @@ export function PrescriptionManager({
             left={cLeft}
             onRight={setCRight}
             onLeft={setCLeft}
-          >
+          />
+
+          <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-3">
             <button
               type="button"
-              onClick={handleSphericalEquivalent}
+              onClick={handleSave}
               disabled={saving}
-              className="rounded-xl border border-brand-300 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100 disabled:opacity-50"
-              title="안경 도수를 구면등가(SE)로 변환해 난시 없이 적용"
+              className="rounded-xl bg-gray-900 px-5 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
             >
-              구면도수로만 적용
+              {saving ? '저장 중...' : editing ? '수정 저장' : '저장 (안경·콘택트)'}
             </button>
-            <button
-              type="button"
-              onClick={handleSaveContact}
-              disabled={saving}
-              className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
-            >
-              {cEditAt ? '콘택트 수정 저장' : '콘택트 저장'}
-            </button>
-            {cEditAt && (
+            {editing && (
               <button
                 type="button"
-                onClick={cancelContact}
+                onClick={resetForm}
                 className="rounded-xl px-3 py-2 text-sm text-gray-500 hover:text-gray-700"
               >
                 취소
               </button>
             )}
-          </PowerSection>
-
-          {err && <p className="text-sm text-red-600">{err}</p>}
-          {msg && <p className="text-sm text-emerald-600">{msg}</p>}
+            {err && <span className="text-sm text-red-600">{err}</span>}
+            {msg && <span className="text-sm text-emerald-600">{msg}</span>}
+          </div>
         </div>
       )}
 
@@ -384,7 +309,6 @@ function PowerSection({
   left,
   onRight,
   onLeft,
-  children,
 }: {
   title: string;
   editing: boolean;
@@ -392,7 +316,6 @@ function PowerSection({
   left: EyeForm;
   onRight: (v: EyeForm) => void;
   onLeft: (v: EyeForm) => void;
-  children: React.ReactNode;
 }) {
   return (
     <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-3">
@@ -421,7 +344,6 @@ function PowerSection({
           </tbody>
         </table>
       </div>
-      <div className="mt-3 flex flex-wrap gap-2">{children}</div>
     </div>
   );
 }
@@ -459,9 +381,9 @@ function HistoryList({
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
-                  {g.source === 'converted' && (
+                  {(g.source === 'converted' || g.source === 'se') && (
                     <span className="ml-1.5 rounded bg-brand-50 px-1 py-0.5 text-[10px] text-brand-600">
-                      변환
+                      {g.source === 'se' ? '구면등가' : '변환'}
                     </span>
                   )}
                 </span>
