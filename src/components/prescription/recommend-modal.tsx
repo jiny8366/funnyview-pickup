@@ -27,7 +27,23 @@ const DISCOMFORTS = [
   { key: 'dryness', label: '건조함' },
   { key: 'foreign', label: '이물감' },
   { key: 'redness', label: '충혈' },
-  { key: 'uv', label: '자외선·야외활동' },
+  { key: 'blur', label: '흐림' },
+];
+
+const FEATURES = [
+  { key: 'bluelight', label: '블루라이트 차단' },
+  { key: 'uv', label: '자외선 차단' },
+  { key: 'moisture', label: '수분감' },
+];
+
+const DAY_OPTIONS = [1, 2, 3, 4, 5, 6, 7];
+const HOUR_OPTIONS = [
+  { v: 3, l: '3' },
+  { v: 5, l: '5' },
+  { v: 7, l: '7' },
+  { v: 9, l: '9' },
+  { v: 12, l: '12' },
+  { v: 13, l: 'OVER' },
 ];
 
 const CYCLE_LABEL: Record<string, string> = {
@@ -55,9 +71,10 @@ export function RecommendModal({
   endpoint: string;
   dose: RecommendDose;
 }) {
-  const [days, setDays] = useState('');
-  const [hours, setHours] = useState('');
+  const [days, setDays] = useState<number | null>(null);
+  const [hours, setHours] = useState<number | null>(null);
   const [discomforts, setDiscomforts] = useState<string[]>([]);
+  const [features, setFeatures] = useState<string[]>([]);
   const [ignore, setIgnore] = useState(false);
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<Recommended[] | null>(null);
@@ -66,10 +83,11 @@ export function RecommendModal({
 
   if (!open) return null;
 
-  function toggleDiscomfort(key: string) {
-    setDiscomforts((prev) =>
-      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
-    );
+  function toggleIn(
+    setter: React.Dispatch<React.SetStateAction<string[]>>,
+    key: string,
+  ) {
+    setter((prev) => (prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key]));
   }
 
   async function run() {
@@ -81,9 +99,10 @@ export function RecommendModal({
       body: JSON.stringify({
         dose,
         lifestyle: {
-          daysPerWeek: days ? Number(days) : null,
-          hoursPerDay: hours ? Number(hours) : null,
+          daysPerWeek: days,
+          hoursPerDay: hours,
           discomforts: ignore ? [] : discomforts,
+          features,
           ignoreLifestyle: ignore,
         },
       }),
@@ -130,53 +149,88 @@ export function RecommendModal({
         <div className="flex-1 overflow-y-auto px-5 py-4">
           {/* 생활환경 입력 */}
           <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-3">
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-gray-700">일주일에 며칠 착용</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={7}
-                  value={days}
-                  onChange={(e) => setDays(e.target.value)}
-                  disabled={ignore}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none disabled:bg-gray-50"
-                  placeholder="예: 5"
-                />
-              </label>
-              <label className="block">
-                <span className="mb-1 block text-xs font-medium text-gray-700">하루에 몇 시간</span>
-                <input
-                  type="number"
-                  min={0}
-                  max={24}
-                  value={hours}
-                  onChange={(e) => setHours(e.target.value)}
-                  disabled={ignore}
-                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none disabled:bg-gray-50"
-                  placeholder="예: 8"
-                />
-              </label>
-            </div>
-
             <div>
-              <span className="mb-1.5 block text-xs font-medium text-gray-700">
-                기존 렌즈 착용 시 불편함 (복수 선택, 없으면 비워두세요)
-              </span>
-              <div className="flex flex-wrap gap-2">
-                {DISCOMFORTS.map((d) => (
+              <span className="mb-1.5 block text-xs font-medium text-gray-700">주간 착용일</span>
+              <div className="flex flex-wrap gap-1.5">
+                {DAY_OPTIONS.map((dd) => (
                   <button
-                    key={d.key}
+                    key={dd}
                     type="button"
-                    onClick={() => toggleDiscomfort(d.key)}
+                    onClick={() => setDays(dd)}
                     disabled={ignore}
-                    className={`rounded-full border px-3 py-1.5 text-sm transition disabled:opacity-40 ${
-                      discomforts.includes(d.key)
+                    className={`h-9 w-9 rounded-lg border text-sm font-medium transition disabled:opacity-40 ${
+                      days === dd
                         ? 'border-gray-900 bg-gray-900 text-white'
                         : 'border-gray-200 text-gray-600 hover:border-gray-400'
                     }`}
                   >
-                    {d.label}
+                    {dd}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="mb-1.5 block text-xs font-medium text-gray-700">일 착용시간</span>
+              <div className="flex flex-wrap gap-1.5">
+                {HOUR_OPTIONS.map((o) => (
+                  <button
+                    key={o.v}
+                    type="button"
+                    onClick={() => setHours(o.v)}
+                    disabled={ignore}
+                    className={`h-9 min-w-[44px] rounded-lg border px-2 text-sm font-medium transition disabled:opacity-40 ${
+                      hours === o.v
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    {o.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="mb-1.5 block text-xs font-medium text-gray-700">
+                기존 렌즈 착용 시 불편함 (복수 선택, 없어도 됨)
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {DISCOMFORTS.map((dc) => (
+                  <button
+                    key={dc.key}
+                    type="button"
+                    onClick={() => toggleIn(setDiscomforts, dc.key)}
+                    disabled={ignore}
+                    className={`rounded-full border px-3 py-1.5 text-sm transition disabled:opacity-40 ${
+                      discomforts.includes(dc.key)
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    {dc.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div>
+              <span className="mb-1.5 block text-xs font-medium text-gray-700">
+                원하는 기능 (복수 선택)
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {FEATURES.map((ft) => (
+                  <button
+                    key={ft.key}
+                    type="button"
+                    onClick={() => toggleIn(setFeatures, ft.key)}
+                    className={`rounded-full border px-3 py-1.5 text-sm transition ${
+                      features.includes(ft.key)
+                        ? 'border-brand-500 bg-brand-500 text-white'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    {ft.label}
                   </button>
                 ))}
               </div>

@@ -79,6 +79,7 @@ interface FormState {
   material: string;
   oxygenDkt: string;
   uvProtection: boolean;
+  blueLight: boolean;
   sphereMin: string;
   sphereMax: string;
   // 식약처 UDI 참조 (수기 입력 또는 UDI 적재 시 자동 채움)
@@ -123,6 +124,7 @@ const EMPTY: FormState = {
   material: '',
   oxygenDkt: '',
   uvProtection: false,
+  blueLight: false,
   sphereMin: '',
   sphereMax: '',
   mfdsPermitNo: '',
@@ -498,6 +500,17 @@ export function ProductForm({
                   className="h-4 w-4 rounded border-gray-300"
                 />
                 UV 차단 기능 있음
+              </label>
+            </Field>
+            <Field label="블루라이트 차단">
+              <label className="flex h-[38px] items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={form.blueLight}
+                  onChange={(e) => update('blueLight', e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                블루라이트 차단 기능 있음
               </label>
             </Field>
             <Field

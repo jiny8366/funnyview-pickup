@@ -32,6 +32,7 @@ export const lenses = pgTable(
     material: text('material'),
     oxygenDkt: integer('oxygen_dkt'), // 산소투과율 Dk/t (착용시간 추천 지표)
     uvProtection: boolean('uv_protection').default(false).notNull(), // UV 차단 여부
+    blueLight: boolean('blue_light').default(false).notNull(), // 블루라이트 차단 여부
 
     // 박스 단위
     piecesPerBox: integer('pieces_per_box').default(1).notNull(), // 1박스 매수

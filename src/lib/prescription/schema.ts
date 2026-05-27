@@ -28,6 +28,7 @@ export const recommendSchema = z.object({
     daysPerWeek: z.number().nullable(),
     hoursPerDay: z.number().nullable(),
     discomforts: z.array(z.string()),
+    features: z.array(z.string()),
     ignoreLifestyle: z.boolean(),
   }),
 });

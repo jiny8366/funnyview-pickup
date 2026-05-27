@@ -4,8 +4,9 @@ import { lenses, lensVariants } from '@/db/schema';
 
 export interface Lifestyle {
   daysPerWeek: number | null; // 주 며칠 착용
-  hoursPerDay: number | null; // 하루 몇 시간
-  discomforts: string[]; // 'dryness' | 'foreign' | 'redness' | 'uv'
+  hoursPerDay: number | null; // 하루 몇 시간 (12 초과는 13)
+  discomforts: string[]; // 'dryness' | 'foreign' | 'redness' | 'blur'
+  features: string[]; // 원하는 기능: 'bluelight' | 'uv' | 'moisture' (생활환경과 무관하게 항상 반영)
   ignoreLifestyle: boolean; // 생활환경 무관 — 두루 좋은 제품
 }
 
@@ -81,6 +82,7 @@ export async function recommendLenses(
       waterContent: lenses.waterContent,
       oxygenDkt: lenses.oxygenDkt,
       uvProtection: lenses.uvProtection,
+      blueLight: lenses.blueLight,
       isNew: lenses.isNew,
     })
     .from(lenses)
@@ -113,10 +115,11 @@ export async function recommendLenses(
     return set.has(targetSphere);
   });
 
-  const longWear = (lifestyle.hoursPerDay ?? 0) >= 8;
+  const longWear = (lifestyle.hoursPerDay ?? 0) >= 9;
   const rareUse = (lifestyle.daysPerWeek ?? 7) <= 3;
   const frequentUse = (lifestyle.daysPerWeek ?? 0) >= 5;
   const d = new Set(lifestyle.discomforts);
+  const f = new Set(lifestyle.features);
 
   const scored = covered.map((r) => {
     let score = 0;
@@ -125,6 +128,7 @@ export async function recommendLenses(
       (r.material ?? '').toLowerCase().includes('silicon') || SILICONE_HINT.test(r.name);
     const moist = MOIST_HINT.test(r.name);
     const water = r.waterContent != null ? Number(r.waterContent) : null;
+    const hydrating = moist || (water != null && water >= 55);
 
     if (!lifestyle.ignoreLifestyle) {
       if (longWear) {
@@ -144,7 +148,7 @@ export async function recommendLenses(
         score += 1;
         reasons.push('자주 착용 시 경제적');
       }
-      if (d.has('dryness') && (moist || (water != null && water >= 55))) {
+      if (d.has('dryness') && hydrating) {
         score += 3;
         reasons.push('보습');
       }
@@ -152,13 +156,20 @@ export async function recommendLenses(
         score += 2;
         reasons.push('산소 공급(충혈 완화)');
       }
-      if (d.has('uv') && r.uvProtection) {
-        score += 2;
-        reasons.push('UV 차단');
-      }
       if (d.has('foreign') && silicone) {
         score += 1;
         reasons.push('부드러운 착용감');
+      }
+      if (d.has('blur')) {
+        // 흐림 — 단백질 침착·건조 영향. 원데이 + 보습 우선
+        if (r.replacementCycle === '1day') {
+          score += 2;
+          reasons.push('침착 적은 원데이');
+        }
+        if (hydrating) {
+          score += 1;
+          reasons.push('보습(흐림 완화)');
+        }
       }
     } else {
       // 두루 좋은 제품 — 물성 우수 + 신제품 가산
@@ -166,6 +177,21 @@ export async function recommendLenses(
       if (silicone) score += 1;
       if (moist) score += 1;
     }
+
+    // 기능 요청 (생활환경 무관하게 항상 반영) — 제품 특성 매칭
+    if (f.has('uv') && r.uvProtection) {
+      score += 3;
+      reasons.push('자외선 차단');
+    }
+    if (f.has('bluelight') && r.blueLight) {
+      score += 3;
+      reasons.push('블루라이트 차단');
+    }
+    if (f.has('moisture') && hydrating) {
+      score += 3;
+      reasons.push('수분감');
+    }
+
     if (r.isNew) score += 0.5;
 
     return {

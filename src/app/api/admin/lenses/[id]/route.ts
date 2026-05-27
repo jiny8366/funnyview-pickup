@@ -54,6 +54,7 @@ export async function PATCH(
     'material',
     'oxygenDkt',
     'uvProtection',
+    'blueLight',
     'sphereMin',
     'sphereMax',
     'mfdsPermitNo',
