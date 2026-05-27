@@ -74,8 +74,9 @@ export default async function AdminCustomerDetailPage({
         }
       />
 
-      <div className="grid gap-6 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-2">
+      <div className="grid gap-6 lg:grid-cols-2">
+        {/* 좌측: 기본정보 · 주소 · 관리자메모 + 추천/주문 */}
+        <div className="space-y-6">
           <CustomerEditForm
             customerId={c.id}
             canWrite={canWrite}
@@ -92,13 +93,7 @@ export default async function AdminCustomerDetailPage({
               adminMemo: c.adminMemo,
             }}
           />
-          <PrescriptionManager
-            endpoint={`/api/admin/customers/${c.id}/prescriptions`}
-            canEdit={canWrite}
-          />
-        </div>
 
-        <div className="space-y-6">
           <div className="rounded-2xl border border-gray-200 bg-white p-5">
             <h2 className="mb-3 text-sm font-bold text-gray-900">추천 정보</h2>
             <dl className="space-y-2 text-sm">
@@ -137,6 +132,14 @@ export default async function AdminCustomerDetailPage({
               </ul>
             )}
           </div>
+        </div>
+
+        {/* 우측: 도수정보 */}
+        <div>
+          <PrescriptionManager
+            endpoint={`/api/admin/customers/${c.id}/prescriptions`}
+            canEdit={canWrite}
+          />
         </div>
       </div>
     </PageWrap>
