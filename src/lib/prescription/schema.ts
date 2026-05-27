@@ -16,3 +16,18 @@ export const prescriptionPostSchema = z.object({
   // 기존 기록 수정 시 그 기록의 recordedAt (ISO). 미지정이면 신규 저장.
   replaceAt: z.string().nullable().optional(),
 });
+
+/** 최적화 렌즈 추천 입력 (도수 + 생활환경). */
+export const recommendSchema = z.object({
+  dose: z.object({
+    sphere: z.number(),
+    cylinder: z.number().nullable(),
+    addPower: z.number().nullable(),
+  }),
+  lifestyle: z.object({
+    daysPerWeek: z.number().nullable(),
+    hoursPerDay: z.number().nullable(),
+    discomforts: z.array(z.string()),
+    ignoreLifestyle: z.boolean(),
+  }),
+});

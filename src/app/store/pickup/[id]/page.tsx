@@ -222,6 +222,7 @@ export default function StorePickupDetailPage() {
       <PrescriptionManager
         endpoint={`/api/store/customers/${customer.id}/prescriptions`}
         canEdit
+        recommendEndpoint={`/api/store/customers/${customer.id}/recommend`}
       />
 
       {/* 스캔 진행 */}

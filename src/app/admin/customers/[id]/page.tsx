@@ -139,6 +139,7 @@ export default async function AdminCustomerDetailPage({
           <PrescriptionManager
             endpoint={`/api/admin/customers/${c.id}/prescriptions`}
             canEdit={canWrite}
+            recommendEndpoint={`/api/admin/customers/${c.id}/recommend`}
           />
         </div>
       </div>

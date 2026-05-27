@@ -1,0 +1,267 @@
+'use client';
+
+import Link from 'next/link';
+import { useState } from 'react';
+import { formatDiopter } from '@/lib/prescription/convert';
+
+export interface RecommendDose {
+  sphere: number;
+  cylinder: number | null;
+  addPower: number | null;
+}
+
+interface Recommended {
+  id: string;
+  productCode: string;
+  brand: string;
+  name: string;
+  lensType: string;
+  replacementCycle: string;
+  imageUrl: string | null;
+  price: number;
+  score: number;
+  reasons: string[];
+}
+
+const DISCOMFORTS = [
+  { key: 'dryness', label: '건조함' },
+  { key: 'foreign', label: '이물감' },
+  { key: 'redness', label: '충혈' },
+  { key: 'uv', label: '자외선·야외활동' },
+];
+
+const CYCLE_LABEL: Record<string, string> = {
+  '1day': '원데이',
+  '2week': '2주',
+  '1month': '1개월',
+  '3month': '3개월',
+  '6month': '6개월',
+  '1year': '연간',
+};
+const TYPE_LABEL: Record<string, string> = {
+  spherical: '구면',
+  toric: '난시',
+  multifocal: '다초점',
+};
+
+export function RecommendModal({
+  open,
+  onClose,
+  endpoint,
+  dose,
+}: {
+  open: boolean;
+  onClose: () => void;
+  endpoint: string;
+  dose: RecommendDose;
+}) {
+  const [days, setDays] = useState('');
+  const [hours, setHours] = useState('');
+  const [discomforts, setDiscomforts] = useState<string[]>([]);
+  const [ignore, setIgnore] = useState(false);
+  const [loading, setLoading] = useState(false);
+  const [results, setResults] = useState<Recommended[] | null>(null);
+  const [age, setAge] = useState<number | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+
+  if (!open) return null;
+
+  function toggleDiscomfort(key: string) {
+    setDiscomforts((prev) =>
+      prev.includes(key) ? prev.filter((k) => k !== key) : [...prev, key],
+    );
+  }
+
+  async function run() {
+    setLoading(true);
+    setErr(null);
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        dose,
+        lifestyle: {
+          daysPerWeek: days ? Number(days) : null,
+          hoursPerDay: hours ? Number(hours) : null,
+          discomforts: ignore ? [] : discomforts,
+          ignoreLifestyle: ignore,
+        },
+      }),
+    });
+    setLoading(false);
+    if (!res.ok) {
+      setErr('추천을 불러오지 못했습니다.');
+      return;
+    }
+    const j = await res.json();
+    setResults(j.recommendations ?? []);
+    setAge(j.age ?? null);
+  }
+
+  const doseLabel =
+    `SPH ${formatDiopter(dose.sphere)}` +
+    (dose.cylinder !== null ? ` · CYL ${formatDiopter(dose.cylinder)}` : '') +
+    (dose.addPower !== null ? ` · ADD ${formatDiopter(dose.addPower)}` : '');
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex max-h-[90vh] w-full max-w-lg flex-col overflow-hidden rounded-t-3xl bg-white sm:rounded-3xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">최적화 렌즈 추천</h2>
+            <p className="mt-0.5 text-xs text-gray-500">기준 도수 · {doseLabel}</p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="grid h-8 w-8 place-items-center rounded-full text-gray-400 hover:bg-gray-100"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </header>
+
+        <div className="flex-1 overflow-y-auto px-5 py-4">
+          {/* 생활환경 입력 */}
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-gray-700">일주일에 며칠 착용</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={7}
+                  value={days}
+                  onChange={(e) => setDays(e.target.value)}
+                  disabled={ignore}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none disabled:bg-gray-50"
+                  placeholder="예: 5"
+                />
+              </label>
+              <label className="block">
+                <span className="mb-1 block text-xs font-medium text-gray-700">하루에 몇 시간</span>
+                <input
+                  type="number"
+                  min={0}
+                  max={24}
+                  value={hours}
+                  onChange={(e) => setHours(e.target.value)}
+                  disabled={ignore}
+                  className="w-full rounded-lg border border-gray-200 px-3 py-2 text-sm focus:border-brand-500 focus:outline-none disabled:bg-gray-50"
+                  placeholder="예: 8"
+                />
+              </label>
+            </div>
+
+            <div>
+              <span className="mb-1.5 block text-xs font-medium text-gray-700">
+                기존 렌즈 착용 시 불편함 (복수 선택, 없으면 비워두세요)
+              </span>
+              <div className="flex flex-wrap gap-2">
+                {DISCOMFORTS.map((d) => (
+                  <button
+                    key={d.key}
+                    type="button"
+                    onClick={() => toggleDiscomfort(d.key)}
+                    disabled={ignore}
+                    className={`rounded-full border px-3 py-1.5 text-sm transition disabled:opacity-40 ${
+                      discomforts.includes(d.key)
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 text-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    {d.label}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <label className="flex items-center gap-2 rounded-xl bg-gray-50 px-3 py-2.5 text-sm text-gray-700">
+              <input
+                type="checkbox"
+                checked={ignore}
+                onChange={(e) => setIgnore(e.target.checked)}
+                className="h-4 w-4 rounded border-gray-300"
+              />
+              생활환경과 무관하게 두루 좋은 제품 추천
+            </label>
+
+            <button
+              type="button"
+              onClick={run}
+              disabled={loading}
+              className="w-full rounded-xl bg-gray-900 py-3 text-sm font-bold text-white hover:bg-black disabled:opacity-50"
+            >
+              {loading ? '분석 중...' : '추천받기'}
+            </button>
+            {err && <p className="text-sm text-red-600">{err}</p>}
+          </div>
+
+          {/* 결과 */}
+          {results && (
+            <div className="mt-5 border-t border-gray-100 pt-4">
+              <p className="mb-3 text-xs font-semibold text-gray-500">
+                추천 결과 ({results.length}){age != null ? ` · 만 ${age}세 반영` : ''}
+              </p>
+              {results.length === 0 ? (
+                <p className="text-sm text-gray-400">조건에 맞는 제품을 찾지 못했습니다.</p>
+              ) : (
+                <ul className="space-y-2">
+                  {results.map((r) => (
+                    <li key={r.id}>
+                      <Link
+                        href={`/products/${r.productCode}`}
+                        className="flex gap-3 rounded-xl border border-gray-100 p-2.5 hover:border-gray-300"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={r.imageUrl ?? `/api/lens-image/${r.productCode}`}
+                          alt={r.name}
+                          className="h-14 w-14 shrink-0 rounded-lg object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] text-gray-400">{r.brand}</p>
+                          <p className="truncate text-sm font-medium text-gray-900">{r.name}</p>
+                          <div className="mt-1 flex flex-wrap gap-1">
+                            <Tag>{TYPE_LABEL[r.lensType] ?? r.lensType}</Tag>
+                            <Tag>{CYCLE_LABEL[r.replacementCycle] ?? r.replacementCycle}</Tag>
+                            {r.reasons.slice(0, 3).map((reason) => (
+                              <Tag key={reason} accent>
+                                {reason}
+                              </Tag>
+                            ))}
+                          </div>
+                        </div>
+                        <div className="shrink-0 self-center text-sm font-semibold text-gray-800">
+                          {r.price > 0 ? `${r.price.toLocaleString()}원` : ''}
+                        </div>
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function Tag({ children, accent }: { children: React.ReactNode; accent?: boolean }) {
+  return (
+    <span
+      className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${
+        accent ? 'bg-brand-50 text-brand-700' : 'bg-gray-100 text-gray-600'
+      }`}
+    >
+      {children}
+    </span>
+  );
+}

@@ -10,6 +10,7 @@ import {
   normalizeSignedDiopter,
   signedDiopterString,
 } from '@/lib/prescription/convert';
+import { RecommendModal, type RecommendDose } from './recommend-modal';
 
 type Kind = 'glasses' | 'contact';
 type Source = 'manual' | 'converted' | 'se';
@@ -46,6 +47,21 @@ function eyeDataToForm(e: EyeData | null): EyeForm {
   };
 }
 
+/** 추천 기준 도수 — 좌/우 중 절댓값이 큰 눈을 대표로. */
+function groupToDose(g: PrescriptionGroup): RecommendDose {
+  const eyes = [g.right, g.left].filter((e): e is EyeData => e !== null);
+  if (eyes.length === 0) return { sphere: 0, cylinder: null, addPower: null };
+  let pick = eyes[0];
+  for (const e of eyes) {
+    if (Math.abs(Number(e.sphere)) > Math.abs(Number(pick.sphere))) pick = e;
+  }
+  return {
+    sphere: Number(pick.sphere),
+    cylinder: pick.cylinder ? Number(pick.cylinder) : null,
+    addPower: pick.addPower ? Number(pick.addPower) : null,
+  };
+}
+
 /**
  * 고객 시력(도수) 관리 — admin/customer/store 공용.
  * 안경·콘택트 입력을 함께 표시. 변환 버튼은 안경 도수를 콘택트 칸에 채워 넣기만 하고(저장 X),
@@ -54,9 +70,11 @@ function eyeDataToForm(e: EyeData | null): EyeForm {
 export function PrescriptionManager({
   endpoint,
   canEdit,
+  recommendEndpoint,
 }: {
   endpoint: string;
   canEdit: boolean;
+  recommendEndpoint?: string;
 }) {
   const [groups, setGroups] = useState<PrescriptionGroup[]>([]);
   const [loading, setLoading] = useState(true);
@@ -67,6 +85,7 @@ export function PrescriptionManager({
   const [cLeft, setCLeft] = useState<EyeForm>(EMPTY_EYE);
   const [cEditAt, setCEditAt] = useState<string | null>(null);
   const [cSource, setCSource] = useState<Source>('manual');
+  const [recommendDose, setRecommendDose] = useState<RecommendDose | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -296,8 +315,20 @@ export function PrescriptionManager({
           loading={loading}
           canEdit={canEdit}
           onEdit={handleEdit}
+          onRecommend={
+            recommendEndpoint ? (g) => setRecommendDose(groupToDose(g)) : undefined
+          }
         />
       </div>
+
+      {recommendEndpoint && recommendDose && (
+        <RecommendModal
+          open={Boolean(recommendDose)}
+          onClose={() => setRecommendDose(null)}
+          endpoint={recommendEndpoint}
+          dose={recommendDose}
+        />
+      )}
     </div>
   );
 }
@@ -354,12 +385,14 @@ function HistoryList({
   loading,
   canEdit,
   onEdit,
+  onRecommend,
 }: {
   title: string;
   items: PrescriptionGroup[];
   loading: boolean;
   canEdit: boolean;
   onEdit: (g: PrescriptionGroup) => void;
+  onRecommend?: (g: PrescriptionGroup) => void;
 }) {
   return (
     <div>
@@ -387,15 +420,26 @@ function HistoryList({
                     </span>
                   )}
                 </span>
-                {canEdit && (
-                  <button
-                    type="button"
-                    onClick={() => onEdit(g)}
-                    className="rounded border border-gray-200 px-2 py-0.5 text-[11px] text-gray-500 hover:bg-gray-50 hover:text-brand-600"
-                  >
-                    수정
-                  </button>
-                )}
+                <div className="flex items-center gap-1">
+                  {onRecommend && (
+                    <button
+                      type="button"
+                      onClick={() => onRecommend(g)}
+                      className="rounded border border-brand-200 bg-brand-50 px-2 py-0.5 text-[11px] font-medium text-brand-700 hover:bg-brand-100"
+                    >
+                      추천렌즈
+                    </button>
+                  )}
+                  {canEdit && (
+                    <button
+                      type="button"
+                      onClick={() => onEdit(g)}
+                      className="rounded border border-gray-200 px-2 py-0.5 text-[11px] text-gray-500 hover:bg-gray-50 hover:text-brand-600"
+                    >
+                      수정
+                    </button>
+                  )}
+                </div>
               </div>
               <EyeReadout label="우 (R)" eye={g.right} />
               <EyeReadout label="좌 (L)" eye={g.left} />
