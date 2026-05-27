@@ -118,7 +118,7 @@ export default function RegisterPage() {
           postalCode: f.postalCode || null,
           addressLine1: f.addressLine1 || null,
           addressLine2: f.addressLine2 || null,
-          memberType: 'individual',
+          memberType: 'online', // 퍼니뷰 예약시스템 가입 = 온라인고객
           referredByCode: f.referredByCode || null,
           refundBank:
             f.refundHolder || f.refundBank || f.refundAccount

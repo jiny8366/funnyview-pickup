@@ -51,7 +51,8 @@ export function CustomerEditForm({
     addressLine1: initial.addressLine1 ?? '',
     addressLine2: initial.addressLine2 ?? '',
     landlinePhone: formatPhoneKR(initial.landlinePhone ?? ''),
-    memberType: initial.memberType ?? 'individual',
+    // 기존 individual/business 데이터는 온라인으로 표시
+    memberType: initial.memberType === 'offline' ? 'offline' : 'online',
     adminMemo: initial.adminMemo ?? '',
   });
   const [saving, setSaving] = useState(false);
@@ -109,26 +110,39 @@ export function CustomerEditForm({
       )}
 
       <Section title="기본 정보">
-        <Field label="이름" required>
-          <div className="flex items-center gap-2">
+        {/* 이름 · 성별 · 생년월일 */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Field label="이름" required>
             <input
               type="text"
               value={form.name}
               onChange={(e) => update('name', e.target.value)}
-              className={`${inputCls} flex-1`}
+              className={inputCls}
               disabled={disabled}
               required
             />
+          </Field>
+          <Field label="성별">
             <GenderToggle
               value={form.gender}
               onChange={(g) => update('gender', g)}
               disabled={disabled}
             />
-          </div>
-        </Field>
+          </Field>
+          <Field label="생년월일">
+            <input
+              type="date"
+              value={form.birthDate}
+              onChange={(e) => update('birthDate', e.target.value)}
+              className={inputCls}
+              disabled={disabled}
+            />
+          </Field>
+        </div>
 
-        <Grid2>
-          <Field label="전화번호" required>
+        {/* 휴대전화 · 일반전화 · 회원유형 */}
+        <div className="grid gap-4 md:grid-cols-3">
+          <Field label="휴대전화" required>
             <input
               type="tel"
               inputMode="numeric"
@@ -151,30 +165,18 @@ export function CustomerEditForm({
               disabled={disabled}
             />
           </Field>
-        </Grid2>
-
-        <Grid2>
-          <Field label="생년월일">
-            <input
-              type="date"
-              value={form.birthDate}
-              onChange={(e) => update('birthDate', e.target.value)}
-              className={inputCls}
-              disabled={disabled}
-            />
-          </Field>
-          <Field label="회원유형">
+          <Field label="회원유형" hint="퍼니뷰 가입=온라인 / 가맹점 유입=오프라인">
             <select
               value={form.memberType}
               onChange={(e) => update('memberType', e.target.value)}
               className={inputCls}
               disabled={disabled}
             >
-              <option value="individual">개인</option>
-              <option value="business">사업자</option>
+              <option value="online">온라인고객</option>
+              <option value="offline">오프라인고객</option>
             </select>
           </Field>
-        </Grid2>
+        </div>
       </Section>
 
       <Section title="주소">
@@ -297,10 +299,6 @@ function Section({ title, children }: { title: string; children: React.ReactNode
       <div className="space-y-4">{children}</div>
     </div>
   );
-}
-
-function Grid2({ children }: { children: React.ReactNode }) {
-  return <div className="grid gap-4 md:grid-cols-2">{children}</div>;
 }
 
 function Field({

@@ -10,8 +10,8 @@ import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 export const dynamic = 'force-dynamic';
 
 const MEMBER_TYPE_LABEL: Record<string, string> = {
-  individual: '개인',
-  business: '사업자',
+  online: '온라인',
+  offline: '오프라인',
 };
 
 export default async function AdminCustomersPage({

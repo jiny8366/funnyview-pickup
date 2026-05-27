@@ -20,7 +20,7 @@ const patchSchema = z.object({
   addressLine1: z.string().nullable().optional(),
   addressLine2: z.string().nullable().optional(),
   landlinePhone: z.string().nullable().optional(),
-  memberType: z.enum(['individual', 'business']).optional(),
+  memberType: z.enum(['online', 'offline']).optional(),
   adminMemo: z.string().nullable().optional(),
 });
 

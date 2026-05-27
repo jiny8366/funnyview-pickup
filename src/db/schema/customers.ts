@@ -40,8 +40,8 @@ export const customers = pgTable(
     // 일반전화 (선택)
     landlinePhone: text('landline_phone'),
 
-    // 회원 구분 — 'individual' | 'business' (사업자 회원 추후)
-    memberType: text('member_type').default('individual').notNull(),
+    // 회원 구분 — 'online'(퍼니뷰 예약시스템 가입) | 'offline'(픽업가맹점 유입)
+    memberType: text('member_type').default('online').notNull(),
 
     // 환불 계좌 (선택) — { holder, bank, account }
     refundBank: jsonb('refund_bank'),

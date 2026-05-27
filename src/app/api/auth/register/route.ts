@@ -35,7 +35,7 @@ const registerSchema = z.object({
   postalCode: z.string().optional().nullable(),
   addressLine1: z.string().optional().nullable(),
   addressLine2: z.string().optional().nullable(),
-  memberType: z.enum(['individual', 'business']).default('individual'),
+  memberType: z.enum(['online', 'offline']).default('online'),
   referredByCode: z.string().optional().nullable(),
   refundBank: z
     .object({
