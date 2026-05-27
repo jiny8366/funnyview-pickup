@@ -29,22 +29,67 @@ export interface EyePower {
   addPower: number | null;
 }
 
+/** 일반 난시용(토릭) 콘택트렌즈의 가용 CYL 단계 (절댓값). 아큐브/바슈롬 등 공통 범위. */
+const TORIC_CYL_STEPS = [0.75, 1.25, 1.75, 2.25];
+
+/** 안경 난시 도수를 토릭 콘택트 가용 CYL 로 매핑. |CYL| < 0.5 면 0(구면 취급). */
+export function mapToricCylinder(cyl: number): number {
+  const abs = Math.abs(cyl);
+  if (abs < 0.5) return 0;
+  let closest = TORIC_CYL_STEPS[0];
+  for (const s of TORIC_CYL_STEPS) {
+    if (Math.abs(s - abs) < Math.abs(closest - abs)) closest = s;
+  }
+  return -closest;
+}
+
 /**
- * 한쪽 눈의 안경 도수를 콘택트 도수로 변환.
- * 난시가 있으면 두 주경선(sphere, sphere+cyl)을 각각 보정 후 재합성한다.
+ * 안경 → 난시용(토릭) 콘택트 변환.
+ * 1) 두 주경선(SPH, SPH+CYL)을 각각 정점 보정
+ * 2) 난시를 토릭 콘택트 가용 CYL 로 매핑
+ * 3) 구면등가(SE) 보존을 위해 CYL 변경분의 절반을 SPH 에 보정
+ * 난시가 미미(|CYL|<0.5)하면 구면등가로 떨어뜨려 구면 렌즈 도수를 돌려준다.
  */
-export function glassesToContactEye(p: EyePower): EyePower {
+export function glassesToContactToric(p: EyePower): EyePower {
   const s = p.sphere;
   const c = p.cylinder ?? 0;
-  const m1 = vertexCorrect(s); // 약주경선
-  const m2 = vertexCorrect(s + c); // 강주경선
-  const newSphere = roundQuarter(m1);
-  const newCyl = c !== 0 ? roundQuarter(m2 - m1) : null;
+  const m1 = vertexCorrect(s);
+  const m2 = vertexCorrect(s + c);
+  const vSphere = m1;
+  const vCyl = m2 - m1;
+  if (Math.abs(vCyl) < 0.5) {
+    return {
+      sphere: roundQuarter(vSphere + vCyl / 2),
+      cylinder: null,
+      axis: null,
+      addPower: p.addPower,
+    };
+  }
+  const mappedCyl = mapToricCylinder(vCyl);
+  const adjustedSphere = vSphere + (vCyl - mappedCyl) / 2; // SE 보존
   return {
-    sphere: newSphere,
-    cylinder: newCyl,
-    axis: p.axis, // 축은 변하지 않음
-    addPower: p.addPower, // 가입도(다초점)는 그대로
+    sphere: roundQuarter(adjustedSphere),
+    cylinder: roundQuarter(mappedCyl),
+    axis: p.axis,
+    addPower: p.addPower,
+  };
+}
+
+/**
+ * 안경 → 구면등가(SE) 콘택트 변환. 정점 보정 후 SE = SPH + CYL/2, 난시는 제거.
+ * 구면(난시 비교정) 콘택트를 선택할 때 사용.
+ */
+export function glassesToContactSphericalEquivalent(p: EyePower): EyePower {
+  const s = p.sphere;
+  const c = p.cylinder ?? 0;
+  const m1 = vertexCorrect(s);
+  const m2 = vertexCorrect(s + c);
+  const se = m1 + (m2 - m1) / 2;
+  return {
+    sphere: roundQuarter(se),
+    cylinder: null,
+    axis: null,
+    addPower: p.addPower,
   };
 }
 

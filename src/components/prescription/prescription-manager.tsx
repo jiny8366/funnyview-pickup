@@ -3,7 +3,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import {
   formatDiopter,
-  glassesToContactEye,
+  glassesToContactSphericalEquivalent,
+  glassesToContactToric,
   normalizeAddDiopter,
   normalizeAxis,
   normalizeSignedDiopter,
@@ -107,13 +108,19 @@ export function PrescriptionManager({
     return res.ok;
   }
 
-  function contactFormFromGlasses(p: NonNullable<ReturnType<typeof eyePayload>>): EyeForm {
-    const r = glassesToContactEye({
+  function contactFormFromGlasses(
+    p: NonNullable<ReturnType<typeof eyePayload>>,
+    mode: 'toric' | 'se',
+  ): EyeForm {
+    const input = {
       sphere: Number(p.sphere),
       cylinder: p.cylinder ? Number(p.cylinder) : null,
       axis: p.axis,
       addPower: p.addPower ? Number(p.addPower) : null,
-    });
+    };
+    const r = mode === 'se'
+      ? glassesToContactSphericalEquivalent(input)
+      : glassesToContactToric(input);
     return {
       sphere: signedDiopterString(r.sphere),
       cylinder: r.cylinder !== null ? signedDiopterString(r.cylinder) : '',
@@ -154,8 +161,8 @@ export function PrescriptionManager({
       setErr('변환할 안경 도수를 먼저 입력하세요.');
       return;
     }
-    const cr = r ? contactFormFromGlasses(r) : EMPTY_EYE;
-    const cl = l ? contactFormFromGlasses(l) : EMPTY_EYE;
+    const cr = r ? contactFormFromGlasses(r, 'toric') : EMPTY_EYE;
+    const cl = l ? contactFormFromGlasses(l, 'toric') : EMPTY_EYE;
     setCRight(cr);
     setCLeft(cl);
     setSaving(true);
@@ -175,7 +182,40 @@ export function PrescriptionManager({
     setGLeft(EMPTY_EYE);
     setGEditAt(null);
     load();
-    flash(setMsg, '안경 도수를 콘택트로 변환해 함께 저장했습니다.');
+    flash(setMsg, '안경 도수를 난시용(토릭) 콘택트로 변환해 저장했습니다.');
+  }
+
+  // 안경 → 구면등가(SE) 변환 후 둘 다 저장 (구면 콘택트용, 난시 제거)
+  async function handleSphericalEquivalent() {
+    setErr(null);
+    const r = eyePayload(gRight);
+    const l = eyePayload(gLeft);
+    if (!r && !l) {
+      setErr('변환할 안경 도수를 먼저 입력하세요.');
+      return;
+    }
+    const cr = r ? contactFormFromGlasses(r, 'se') : EMPTY_EYE;
+    const cl = l ? contactFormFromGlasses(l, 'se') : EMPTY_EYE;
+    setCRight(cr);
+    setCLeft(cl);
+    setSaving(true);
+    const ok1 = await post({ kind: 'glasses', source: 'manual', right: r, left: l, replaceAt: gEditAt });
+    const ok2 = await post({
+      kind: 'contact',
+      source: 'se',
+      right: eyePayload(cr),
+      left: eyePayload(cl),
+    });
+    setSaving(false);
+    if (!ok1 || !ok2) {
+      setErr('변환·저장에 실패했습니다.');
+      return;
+    }
+    setGRight(EMPTY_EYE);
+    setGLeft(EMPTY_EYE);
+    setGEditAt(null);
+    load();
+    flash(setMsg, '구면등가 도수로 변환해 저장했습니다 (난시 제거).');
   }
 
   // 콘택트 도수 저장 (직접 입력 또는 수정)
@@ -283,6 +323,15 @@ export function PrescriptionManager({
             onRight={setCRight}
             onLeft={setCLeft}
           >
+            <button
+              type="button"
+              onClick={handleSphericalEquivalent}
+              disabled={saving}
+              className="rounded-xl border border-brand-300 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100 disabled:opacity-50"
+              title="안경 도수를 구면등가(SE)로 변환해 난시 없이 적용"
+            >
+              구면도수로만 적용
+            </button>
             <button
               type="button"
               onClick={handleSaveContact}
@@ -470,7 +519,6 @@ function EyeInputRow({
           value={value.sphere}
           onChange={(e) => set({ sphere: e.target.value })}
           onBlur={(e) => set({ sphere: normalizeSignedDiopter(e.target.value) })}
-          placeholder="300"
           className={cls}
         />
       </td>
@@ -480,7 +528,6 @@ function EyeInputRow({
           value={value.cylinder}
           onChange={(e) => set({ cylinder: e.target.value })}
           onBlur={(e) => set({ cylinder: normalizeSignedDiopter(e.target.value) })}
-          placeholder="075"
           className={cls}
         />
       </td>
@@ -491,7 +538,6 @@ function EyeInputRow({
           value={value.axis}
           onChange={(e) => set({ axis: e.target.value })}
           onBlur={(e) => set({ axis: normalizeAxis(e.target.value) })}
-          placeholder="180"
           className={cls}
         />
       </td>
@@ -501,7 +547,6 @@ function EyeInputRow({
           value={value.addPower}
           onChange={(e) => set({ addPower: e.target.value })}
           onBlur={(e) => set({ addPower: normalizeAddDiopter(e.target.value) })}
-          placeholder="150"
           className={cls}
         />
       </td>
