@@ -1,7 +1,14 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { formatDiopter, glassesToContactEye } from '@/lib/prescription/convert';
+import {
+  formatDiopter,
+  glassesToContactEye,
+  normalizeAddDiopter,
+  normalizeAxis,
+  normalizeSignedDiopter,
+  signedDiopterString,
+} from '@/lib/prescription/convert';
 
 type Kind = 'glasses' | 'contact';
 
@@ -63,12 +70,14 @@ export function PrescriptionManager({
   }, [load]);
 
   function eyePayload(f: EyeForm) {
-    if (!f.sphere.trim()) return null;
+    const sphere = normalizeSignedDiopter(f.sphere);
+    if (!sphere) return null;
+    const axis = normalizeAxis(f.axis);
     return {
-      sphere: f.sphere.trim(),
-      cylinder: f.cylinder.trim() || null,
-      axis: f.axis.trim() ? Number(f.axis) : null,
-      addPower: f.addPower.trim() || null,
+      sphere,
+      cylinder: normalizeSignedDiopter(f.cylinder) || null,
+      axis: axis ? Number(axis) : null,
+      addPower: normalizeAddDiopter(f.addPower) || null,
     };
   }
 
@@ -83,10 +92,10 @@ export function PrescriptionManager({
         addPower: f.addPower.trim() ? Number(f.addPower) : null,
       });
       return {
-        sphere: r.sphere.toFixed(2),
-        cylinder: r.cylinder !== null ? r.cylinder.toFixed(2) : '',
+        sphere: signedDiopterString(r.sphere),
+        cylinder: r.cylinder !== null ? signedDiopterString(r.cylinder) : '',
         axis: r.axis !== null ? String(r.axis) : '',
-        addPower: r.addPower !== null ? r.addPower.toFixed(2) : '',
+        addPower: r.addPower !== null ? '+' + Math.abs(r.addPower).toFixed(2) : '',
       };
     };
     if (!right.sphere.trim() && !left.sphere.trim()) {
@@ -181,6 +190,11 @@ export function PrescriptionManager({
             </table>
           </div>
 
+          <p className="mt-2 text-[11px] leading-relaxed text-gray-400">
+            숫자만 입력하면 0.25D 단위로 자동 변환됩니다 (300 → −3.00 · +100 → +1.00 · 075 → −0.75).
+            ADD 는 +0.25 ~ +4.00 (150 → +1.50).
+          </p>
+
           <div className="mt-3 flex flex-wrap gap-2">
             {kind === 'glasses' && (
               <button
@@ -260,26 +274,27 @@ function EyeInputRow({
 }) {
   const cls =
     'w-full rounded-md border border-gray-200 px-2 py-1.5 text-sm focus:border-brand-500 focus:outline-none';
+  const set = (patch: Partial<EyeForm>) => onChange({ ...value, ...patch });
   return (
     <tr>
       <td className="py-1 pr-2 text-xs font-medium text-gray-600">{label}</td>
       <td className="py-1 pr-1.5">
         <input
           type="text"
-          inputMode="decimal"
           value={value.sphere}
-          onChange={(e) => onChange({ ...value, sphere: e.target.value })}
-          placeholder="-3.00"
+          onChange={(e) => set({ sphere: e.target.value })}
+          onBlur={(e) => set({ sphere: normalizeSignedDiopter(e.target.value) })}
+          placeholder="300"
           className={cls}
         />
       </td>
       <td className="py-1 pr-1.5">
         <input
           type="text"
-          inputMode="decimal"
           value={value.cylinder}
-          onChange={(e) => onChange({ ...value, cylinder: e.target.value })}
-          placeholder="-0.75"
+          onChange={(e) => set({ cylinder: e.target.value })}
+          onBlur={(e) => set({ cylinder: normalizeSignedDiopter(e.target.value) })}
+          placeholder="075"
           className={cls}
         />
       </td>
@@ -288,7 +303,8 @@ function EyeInputRow({
           type="text"
           inputMode="numeric"
           value={value.axis}
-          onChange={(e) => onChange({ ...value, axis: e.target.value })}
+          onChange={(e) => set({ axis: e.target.value })}
+          onBlur={(e) => set({ axis: normalizeAxis(e.target.value) })}
           placeholder="180"
           className={cls}
         />
@@ -296,10 +312,10 @@ function EyeInputRow({
       <td className="py-1">
         <input
           type="text"
-          inputMode="decimal"
           value={value.addPower}
-          onChange={(e) => onChange({ ...value, addPower: e.target.value })}
-          placeholder="+1.50"
+          onChange={(e) => set({ addPower: e.target.value })}
+          onBlur={(e) => set({ addPower: normalizeAddDiopter(e.target.value) })}
+          placeholder="150"
           className={cls}
         />
       </td>

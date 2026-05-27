@@ -48,9 +48,62 @@ export function glassesToContactEye(p: EyePower): EyePower {
   };
 }
 
-/** 도수 숫자를 처방 표기 문자열로 (+0.00 / -3.75). */
+/** 도수 숫자를 처방 표기 문자열로 (+0.00 / −3.75) — 화면 표시용(− 기호). */
 export function formatDiopter(v: number | null | undefined): string {
   if (v === null || v === undefined) return '—';
   const sign = v > 0 ? '+' : v < 0 ? '−' : '';
   return `${sign}${Math.abs(v).toFixed(2)}`;
+}
+
+/** 폼 입력/저장용 부호 문자열 (ASCII +/-): -3.00 / +1.00 / 0.00 */
+export function signedDiopterString(v: number): string {
+  if (v === 0) return '0.00';
+  return (v > 0 ? '+' : '-') + Math.abs(v).toFixed(2);
+}
+
+function parseDigits(raw: string): number | null {
+  const digits = raw.replace(/[^0-9.]/g, '');
+  if (!digits) return null;
+  // 소수점이 있으면 그대로(3.00), 없으면 100으로 나눔(300 → 3.00)
+  const val = digits.includes('.') ? parseFloat(digits) : parseInt(digits, 10) / 100;
+  return Number.isFinite(val) ? val : null;
+}
+
+/**
+ * SPH/CYL 입력 정규화. 0.25 단위 반올림, 부호 없으면 음수(근시) 기본, '+' 명시 시 양수.
+ *   "300" → "-3.00",  "075" → "-0.75",  "+100" → "+1.00",  "0" → "0.00"
+ */
+export function normalizeSignedDiopter(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '';
+  const hasPlus = t.includes('+');
+  const v = parseDigits(t);
+  if (v === null) return '';
+  const rounded = roundQuarter(Math.abs(v));
+  if (rounded === 0) return '0.00';
+  return signedDiopterString(hasPlus ? rounded : -rounded);
+}
+
+/**
+ * ADD(가입도) 입력 정규화. 항상 +, +0.25 ~ +4.00 범위로 clamp, 0.25 단위.
+ *   "150" → "+1.50",  "500" → "+4.00",  "10" → "+0.25"
+ */
+export function normalizeAddDiopter(raw: string): string {
+  const t = raw.trim();
+  if (!t) return '';
+  const v = parseDigits(t);
+  if (v === null) return '';
+  let val = roundQuarter(Math.abs(v));
+  val = Math.max(0.25, Math.min(4.0, val));
+  return '+' + val.toFixed(2);
+}
+
+/** AXIS 입력 정규화 — 0~180 정수. */
+export function normalizeAxis(raw: string): string {
+  const digits = raw.replace(/[^0-9]/g, '');
+  if (!digits) return '';
+  let v = parseInt(digits, 10);
+  if (!Number.isFinite(v)) return '';
+  v = Math.max(0, Math.min(180, v));
+  return String(v);
 }
