@@ -52,6 +52,8 @@ export async function PATCH(
     'diameter',
     'waterContent',
     'material',
+    'oxygenDkt',
+    'uvProtection',
     'sphereMin',
     'sphereMax',
     'mfdsPermitNo',
@@ -73,6 +75,8 @@ export async function PATCH(
       const v = body[k];
       if (numericFields.has(k)) {
         allowed[k] = v == null ? null : Number(v);
+      } else if (k === 'oxygenDkt') {
+        allowed[k] = v == null || v === '' ? null : Number(v);
       } else if (['baseCurve', 'diameter', 'waterContent', 'sphereMin', 'sphereMax'].includes(k)) {
         allowed[k] = v == null || v === '' ? null : String(v);
       } else {

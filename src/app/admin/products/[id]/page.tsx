@@ -66,6 +66,8 @@ export default async function EditProductPage({
           diameter: row.diameter ?? '',
           waterContent: row.waterContent ?? '',
           material: row.material ?? '',
+          oxygenDkt: row.oxygenDkt != null ? String(row.oxygenDkt) : '',
+          uvProtection: row.uvProtection ?? false,
           sphereMin: row.sphereMin ?? '',
           sphereMax: row.sphereMax ?? '',
           mfdsPermitNo: row.mfdsPermitNo ?? '',

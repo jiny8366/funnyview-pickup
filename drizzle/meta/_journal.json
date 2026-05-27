@@ -134,6 +134,13 @@
       "when": 1779900200000,
       "tag": "0018_member_type_online_offline",
       "breakpoints": true
+    },
+    {
+      "idx": 19,
+      "version": "7",
+      "when": 1779900300000,
+      "tag": "0019_lens_oxygen_uv",
+      "breakpoints": true
     }
   ]
 }

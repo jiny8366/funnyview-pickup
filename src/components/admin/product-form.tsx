@@ -77,6 +77,8 @@ interface FormState {
   diameter: string;
   waterContent: string;
   material: string;
+  oxygenDkt: string;
+  uvProtection: boolean;
   sphereMin: string;
   sphereMax: string;
   // 식약처 UDI 참조 (수기 입력 또는 UDI 적재 시 자동 채움)
@@ -119,6 +121,8 @@ const EMPTY: FormState = {
   diameter: '',
   waterContent: '',
   material: '',
+  oxygenDkt: '',
+  uvProtection: false,
   sphereMin: '',
   sphereMax: '',
   mfdsPermitNo: '',
@@ -472,9 +476,29 @@ export function ProductForm({
               <input
                 value={form.material}
                 onChange={(e) => update('material', e.target.value)}
-                placeholder="senofilcon A"
+                placeholder="senofilcon A / etafilcon A"
                 className="input"
               />
+            </Field>
+            <Field label="산소투과율 (Dk/t)">
+              <input
+                value={form.oxygenDkt}
+                onChange={(e) => update('oxygenDkt', e.target.value.replace(/[^0-9]/g, ''))}
+                inputMode="numeric"
+                placeholder="138 (장시간 착용 지표)"
+                className="input"
+              />
+            </Field>
+            <Field label="UV 차단">
+              <label className="flex h-[38px] items-center gap-2 text-sm text-gray-700">
+                <input
+                  type="checkbox"
+                  checked={form.uvProtection}
+                  onChange={(e) => update('uvProtection', e.target.checked)}
+                  className="h-4 w-4 rounded border-gray-300"
+                />
+                UV 차단 기능 있음
+              </label>
             </Field>
             <Field
               label="도수 최소 (구면)"

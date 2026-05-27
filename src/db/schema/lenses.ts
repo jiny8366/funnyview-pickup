@@ -30,6 +30,8 @@ export const lenses = pgTable(
     diameter: numeric('diameter', { precision: 4, scale: 2 }), // DIA
     waterContent: numeric('water_content', { precision: 5, scale: 2 }), // 함수율 %
     material: text('material'),
+    oxygenDkt: integer('oxygen_dkt'), // 산소투과율 Dk/t (착용시간 추천 지표)
+    uvProtection: boolean('uv_protection').default(false).notNull(), // UV 차단 여부
 
     // 박스 단위
     piecesPerBox: integer('pieces_per_box').default(1).notNull(), // 1박스 매수
