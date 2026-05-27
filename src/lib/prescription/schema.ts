@@ -13,4 +13,6 @@ export const prescriptionPostSchema = z.object({
   source: z.string().nullable().optional(),
   left: prescriptionEyeSchema.nullable().optional(),
   right: prescriptionEyeSchema.nullable().optional(),
+  // 기존 기록 수정 시 그 기록의 recordedAt (ISO). 미지정이면 신규 저장.
+  replaceAt: z.string().nullable().optional(),
 });

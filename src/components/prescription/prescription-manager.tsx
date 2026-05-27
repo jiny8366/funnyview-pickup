@@ -34,11 +34,20 @@ interface EyeForm {
 }
 const EMPTY_EYE: EyeForm = { sphere: '', cylinder: '', axis: '', addPower: '' };
 
-const KIND_LABEL: Record<Kind, string> = { glasses: '안경', contact: '콘택트' };
+function eyeDataToForm(e: EyeData | null): EyeForm {
+  if (!e) return EMPTY_EYE;
+  return {
+    sphere: e.sphere ?? '',
+    cylinder: e.cylinder ?? '',
+    axis: e.axis !== null ? String(e.axis) : '',
+    addPower: e.addPower ?? '',
+  };
+}
 
 /**
  * 고객 시력(도수) 관리 — admin/customer/store 공용.
- * endpoint 는 GET(이력)/POST(저장)를 처리하는 동일 URL.
+ * 안경·콘택트 입력을 함께 표시. 안경 입력 후 변환하면 콘택트 도수가 자동 계산되어 함께 저장된다.
+ * 이력 항목을 클릭하면 해당 기록을 수정할 수 있다.
  */
 export function PrescriptionManager({
   endpoint,
@@ -49,9 +58,12 @@ export function PrescriptionManager({
 }) {
   const [groups, setGroups] = useState<PrescriptionGroup[]>([]);
   const [loading, setLoading] = useState(true);
-  const [kind, setKind] = useState<Kind>('glasses');
-  const [right, setRight] = useState<EyeForm>(EMPTY_EYE);
-  const [left, setLeft] = useState<EyeForm>(EMPTY_EYE);
+  const [gRight, setGRight] = useState<EyeForm>(EMPTY_EYE);
+  const [gLeft, setGLeft] = useState<EyeForm>(EMPTY_EYE);
+  const [gEditAt, setGEditAt] = useState<string | null>(null);
+  const [cRight, setCRight] = useState<EyeForm>(EMPTY_EYE);
+  const [cLeft, setCLeft] = useState<EyeForm>(EMPTY_EYE);
+  const [cEditAt, setCEditAt] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
@@ -81,171 +93,345 @@ export function PrescriptionManager({
     };
   }
 
-  function handleConvert() {
-    setErr(null);
-    const conv = (f: EyeForm): EyeForm => {
-      if (!f.sphere.trim()) return EMPTY_EYE;
-      const r = glassesToContactEye({
-        sphere: Number(f.sphere),
-        cylinder: f.cylinder.trim() ? Number(f.cylinder) : null,
-        axis: f.axis.trim() ? Number(f.axis) : null,
-        addPower: f.addPower.trim() ? Number(f.addPower) : null,
-      });
-      return {
-        sphere: signedDiopterString(r.sphere),
-        cylinder: r.cylinder !== null ? signedDiopterString(r.cylinder) : '',
-        axis: r.axis !== null ? String(r.axis) : '',
-        addPower: r.addPower !== null ? '+' + Math.abs(r.addPower).toFixed(2) : '',
-      };
-    };
-    if (!right.sphere.trim() && !left.sphere.trim()) {
-      setErr('변환할 안경 도수를 먼저 입력하세요.');
-      return;
-    }
-    setRight(conv(right));
-    setLeft(conv(left));
-    setKind('contact');
-    setMsg('안경 도수를 콘택트 도수로 변환했습니다. 확인 후 저장하세요.');
-    setTimeout(() => setMsg(null), 4000);
+  function flash(setter: (v: string | null) => void, text: string) {
+    setter(text);
+    setTimeout(() => setter(null), 2800);
   }
 
-  async function handleSave() {
-    setErr(null);
-    setMsg(null);
-    const l = eyePayload(left);
-    const r = eyePayload(right);
-    if (!l && !r) {
-      setErr('좌/우 중 하나 이상 SPH 를 입력하세요.');
-      return;
-    }
-    setSaving(true);
+  async function post(body: Record<string, unknown>): Promise<boolean> {
     const res = await fetch(endpoint, {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ kind, source: 'manual', left: l, right: r }),
+      body: JSON.stringify(body),
     });
-    setSaving(false);
-    if (!res.ok) {
-      const j = await res.json().catch(() => ({}));
-      setErr(j.error ?? '저장에 실패했습니다.');
-      return;
-    }
-    setMsg('저장되었습니다.');
-    setRight(EMPTY_EYE);
-    setLeft(EMPTY_EYE);
-    load();
-    setTimeout(() => setMsg(null), 2500);
+    return res.ok;
   }
 
-  const history = groups.filter((g) => g.kind === kind);
-  const latest = history[0] ?? null;
+  function contactFormFromGlasses(p: NonNullable<ReturnType<typeof eyePayload>>): EyeForm {
+    const r = glassesToContactEye({
+      sphere: Number(p.sphere),
+      cylinder: p.cylinder ? Number(p.cylinder) : null,
+      axis: p.axis,
+      addPower: p.addPower ? Number(p.addPower) : null,
+    });
+    return {
+      sphere: signedDiopterString(r.sphere),
+      cylinder: r.cylinder !== null ? signedDiopterString(r.cylinder) : '',
+      axis: r.axis !== null ? String(r.axis) : '',
+      addPower: r.addPower !== null ? '+' + Math.abs(r.addPower).toFixed(2) : '',
+    };
+  }
+
+  // 안경 도수만 저장
+  async function handleSaveGlasses() {
+    setErr(null);
+    const r = eyePayload(gRight);
+    const l = eyePayload(gLeft);
+    if (!r && !l) {
+      setErr('안경 도수를 입력하세요 (좌/우 중 하나 이상).');
+      return;
+    }
+    setSaving(true);
+    const ok = await post({ kind: 'glasses', source: 'manual', right: r, left: l, replaceAt: gEditAt });
+    setSaving(false);
+    if (!ok) {
+      setErr('안경 도수 저장에 실패했습니다.');
+      return;
+    }
+    setGRight(EMPTY_EYE);
+    setGLeft(EMPTY_EYE);
+    setGEditAt(null);
+    load();
+    flash(setMsg, '안경 도수를 저장했습니다.');
+  }
+
+  // 안경 → 콘택트 변환 후 둘 다 저장
+  async function handleConvert() {
+    setErr(null);
+    const r = eyePayload(gRight);
+    const l = eyePayload(gLeft);
+    if (!r && !l) {
+      setErr('변환할 안경 도수를 먼저 입력하세요.');
+      return;
+    }
+    const cr = r ? contactFormFromGlasses(r) : EMPTY_EYE;
+    const cl = l ? contactFormFromGlasses(l) : EMPTY_EYE;
+    setCRight(cr);
+    setCLeft(cl);
+    setSaving(true);
+    const ok1 = await post({ kind: 'glasses', source: 'manual', right: r, left: l, replaceAt: gEditAt });
+    const ok2 = await post({
+      kind: 'contact',
+      source: 'converted',
+      right: eyePayload(cr),
+      left: eyePayload(cl),
+    });
+    setSaving(false);
+    if (!ok1 || !ok2) {
+      setErr('변환·저장에 실패했습니다.');
+      return;
+    }
+    setGRight(EMPTY_EYE);
+    setGLeft(EMPTY_EYE);
+    setGEditAt(null);
+    load();
+    flash(setMsg, '안경 도수를 콘택트로 변환해 함께 저장했습니다.');
+  }
+
+  // 콘택트 도수 저장 (직접 입력 또는 수정)
+  async function handleSaveContact() {
+    setErr(null);
+    const r = eyePayload(cRight);
+    const l = eyePayload(cLeft);
+    if (!r && !l) {
+      setErr('콘택트 도수를 입력하세요 (좌/우 중 하나 이상).');
+      return;
+    }
+    setSaving(true);
+    const ok = await post({ kind: 'contact', source: 'manual', right: r, left: l, replaceAt: cEditAt });
+    setSaving(false);
+    if (!ok) {
+      setErr('콘택트 도수 저장에 실패했습니다.');
+      return;
+    }
+    setCRight(EMPTY_EYE);
+    setCLeft(EMPTY_EYE);
+    setCEditAt(null);
+    load();
+    flash(setMsg, '콘택트 도수를 저장했습니다.');
+  }
+
+  function handleEdit(g: PrescriptionGroup) {
+    setErr(null);
+    if (g.kind === 'glasses') {
+      setGRight(eyeDataToForm(g.right));
+      setGLeft(eyeDataToForm(g.left));
+      setGEditAt(g.recordedAt);
+    } else {
+      setCRight(eyeDataToForm(g.right));
+      setCLeft(eyeDataToForm(g.left));
+      setCEditAt(g.recordedAt);
+    }
+    flash(setMsg, '기록을 불러왔습니다. 수정 후 저장하세요.');
+  }
+
+  function cancelGlasses() {
+    setGRight(EMPTY_EYE);
+    setGLeft(EMPTY_EYE);
+    setGEditAt(null);
+  }
+  function cancelContact() {
+    setCRight(EMPTY_EYE);
+    setCLeft(EMPTY_EYE);
+    setCEditAt(null);
+  }
+
+  const glassesHistory = groups.filter((g) => g.kind === 'glasses');
+  const contactHistory = groups.filter((g) => g.kind === 'contact');
 
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5">
-      <div className="mb-4 flex items-center justify-between">
-        <h2 className="text-sm font-bold text-gray-900">시력 (도수) 관리</h2>
-        <div className="inline-flex rounded-lg border border-gray-200 bg-gray-50 p-0.5">
-          {(['glasses', 'contact'] as const).map((k) => (
-            <button
-              key={k}
-              type="button"
-              onClick={() => setKind(k)}
-              className={`rounded-md px-3 py-1.5 text-sm font-medium transition ${
-                kind === k ? 'bg-gray-900 text-white shadow-sm' : 'text-gray-500 hover:text-gray-700'
-              }`}
-            >
-              {KIND_LABEL[k]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      {latest && (
-        <div className="mb-4 rounded-xl bg-gray-50 p-3 text-xs">
-          <p className="mb-1.5 font-semibold text-gray-500">
-            최신 {KIND_LABEL[kind]} 도수 · {new Date(latest.recordedAt).toLocaleDateString('ko-KR')}
-          </p>
-          <EyeReadout label="우 (R)" eye={latest.right} />
-          <EyeReadout label="좌 (L)" eye={latest.left} />
-        </div>
-      )}
+      <h2 className="mb-1 text-sm font-bold text-gray-900">시력 (도수) 관리</h2>
+      <p className="mb-4 text-[11px] leading-relaxed text-gray-400">
+        숫자만 입력하면 0.25D 단위로 자동 변환됩니다 (300 → −3.00 · +100 → +1.00 · 075 → −0.75). ADD 는 +0.25 ~ +4.00.
+      </p>
 
       {canEdit && (
-        <>
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="text-[11px] uppercase tracking-wider text-gray-400">
-                  <th className="w-12 py-1 text-left" />
-                  <th className="py-1 text-left font-semibold">SPH</th>
-                  <th className="py-1 text-left font-semibold">CYL</th>
-                  <th className="py-1 text-left font-semibold">AXIS</th>
-                  <th className="py-1 text-left font-semibold">ADD</th>
-                </tr>
-              </thead>
-              <tbody>
-                <EyeInputRow label="우(R)" value={right} onChange={setRight} />
-                <EyeInputRow label="좌(L)" value={left} onChange={setLeft} />
-              </tbody>
-            </table>
-          </div>
-
-          <p className="mt-2 text-[11px] leading-relaxed text-gray-400">
-            숫자만 입력하면 0.25D 단위로 자동 변환됩니다 (300 → −3.00 · +100 → +1.00 · 075 → −0.75).
-            ADD 는 +0.25 ~ +4.00 (150 → +1.50).
-          </p>
-
-          <div className="mt-3 flex flex-wrap gap-2">
-            {kind === 'glasses' && (
-              <button
-                type="button"
-                onClick={handleConvert}
-                className="rounded-xl border border-brand-300 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100"
-              >
-                콘택트 도수로 변환 →
-              </button>
-            )}
+        <div className="space-y-5">
+          {/* 안경 도수 */}
+          <PowerSection
+            title="안경 도수"
+            editing={Boolean(gEditAt)}
+            right={gRight}
+            left={gLeft}
+            onRight={setGRight}
+            onLeft={setGLeft}
+          >
             <button
               type="button"
-              onClick={handleSave}
+              onClick={handleConvert}
+              disabled={saving}
+              className="rounded-xl border border-brand-300 bg-brand-50 px-4 py-2 text-sm font-semibold text-brand-700 hover:bg-brand-100 disabled:opacity-50"
+            >
+              콘택트로 변환 후 저장 →
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveGlasses}
               disabled={saving}
               className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
             >
-              {saving ? '저장 중...' : `${KIND_LABEL[kind]} 도수 저장`}
+              {gEditAt ? '안경 수정 저장' : '안경만 저장'}
             </button>
-          </div>
+            {gEditAt && (
+              <button
+                type="button"
+                onClick={cancelGlasses}
+                className="rounded-xl px-3 py-2 text-sm text-gray-500 hover:text-gray-700"
+              >
+                취소
+              </button>
+            )}
+          </PowerSection>
 
-          {err && <p className="mt-2 text-sm text-red-600">{err}</p>}
-          {msg && <p className="mt-2 text-sm text-emerald-600">{msg}</p>}
-        </>
+          {/* 콘택트 도수 */}
+          <PowerSection
+            title="콘택트 도수"
+            editing={Boolean(cEditAt)}
+            right={cRight}
+            left={cLeft}
+            onRight={setCRight}
+            onLeft={setCLeft}
+          >
+            <button
+              type="button"
+              onClick={handleSaveContact}
+              disabled={saving}
+              className="rounded-xl bg-gray-900 px-4 py-2 text-sm font-semibold text-white hover:bg-black disabled:opacity-50"
+            >
+              {cEditAt ? '콘택트 수정 저장' : '콘택트 저장'}
+            </button>
+            {cEditAt && (
+              <button
+                type="button"
+                onClick={cancelContact}
+                className="rounded-xl px-3 py-2 text-sm text-gray-500 hover:text-gray-700"
+              >
+                취소
+              </button>
+            )}
+          </PowerSection>
+
+          {err && <p className="text-sm text-red-600">{err}</p>}
+          {msg && <p className="text-sm text-emerald-600">{msg}</p>}
+        </div>
       )}
 
-      <div className="mt-5">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
-          {KIND_LABEL[kind]} 이력 ({history.length})
-        </p>
-        {loading ? (
-          <p className="text-sm text-gray-400">불러오는 중...</p>
-        ) : history.length === 0 ? (
-          <p className="text-sm text-gray-400">기록이 없습니다.</p>
-        ) : (
-          <ul className="divide-y divide-gray-50">
-            {history.map((g) => (
-              <li key={`${g.kind}-${g.recordedAt}`} className="py-2.5 text-xs">
-                <p className="mb-1 font-medium text-gray-500">
+      {/* 이력 */}
+      <div className="mt-6 grid gap-5 md:grid-cols-2">
+        <HistoryList
+          title="안경 이력"
+          items={glassesHistory}
+          loading={loading}
+          canEdit={canEdit}
+          onEdit={handleEdit}
+        />
+        <HistoryList
+          title="콘택트 이력"
+          items={contactHistory}
+          loading={loading}
+          canEdit={canEdit}
+          onEdit={handleEdit}
+        />
+      </div>
+    </div>
+  );
+}
+
+function PowerSection({
+  title,
+  editing,
+  right,
+  left,
+  onRight,
+  onLeft,
+  children,
+}: {
+  title: string;
+  editing: boolean;
+  right: EyeForm;
+  left: EyeForm;
+  onRight: (v: EyeForm) => void;
+  onLeft: (v: EyeForm) => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <div className="rounded-xl border border-gray-100 bg-gray-50/50 p-3">
+      <div className="mb-2 flex items-center gap-2">
+        <span className="text-sm font-semibold text-gray-800">{title}</span>
+        {editing && (
+          <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold text-amber-700">
+            수정 중
+          </span>
+        )}
+      </div>
+      <div className="overflow-x-auto">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="text-[11px] uppercase tracking-wider text-gray-400">
+              <th className="w-12 py-1 text-left" />
+              <th className="py-1 text-left font-semibold">SPH</th>
+              <th className="py-1 text-left font-semibold">CYL</th>
+              <th className="py-1 text-left font-semibold">AXIS</th>
+              <th className="py-1 text-left font-semibold">ADD</th>
+            </tr>
+          </thead>
+          <tbody>
+            <EyeInputRow label="우(R)" value={right} onChange={onRight} />
+            <EyeInputRow label="좌(L)" value={left} onChange={onLeft} />
+          </tbody>
+        </table>
+      </div>
+      <div className="mt-3 flex flex-wrap gap-2">{children}</div>
+    </div>
+  );
+}
+
+function HistoryList({
+  title,
+  items,
+  loading,
+  canEdit,
+  onEdit,
+}: {
+  title: string;
+  items: PrescriptionGroup[];
+  loading: boolean;
+  canEdit: boolean;
+  onEdit: (g: PrescriptionGroup) => void;
+}) {
+  return (
+    <div>
+      <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-400">
+        {title} ({items.length})
+      </p>
+      {loading ? (
+        <p className="text-sm text-gray-400">불러오는 중...</p>
+      ) : items.length === 0 ? (
+        <p className="text-sm text-gray-400">기록이 없습니다.</p>
+      ) : (
+        <ul className="divide-y divide-gray-50">
+          {items.map((g) => (
+            <li key={`${g.kind}-${g.recordedAt}`} className="py-2.5 text-xs">
+              <div className="mb-1 flex items-center justify-between">
+                <span className="font-medium text-gray-500">
                   {new Date(g.recordedAt).toLocaleDateString('ko-KR')}{' '}
                   {new Date(g.recordedAt).toLocaleTimeString('ko-KR', {
                     hour: '2-digit',
                     minute: '2-digit',
                   })}
-                </p>
-                <EyeReadout label="우 (R)" eye={g.right} />
-                <EyeReadout label="좌 (L)" eye={g.left} />
-              </li>
-            ))}
-          </ul>
-        )}
-      </div>
+                  {g.source === 'converted' && (
+                    <span className="ml-1.5 rounded bg-brand-50 px-1 py-0.5 text-[10px] text-brand-600">
+                      변환
+                    </span>
+                  )}
+                </span>
+                {canEdit && (
+                  <button
+                    type="button"
+                    onClick={() => onEdit(g)}
+                    className="rounded border border-gray-200 px-2 py-0.5 text-[11px] text-gray-500 hover:bg-gray-50 hover:text-brand-600"
+                  >
+                    수정
+                  </button>
+                )}
+              </div>
+              <EyeReadout label="우 (R)" eye={g.right} />
+              <EyeReadout label="좌 (L)" eye={g.left} />
+            </li>
+          ))}
+        </ul>
+      )}
     </div>
   );
 }

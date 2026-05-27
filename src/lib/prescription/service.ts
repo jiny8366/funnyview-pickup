@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { and, desc, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { customerPrescriptions } from '@/db/schema';
 
@@ -31,6 +31,8 @@ export interface SavePrescriptionInput {
   source?: string | null;
   left?: EyeInput | null;
   right?: EyeInput | null;
+  /** 지정 시 해당 시각의 기존 같은 종류 기록을 교체(수정). 미지정이면 신규. */
+  replaceAt?: string | null;
 }
 
 /** 한 번의 처방 입력을 좌/우 행으로 저장 (동일 recordedAt 으로 묶음 = 이력 1건). */
@@ -38,7 +40,19 @@ export async function savePrescription(
   customerId: string,
   input: SavePrescriptionInput,
 ): Promise<void> {
-  const recordedAt = new Date();
+  const recordedAt = input.replaceAt ? new Date(input.replaceAt) : new Date();
+  // 수정: 같은 (고객·종류·시각) 기존 행 삭제 후 재삽입
+  if (input.replaceAt) {
+    await db
+      .delete(customerPrescriptions)
+      .where(
+        and(
+          eq(customerPrescriptions.customerId, customerId),
+          eq(customerPrescriptions.kind, input.kind),
+          eq(customerPrescriptions.recordedAt, recordedAt),
+        ),
+      );
+  }
   const rows: (typeof customerPrescriptions.$inferInsert)[] = [];
   const push = (eyeSide: 'left' | 'right', e: EyeInput) => {
     rows.push({
