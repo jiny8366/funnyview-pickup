@@ -148,6 +148,13 @@
       "when": 1779900400000,
       "tag": "0020_lens_blue_light",
       "breakpoints": true
+    },
+    {
+      "idx": 21,
+      "version": "7",
+      "when": 1779900500000,
+      "tag": "0021_seed_lens_properties",
+      "breakpoints": true
     }
   ]
 }
