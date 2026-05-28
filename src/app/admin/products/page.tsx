@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
+import { ProductExcelTools } from '@/components/admin/product-excel-tools';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import {
@@ -265,6 +266,10 @@ export default function AdminProductsPage() {
             </Link>
           </div>
         }
+      />
+
+      <ProductExcelTools
+        brandOptions={[...new Set((items ?? []).map((i) => i.brand))].filter(Boolean).sort()}
       />
 
       {/* 통계 헤더 */}
