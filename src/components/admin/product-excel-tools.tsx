@@ -69,6 +69,14 @@ export function ProductExcelTools({ brandOptions }: { brandOptions: string[] }) 
         <Button variant="secondary" onClick={download}>
           엑셀 다운로드
         </Button>
+        <Button
+          variant="secondary"
+          onClick={() => {
+            window.location.href = '/api/admin/products/export?sample=1';
+          }}
+        >
+          샘플 양식
+        </Button>
         <input
           ref={fileRef}
           type="file"

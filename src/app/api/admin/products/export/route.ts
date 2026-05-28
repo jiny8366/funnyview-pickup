@@ -43,12 +43,60 @@ const EXPORT_COLUMNS = [
   'isActive',
 ];
 
+// 사용자가 입력 형식을 알기 쉽도록 만든 예시 행. 업로드용이 아니라 참고용.
+const SAMPLE_ROW: Record<string, unknown> = {
+  productCode: 'SAMPLE-001',
+  brand: '예시브랜드',
+  name: '샘플 콘택트렌즈 30P',
+  lensType: 'spherical',
+  replacementCycle: '1day',
+  piecesPerBox: 30,
+  baseCurve: '8.60',
+  diameter: '14.20',
+  waterContent: '55.00',
+  material: 'senofilcon A',
+  oxygenDkt: 130,
+  uvProtection: 'TRUE',
+  blueLight: 'FALSE',
+  sphereMin: '-12.00',
+  sphereMax: '+6.00',
+  price: 25000,
+  cost: 0,
+  standardCost: 8000,
+  purchaseDiscountAmount: 0,
+  purchaseDiscountPercent: 0,
+  standardSupplyPrice: 18000,
+  supplyDiscountAmount: 0,
+  supplyDiscountPercent: 0,
+  recommendedRetailPrice: 30000,
+  manufacturer: '예시 제조사',
+  mfdsPermitNo: '제조허가 21-1234',
+  mfdsClassificationCode: 'A07020',
+  mfdsProductName: '시력보정용 소프트콘택트렌즈',
+  colorName: '',
+  colorHex: '',
+  seriesCode: 'SAMPLE',
+  isNew: 'FALSE',
+  isActive: 'TRUE',
+};
+
 export async function GET(req: Request) {
   const me = await requirePermissionForApi('products_read');
   if (!me) return new Response('forbidden', { status: 403 });
 
   const url = new URL(req.url);
+  const sample = url.searchParams.get('sample') === '1';
   const brand = url.searchParams.get('brand')?.trim();
+
+  if (sample) {
+    const csv = rowsToCsv(EXPORT_COLUMNS, [SAMPLE_ROW]);
+    return new Response(csv, {
+      headers: {
+        'Content-Type': 'text/csv; charset=utf-8',
+        'Content-Disposition': `attachment; filename*=UTF-8''${encodeURIComponent('products_sample.csv')}`,
+      },
+    });
+  }
 
   const rows = await db
     .select()
