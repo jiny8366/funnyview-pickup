@@ -7,7 +7,7 @@ import { rowsToCsv } from '@/lib/csv';
 export const dynamic = 'force-dynamic';
 
 // 다운로드/업로드 공통 컬럼. productCode 는 매칭 키(수정 불가), 그 외는 편집 대상.
-export const EXPORT_COLUMNS = [
+const EXPORT_COLUMNS = [
   'productCode',
   'brand',
   'name',
