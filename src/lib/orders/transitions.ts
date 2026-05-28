@@ -340,6 +340,34 @@ export async function cancelOrder(orderId: string, byUserId: string | null, reas
     });
   });
   await voidReferralRewardOnCancel(orderId).catch(() => {});
+
+  // 고객에게 취소 알림 (인계 누락 보완)
+  try {
+    const [info] = await db
+      .select({
+        customerUserId: customers.userId,
+        customerPhone: customers.phone,
+        customerName: customers.name,
+        orderNumber: orders.orderNumber,
+      })
+      .from(orders)
+      .innerJoin(customers, eq(customers.id, orders.customerId))
+      .where(eq(orders.id, orderId))
+      .limit(1);
+    if (info?.customerUserId) {
+      await dispatchNotification({
+        kind: 'order_cancelled',
+        recipients: [{ userId: info.customerUserId, phone: info.customerPhone }],
+        context: {
+          orderNumber: info.orderNumber,
+          customerName: info.customerName,
+          reason,
+        },
+      });
+    }
+  } catch {
+    // 알림 실패는 취소 자체를 막지 않음
+  }
 }
 
 /**

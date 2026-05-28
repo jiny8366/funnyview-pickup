@@ -10,7 +10,8 @@ export type NotificationKind =
   | 'order_arrived'
   | 'pickup_ready'
   | 'pickup_completed'
-  | 'low_stock';
+  | 'low_stock'
+  | 'order_cancelled';
 
 export interface TemplateRendered {
   title: string;
@@ -29,6 +30,7 @@ export interface TemplateContext {
   itemSummary?: string;
   variantLabel?: string;
   availableQty?: number;
+  reason?: string;
 }
 
 export function renderTemplate(
@@ -89,6 +91,13 @@ export function renderTemplate(
       return {
         title: '저재고 알람',
         body: `[Funnyview Pickup] ${ctx.variantLabel ?? 'SKU'} 가용재고 ${ctx.availableQty ?? 0} — 입고가 필요합니다.`,
+      };
+    case 'order_cancelled':
+      return {
+        title: '주문 취소',
+        body: `${name}님, 주문 ${orderNo}이(가) 취소되었습니다.${ctx.reason ? `\n사유: ${ctx.reason}` : ''}`,
+        kakaoTemplateId: process.env.KAKAO_TPL_ORDER_CANCELLED,
+        kakaoVariables: { '#{orderNumber}': orderNo, '#{customerName}': name },
       };
   }
 }
