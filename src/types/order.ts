@@ -7,7 +7,9 @@ export type OrderStatus =
   | 'arrived' // 가맹점 입고
   | 'ready' // 픽업 준비 (도착알림 발송)
   | 'completed' // 처리완료
-  | 'cancelled';
+  | 'cancelled'
+  | 'no_show' // 픽업 미수령 (ready 후 고객 미방문)
+  | 'returned'; // 반품 (회수)
 
 export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   pending: '주문완료',
@@ -19,6 +21,8 @@ export const ORDER_STATUS_LABEL: Record<OrderStatus, string> = {
   ready: '픽업 가능',
   completed: '처리완료',
   cancelled: '취소',
+  no_show: '미수령',
+  returned: '반품',
 };
 
 export type UserRole = 'customer' | 'warehouse_staff' | 'store_staff' | 'admin';

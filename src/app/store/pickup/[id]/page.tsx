@@ -179,6 +179,29 @@ export default function StorePickupDetailPage() {
     router.push('/store/pickup');
   }
 
+  async function doStatusAction(action: 'no_show' | 'return') {
+    if (!data) return;
+    const confirmMsg =
+      action === 'no_show'
+        ? '미수령 처리할까요? 고객에게 미수령 안내가 발송됩니다.'
+        : '반품 처리할까요? 재고는 입고 전표로 별도 재등록해야 합니다.';
+    if (!window.confirm(confirmMsg)) return;
+    setBusy(true);
+    setError(null);
+    const res = await fetch(`/api/store/orders/${data.order.id}/transition`, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ action }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => ({}));
+      setError(j.error ?? '처리 실패');
+      setBusy(false);
+      return;
+    }
+    router.push('/store/pickup');
+  }
+
   if (loading || !data) {
     return <div className="text-sm text-gray-400">불러오는 중...</div>;
   }
@@ -371,28 +394,55 @@ export default function StorePickupDetailPage() {
             모든 항목 스캔 매칭 후 픽업 처리 가능 ({totalScanned}/{totalRequired})
           </div>
         )}
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2">
           <Button variant="secondary" onClick={() => router.push('/store/pickup')} className="flex-1">
-            취소
+            목록
           </Button>
           {order.status === 'ready' && (
-            order.paidAt ? (
+            <>
+              {order.paidAt ? (
+                <Button
+                  onClick={() => complete()}
+                  disabled={!canComplete || busy}
+                  className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                >
+                  {busy ? '처리 중...' : '픽업 완료'}
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => setPaying(true)}
+                  disabled={!canComplete}
+                  className="flex-1 bg-amber-600 hover:bg-amber-700"
+                >
+                  결제 + 완료
+                </Button>
+              )}
               <Button
-                onClick={() => complete()}
-                disabled={!canComplete || busy}
-                className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+                variant="secondary"
+                onClick={() => doStatusAction('no_show')}
+                disabled={busy}
               >
-                {busy ? '처리 중...' : '픽업 완료'}
+                미수령
               </Button>
-            ) : (
-              <Button
-                onClick={() => setPaying(true)}
-                disabled={!canComplete}
-                className="flex-1 bg-amber-600 hover:bg-amber-700"
-              >
-                결제 + 완료
-              </Button>
-            )
+            </>
+          )}
+          {order.status === 'no_show' && (
+            <Button
+              onClick={() => complete()}
+              disabled={busy}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700"
+            >
+              재방문 픽업 완료
+            </Button>
+          )}
+          {(order.status === 'no_show' || order.status === 'completed') && (
+            <Button
+              onClick={() => doStatusAction('return')}
+              disabled={busy}
+              className="flex-1 bg-purple-600 hover:bg-purple-700"
+            >
+              반품 처리
+            </Button>
           )}
         </div>
       </div>

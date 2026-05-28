@@ -11,6 +11,8 @@ const STATUS_COLOR: Record<OrderStatus, string> = {
   ready: 'bg-orange-100 text-orange-700',
   completed: 'bg-green-100 text-green-700',
   cancelled: 'bg-red-100 text-red-700',
+  no_show: 'bg-rose-100 text-rose-700',
+  returned: 'bg-purple-100 text-purple-700',
 };
 
 export function StatusBadge({ status }: { status: OrderStatus | string }) {

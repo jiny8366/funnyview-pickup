@@ -34,9 +34,11 @@ const ALLOWED_FROM: Record<OrderStatus, OrderStatus[]> = {
   picking: ['shipped', 'cancelled'],
   shipped: ['arrived'],
   arrived: ['ready'],
-  ready: ['completed'],
-  completed: [],
+  ready: ['completed', 'no_show'],
+  completed: ['returned'],
   cancelled: [],
+  no_show: ['completed', 'returned'],
+  returned: [],
 };
 
 async function transition(
@@ -278,6 +280,59 @@ export async function markCompleted(orderId: string, byUserId: string) {
         context: {
           orderNumber: summary.orderNumber,
           customerName: summary.customerName,
+        },
+        referenceType: 'order',
+        referenceId: orderId,
+      });
+    }
+  } catch {
+    // ignore
+  }
+}
+
+/** 픽업 미수령 — ready 상태에서 고객이 방문하지 않음 (매장 처리). */
+export async function markNoShow(orderId: string, byUserId: string) {
+  await transition(orderId, 'no_show', byUserId, {}, '픽업 미수령');
+  try {
+    const summary = await orderSummary(orderId);
+    if (summary) {
+      await dispatchNotification({
+        kind: 'pickup_no_show',
+        recipients: [
+          { userId: summary.customerUserId, phone: summary.customerPhone, preferKakao: true },
+        ],
+        context: {
+          orderNumber: summary.orderNumber,
+          customerName: summary.customerName,
+          storeName: summary.storeName,
+        },
+        referenceType: 'order',
+        referenceId: orderId,
+      });
+    }
+  } catch {
+    // ignore
+  }
+}
+
+/**
+ * 반품 (회수) — 미수령 또는 픽업완료 후 반품.
+ * 재고는 CLAUDE 원칙대로 자동 로트 복원하지 않고, 운영자가 새 입고 전표로 재등록한다.
+ */
+export async function markReturned(orderId: string, byUserId: string, reason: string) {
+  await transition(orderId, 'returned', byUserId, {}, reason);
+  try {
+    const summary = await orderSummary(orderId);
+    if (summary) {
+      await dispatchNotification({
+        kind: 'order_returned',
+        recipients: [
+          { userId: summary.customerUserId, phone: summary.customerPhone, preferKakao: true },
+        ],
+        context: {
+          orderNumber: summary.orderNumber,
+          customerName: summary.customerName,
+          reason,
         },
         referenceType: 'order',
         referenceId: orderId,

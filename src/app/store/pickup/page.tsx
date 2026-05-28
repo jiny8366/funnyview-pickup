@@ -66,6 +66,7 @@ function StorePickupInner() {
         <h1 className="text-xl font-bold md:text-2xl">픽업 처리</h1>
         <div className="flex gap-2 text-xs">
           <FilterTab active={statusParam === 'ready'} href="/store/pickup?status=ready" label="픽업 대기" />
+          <FilterTab active={statusParam === 'no_show'} href="/store/pickup?status=no_show" label="미수령" />
           <FilterTab active={statusParam === 'completed'} href="/store/pickup?status=completed" label="완료" />
         </div>
       </header>

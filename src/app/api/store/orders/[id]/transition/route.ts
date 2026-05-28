@@ -8,13 +8,16 @@ import {
   TransitionError,
   markArrived,
   markCompleted,
+  markNoShow,
   markReady,
+  markReturned,
 } from '@/lib/orders/transitions';
 
 export const dynamic = 'force-dynamic';
 
 const schema = z.object({
-  action: z.enum(['arrive', 'ready', 'complete']),
+  action: z.enum(['arrive', 'ready', 'complete', 'no_show', 'return']),
+  reason: z.string().optional(),
   payment: z
     .object({
       method: z.enum(['card', 'cash', 'bank_transfer', 'point', 'mixed']),
@@ -72,6 +75,12 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
         await markCompleted(ctx.params.id, user.id);
         break;
       }
+      case 'no_show':
+        await markNoShow(ctx.params.id, user.id);
+        break;
+      case 'return':
+        await markReturned(ctx.params.id, user.id, parsed.data.reason ?? '매장 반품');
+        break;
     }
     return NextResponse.json({ ok: true });
   } catch (e) {

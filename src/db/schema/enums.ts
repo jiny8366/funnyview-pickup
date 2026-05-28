@@ -53,6 +53,8 @@ export const orderStatusEnum = pgEnum('order_status', [
   'ready',
   'completed',
   'cancelled',
+  'no_show',
+  'returned',
 ]);
 
 // 결제 수단
@@ -98,6 +100,8 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'pickup_completed', // 픽업 완료 (customer 대상)
   'low_stock', // 안전재고 부족 (warehouse 대상)
   'order_cancelled', // 주문 취소 (customer 대상)
+  'pickup_no_show', // 픽업 미수령 (customer 대상)
+  'order_returned', // 반품 (customer 대상)
 ]);
 
 // 알림 채널
