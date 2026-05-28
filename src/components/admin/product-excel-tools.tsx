@@ -57,7 +57,7 @@ export function ProductExcelTools({ brandOptions }: { brandOptions: string[] }) 
         <select
           value={brand}
           onChange={(e) => setBrand(e.target.value)}
-          className="rounded-lg border border-gray-200 px-3 py-1.5 text-sm focus:border-brand-500 focus:outline-none"
+          className="h-9 rounded-lg border border-gray-200 px-3 text-sm focus:border-brand-500 focus:outline-none"
         >
           <option value="">전체 브랜드</option>
           {brandOptions.map((b) => (
@@ -66,11 +66,12 @@ export function ProductExcelTools({ brandOptions }: { brandOptions: string[] }) 
             </option>
           ))}
         </select>
-        <Button variant="secondary" onClick={download}>
+        <Button variant="secondary" className="h-9" onClick={download}>
           엑셀 다운로드
         </Button>
         <Button
           variant="secondary"
+          className="h-9"
           onClick={() => {
             window.location.href = '/api/admin/products/export?sample=1';
           }}
@@ -84,7 +85,7 @@ export function ProductExcelTools({ brandOptions }: { brandOptions: string[] }) 
           onChange={onFile}
           className="hidden"
         />
-        <Button onClick={() => fileRef.current?.click()} disabled={uploading}>
+        <Button className="h-9" onClick={() => fileRef.current?.click()} disabled={uploading}>
           {uploading ? '업로드 중...' : '엑셀 업로드'}
         </Button>
         {msg && <span className="text-sm text-emerald-600">{msg}</span>}
