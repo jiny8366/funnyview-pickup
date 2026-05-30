@@ -148,14 +148,22 @@ export function isPathAllowedOnPortal(portal: Portal, pathname: string): boolean
 }
 
 /**
+ * path 가 특정 prefix 의 정확한 segment 매칭인지 (예: '/store' 는 '/store', '/store/x' 만 매칭, '/stores' 는 제외).
+ */
+function isUnderPrefix(pathname: string, prefix: string): boolean {
+  return pathname === prefix || pathname.startsWith(prefix + '/');
+}
+
+/**
  * 인증이 필요한 (보호된) path 여부.
+ * segment 단위 매칭 — '/stores'(공개 매장찾기) 가 '/store'(가맹점 포털) 로 오인되지 않도록.
  */
 export function isProtectedPath(pathname: string): boolean {
   return (
-    pathname.startsWith('/customer') ||
-    pathname.startsWith('/warehouse') ||
-    pathname.startsWith('/store') ||
-    pathname.startsWith('/admin')
+    isUnderPrefix(pathname, '/customer') ||
+    isUnderPrefix(pathname, '/warehouse') ||
+    isUnderPrefix(pathname, '/store') ||
+    isUnderPrefix(pathname, '/admin')
   );
 }
 
@@ -164,9 +172,9 @@ export function isProtectedPath(pathname: string): boolean {
  */
 export function loginUrlFor(pathname: string, search: string): string {
   const next = encodeURIComponent(pathname + search);
-  if (pathname.startsWith('/admin')) return `/login/admin?next=${next}`;
-  if (pathname.startsWith('/warehouse')) return `/login/warehouse?next=${next}`;
-  if (pathname.startsWith('/store')) return `/login/store?next=${next}`;
+  if (isUnderPrefix(pathname, '/admin')) return `/login/admin?next=${next}`;
+  if (isUnderPrefix(pathname, '/warehouse')) return `/login/warehouse?next=${next}`;
+  if (isUnderPrefix(pathname, '/store')) return `/login/store?next=${next}`;
   return `/login?next=${next}`;
 }
 
