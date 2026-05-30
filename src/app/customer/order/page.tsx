@@ -110,7 +110,6 @@ export default function CustomerOrderPage() {
   const [leftSel, setLeftSel] = useState<EyeSelection>({ variantId: null, quantity: 1 });
   const [rightSel, setRightSel] = useState<EyeSelection>({ variantId: null, quantity: 1 });
   const [storeId, setStoreId] = useState<string | null>(null);
-  const [payOnline, setPayOnline] = useState(true);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -191,7 +190,7 @@ export default function CustomerOrderPage() {
         pickupStoreId: storeId,
         customerNote: note || undefined,
         lines,
-        payOnline,
+        payOnline: false,
       }),
     });
     setSubmitting(false);
@@ -503,69 +502,55 @@ export default function CustomerOrderPage() {
           );
         })()}
 
-        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {(storeRegion ? stores.filter((s) => regionOf(s.address) === storeRegion) : stores).map((s) => (
-            <button
-              key={s.id}
-              type="button"
-              onClick={() => setStoreId(s.id)}
-              className={`rounded-2xl border p-4 text-left transition ${
-                storeId === s.id
-                  ? 'border-brand-600 bg-brand-50'
-                  : 'border-gray-200 bg-white hover:border-brand-300'
-              }`}
-            >
-              <div className="flex items-baseline justify-between gap-2">
-                <div className="font-semibold">{s.name}</div>
-                {regionOf(s.address) && (
-                  <span className="text-[10px] font-medium text-brand-600">
-                    {regionOf(s.address)}
-                  </span>
-                )}
+        {/* 지역 선택 전엔 안내, 선택 시 해당 지역 매장 리스트 */}
+        {!storeRegion ? (
+          <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+            {stores.length === 0
+              ? '등록된 가맹점이 없습니다'
+              : '먼저 지역을 선택하면 픽업가맹점 목록이 표시됩니다'}
+          </div>
+        ) : (
+          (() => {
+            const regionStores = stores.filter((s) => regionOf(s.address) === storeRegion);
+            if (regionStores.length === 0) {
+              return (
+                <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
+                  {storeRegion} 지역에 등록된 가맹점이 없습니다
+                </div>
+              );
+            }
+            return (
+              <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+                {regionStores.map((s) => (
+                  <button
+                    key={s.id}
+                    type="button"
+                    onClick={() => setStoreId(s.id)}
+                    className={`rounded-2xl border p-4 text-left transition ${
+                      storeId === s.id
+                        ? 'border-brand-600 bg-brand-50'
+                        : 'border-gray-200 bg-white hover:border-brand-300'
+                    }`}
+                  >
+                    <div className="flex items-baseline justify-between gap-2">
+                      <div className="font-semibold">{s.name}</div>
+                      <span className="text-[10px] font-medium text-brand-600">{storeRegion}</span>
+                    </div>
+                    <div className="mt-1 text-xs text-gray-500">{s.phone}</div>
+                    <div className="mt-1 text-xs text-gray-500">{s.address}</div>
+                  </button>
+                ))}
               </div>
-              <div className="mt-1 text-xs text-gray-500">{s.phone}</div>
-              <div className="mt-1 text-xs text-gray-500">{s.address}</div>
-            </button>
-          ))}
-          {stores.length === 0 && (
-            <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400 md:col-span-2">
-              가맹점이 없습니다
-            </div>
-          )}
-          {stores.length > 0 && storeRegion && stores.filter((s) => regionOf(s.address) === storeRegion).length === 0 && (
-            <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400 md:col-span-2">
-              {storeRegion} 지역에 등록된 가맹점이 없습니다
-            </div>
-          )}
-        </div>
+            );
+          })()
+        )}
       </section>
 
-      {/* 4. 결제 */}
+      {/* 4. 결제 — 매장 결제 전용 */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-700">4. 결제 방식</h2>
-        <div className="flex gap-3">
-          <label className="flex flex-1 cursor-pointer items-center gap-2 rounded-2xl border border-gray-200 bg-white p-4">
-            <input
-              type="radio"
-              checked={payOnline}
-              onChange={() => setPayOnline(true)}
-            />
-            <div>
-              <div className="font-medium">온라인 선결제</div>
-              <div className="text-xs text-gray-500">카드 · 간편결제 (Mock)</div>
-            </div>
-          </label>
-          <label className="flex flex-1 cursor-pointer items-center gap-2 rounded-2xl border border-gray-200 bg-white p-4">
-            <input
-              type="radio"
-              checked={!payOnline}
-              onChange={() => setPayOnline(false)}
-            />
-            <div>
-              <div className="font-medium">매장 결제</div>
-              <div className="text-xs text-gray-500">픽업 시 결제</div>
-            </div>
-          </label>
+        <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
+          픽업 시 <span className="font-semibold">매장에서 결제</span>합니다.
         </div>
 
         <textarea

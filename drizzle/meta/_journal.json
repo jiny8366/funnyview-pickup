@@ -176,6 +176,13 @@
       "when": 1779900800000,
       "tag": "0024_pickup_reminder",
       "breakpoints": true
+    },
+    {
+      "idx": 25,
+      "version": "7",
+      "when": 1779900900000,
+      "tag": "0025_seed_lens_prices",
+      "breakpoints": true
     }
   ]
 }

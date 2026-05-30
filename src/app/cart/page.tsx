@@ -21,7 +21,6 @@ export default function CartPage() {
   const router = useRouter();
   const [storeId, setStoreId] = useState<string | null>(null);
   const [storeName, setStoreName] = useState<string | null>(null);
-  const [payOnline, setPayOnline] = useState(true);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -64,7 +63,7 @@ export default function CartPage() {
         pickupStoreId: storeId,
         customerNote: note || undefined,
         lines,
-        payOnline,
+        payOnline: false,
       }),
     });
 
@@ -150,27 +149,10 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* Payment */}
-              <div className="rounded-2xl border border-gray-100 p-5">
+              {/* Payment — 매장 결제 전용 */}
+              <div className="rounded-2xl border border-gray-100 bg-gray-50 p-5">
                 <h2 className="text-sm font-bold text-gray-900">결제 방식</h2>
-                <div className="mt-3 grid grid-cols-2 gap-2">
-                  <button
-                    onClick={() => setPayOnline(true)}
-                    className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
-                      payOnline ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-600'
-                    }`}
-                  >
-                    온라인 결제
-                  </button>
-                  <button
-                    onClick={() => setPayOnline(false)}
-                    className={`rounded-xl border px-3 py-2.5 text-sm font-medium transition ${
-                      !payOnline ? 'border-gray-900 bg-gray-900 text-white' : 'border-gray-200 text-gray-600'
-                    }`}
-                  >
-                    매장 결제
-                  </button>
-                </div>
+                <p className="mt-2 text-sm text-gray-700">픽업 시 <span className="font-semibold">매장에서 결제</span>합니다.</p>
               </div>
 
               {/* Note */}
