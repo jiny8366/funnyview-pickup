@@ -1,10 +1,19 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { StatusBadge } from '@/components/ui/badge';
 import { SkeletonCard } from '@/components/ui/skeleton';
+import {
+  ORDER_BUCKET_LABEL,
+  ORDER_BUCKET_ORDER,
+  ORDER_BUCKET_STATUSES,
+  bucketOf,
+  type OrderBucket,
+} from '@/lib/orders/buckets';
 import { formatDateTime, formatKRW } from '@/lib/utils/format';
+import { cn } from '@/lib/utils/cn';
 import type { OrderStatus } from '@/types/order';
 
 interface OrderRow {
@@ -21,7 +30,20 @@ interface OrderRow {
   itemCount: number;
 }
 
-export default function CustomerOrdersPage() {
+type BucketFilter = OrderBucket | 'all';
+
+const FILTERS: { key: BucketFilter; label: string }[] = [
+  { key: 'all', label: '전체' },
+  ...ORDER_BUCKET_ORDER.map((b) => ({ key: b, label: ORDER_BUCKET_LABEL[b] })),
+];
+
+function CustomerOrdersInner() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const initial = (searchParams.get('bucket') as BucketFilter | null) ?? 'all';
+  const [filter, setFilter] = useState<BucketFilter>(
+    FILTERS.some((f) => f.key === initial) ? initial : 'all',
+  );
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
 
   useEffect(() => {
@@ -31,26 +53,84 @@ export default function CustomerOrdersPage() {
       .catch(() => setOrders([]));
   }, []);
 
+  const counts = useMemo(() => {
+    const init: Record<BucketFilter, number> = {
+      all: 0,
+      received: 0,
+      shipping: 0,
+      pickup_waiting: 0,
+      pickup_done: 0,
+    };
+    if (!orders) return init;
+    init.all = orders.length;
+    for (const o of orders) {
+      const b = bucketOf(o.status);
+      if (b) init[b] += 1;
+    }
+    return init;
+  }, [orders]);
+
+  const visible = useMemo(() => {
+    if (!orders) return null;
+    if (filter === 'all') return orders;
+    const allow = new Set<OrderStatus>(ORDER_BUCKET_STATUSES[filter]);
+    return orders.filter((o) => allow.has(o.status));
+  }, [orders, filter]);
+
+  function selectFilter(next: BucketFilter) {
+    setFilter(next);
+    const qs = next === 'all' ? '' : `?bucket=${next}`;
+    router.replace(`/customer/orders${qs}`, { scroll: false });
+  }
+
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold md:text-2xl">내 주문</h1>
+      <h1 className="text-xl font-bold md:text-2xl">구매내역</h1>
 
-      {orders === null ? (
+      <div className="flex gap-1 overflow-x-auto rounded-2xl border border-gray-200 bg-white p-1">
+        {FILTERS.map((f) => {
+          const active = filter === f.key;
+          return (
+            <button
+              key={f.key}
+              type="button"
+              onClick={() => selectFilter(f.key)}
+              className={cn(
+                'flex-1 whitespace-nowrap rounded-xl px-3 py-2 text-xs font-medium transition',
+                active ? 'bg-brand-600 text-white' : 'text-gray-600 hover:bg-gray-100',
+              )}
+            >
+              {f.label}
+              <span className={cn('ml-1', active ? 'text-white/80' : 'text-gray-400')}>
+                {orders === null ? '' : counts[f.key]}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
+      {visible === null ? (
         <div className="space-y-3">
           <SkeletonCard />
           <SkeletonCard />
           <SkeletonCard />
         </div>
-      ) : orders.length === 0 ? (
+      ) : visible.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-10 text-center text-sm text-gray-400">
-          주문 내역이 없습니다.{' '}
-          <Link href="/customer/order" className="text-brand-600 hover:underline">
-            지금 주문하기
-          </Link>
+          {filter === 'all' ? (
+            <>
+              주문 내역이 없습니다.{' '}
+              <Link href="/customer/order" className="text-brand-600 hover:underline">
+                지금 주문하기
+              </Link>
+            </>
+          ) : (
+            <>해당 단계의 주문이 없습니다.</>
+          )}
         </div>
       ) : (
         <ul className="space-y-3">
-          {orders.map((o) => (
+          {visible.map((o) => (
             <li key={o.id}>
               <Link
                 href={`/customer/orders/${o.id}`}
@@ -78,5 +158,20 @@ export default function CustomerOrdersPage() {
         </ul>
       )}
     </div>
+  );
+}
+
+export default function CustomerOrdersPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="space-y-3">
+          <SkeletonCard />
+          <SkeletonCard />
+        </div>
+      }
+    >
+      <CustomerOrdersInner />
+    </Suspense>
   );
 }

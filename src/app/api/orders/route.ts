@@ -5,6 +5,7 @@ import { db } from '@/db/client';
 import { orderItems, orders, stores } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { createOrder, OrderCreationError } from '@/lib/orders/create-order';
+import { ensureCustomerForUser, findCustomerIdForUser } from '@/lib/orders/ensure-customer';
 import { markPaid } from '@/lib/orders/transitions';
 
 export const dynamic = 'force-dynamic';
@@ -27,7 +28,7 @@ const createOrderSchema = z.object({
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
-  if (!user || user.role !== 'customer' || !user.customerId) {
+  if (!user) {
     return NextResponse.json({ error: 'UNAUTHENTICATED' }, { status: 401 });
   }
 
@@ -39,9 +40,11 @@ export async function POST(req: Request) {
     );
   }
 
+  const customerId = user.customerId ?? (await ensureCustomerForUser(user.id));
+
   try {
     const order = await createOrder({
-      customerId: user.customerId,
+      customerId,
       pickupStoreId: parsed.data.pickupStoreId,
       customerNote: parsed.data.customerNote,
       lines: parsed.data.lines,
@@ -70,8 +73,13 @@ export async function POST(req: Request) {
 
 export async function GET() {
   const user = await getCurrentUser();
-  if (!user || !user.customerId) {
+  if (!user) {
     return NextResponse.json({ error: 'UNAUTHENTICATED' }, { status: 401 });
+  }
+
+  const customerId = user.customerId ?? (await findCustomerIdForUser(user.id));
+  if (!customerId) {
+    return NextResponse.json({ orders: [] });
   }
 
   const rows = await db
@@ -90,7 +98,7 @@ export async function GET() {
     })
     .from(orders)
     .innerJoin(stores, eq(stores.id, orders.pickupStoreId))
-    .where(eq(orders.customerId, user.customerId))
+    .where(eq(orders.customerId, customerId))
     .orderBy(desc(orders.createdAt));
 
   return NextResponse.json({ orders: rows });
