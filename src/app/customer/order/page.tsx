@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
+import { PrescriptionManager } from '@/components/prescription/prescription-manager';
 import { formatKRW } from '@/lib/utils/format';
 
 interface LensVariant {
@@ -14,6 +15,21 @@ interface LensVariant {
   addPower: string | null;
   price: number;
   available: number;
+}
+
+interface EyeData {
+  sphere: string;
+  cylinder: string | null;
+  axis: number | null;
+  addPower: string | null;
+}
+
+interface PrescriptionGroup {
+  recordedAt: string;
+  kind: 'glasses' | 'contact';
+  source: string | null;
+  left: EyeData | null;
+  right: EyeData | null;
 }
 
 interface Lens {
@@ -109,6 +125,11 @@ export default function CustomerOrderPage() {
   const [selectedLensId, setSelectedLensId] = useState<string | null>(null);
   const [leftSel, setLeftSel] = useState<EyeSelection>({ variantId: null, quantity: 1 });
   const [rightSel, setRightSel] = useState<EyeSelection>({ variantId: null, quantity: 1 });
+  // 등록된 콘택트 도수 (고객정보의 시력관리에서 저장한 최신값)
+  const [savedDose, setSavedDose] = useState<{ left: EyeData | null; right: EyeData | null; recordedAt: string | null }>({ left: null, right: null, recordedAt: null });
+  const [doseModalOpen, setDoseModalOpen] = useState(false);
+  const [doseLoaded, setDoseLoaded] = useState(false);
+  const [mismatch, setMismatch] = useState<string[]>([]);
   const [storeId, setStoreId] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -132,10 +153,60 @@ export default function CustomerOrderPage() {
       .catch(() => setError('데이터를 불러오지 못했습니다'));
   }, []);
 
+  // 등록된 콘택트 도수 불러오기 — 마이페이지 > 내 시력정보에서 저장한 값
+  const loadSavedDose = useCallback(async () => {
+    try {
+      const res = await fetch('/api/customer/prescriptions');
+      if (res.status === 401) {
+        // 비로그인은 무시 (로그인 후 다시 진입 시 자동 로드)
+        setDoseLoaded(true);
+        return;
+      }
+      if (!res.ok) {
+        setDoseLoaded(true);
+        return;
+      }
+      const j = await res.json();
+      const groups = (j.prescriptions ?? []) as PrescriptionGroup[];
+      const latestContact = groups.find((g) => g.kind === 'contact');
+      if (latestContact) {
+        setSavedDose({
+          left: latestContact.left,
+          right: latestContact.right,
+          recordedAt: latestContact.recordedAt,
+        });
+      }
+    } catch {
+      // ignore
+    } finally {
+      setDoseLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSavedDose();
+  }, [loadSavedDose]);
+
   const selectedLens = useMemo(
     () => lenses.find((l) => l.lensId === selectedLensId) ?? null,
     [lenses, selectedLensId],
   );
+
+  // 선택한 제품의 variants 중 등록 도수와 매칭되는 것을 자동 선택, 매칭 실패 시 경고
+  useEffect(() => {
+    if (!selectedLens) {
+      setMismatch([]);
+      return;
+    }
+    const rMatch = savedDose.right ? matchVariant(selectedLens.variants, savedDose.right) : null;
+    const lMatch = savedDose.left ? matchVariant(selectedLens.variants, savedDose.left) : null;
+    if (rMatch) setRightSel({ variantId: rMatch.variantId, quantity: 1 });
+    if (lMatch) setLeftSel({ variantId: lMatch.variantId, quantity: 1 });
+    const missing: string[] = [];
+    if (savedDose.right && !rMatch) missing.push('우안');
+    if (savedDose.left && !lMatch) missing.push('좌안');
+    setMismatch(missing);
+  }, [selectedLens, savedDose]);
 
   const brands = useMemo(
     () => [...new Set(lenses.map((l) => l.brand))].sort(),
@@ -438,7 +509,58 @@ export default function CustomerOrderPage() {
       {/* 2. 도수 선택 (좌/우) */}
       {selectedLens && (
         <section className="space-y-3">
-          <h2 className="text-sm font-semibold text-gray-700">2. 좌우 도수 입력</h2>
+          <div className="flex flex-wrap items-baseline justify-between gap-2">
+            <h2 className="text-sm font-semibold text-gray-700">2. 좌우 도수 입력</h2>
+            <button
+              type="button"
+              onClick={() => setDoseModalOpen(true)}
+              className="text-xs font-medium text-brand-700 underline hover:text-brand-800"
+            >
+              {savedDose.right || savedDose.left ? '도수 수정/관리' : '도수 등록'}
+            </button>
+          </div>
+
+          {/* 등록된 도수 안내 */}
+          {doseLoaded && (savedDose.right || savedDose.left) && (
+            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs">
+              <div className="font-semibold text-emerald-800">
+                ✓ 등록된 콘택트 도수가 자동 입력됩니다
+                {savedDose.recordedAt && (
+                  <span className="ml-1 font-normal text-emerald-700">
+                    ({new Date(savedDose.recordedAt).toLocaleDateString('ko-KR')} 기준)
+                  </span>
+                )}
+              </div>
+              <div className="mt-1 space-y-0.5 text-emerald-700">
+                <div>우(R): {eyeSummary(savedDose.right)}</div>
+                <div>좌(L): {eyeSummary(savedDose.left)}</div>
+              </div>
+            </div>
+          )}
+
+          {/* 등록 도수 없음 안내 */}
+          {doseLoaded && !savedDose.right && !savedDose.left && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+              <span className="font-semibold">등록된 콘택트 도수가 없습니다.</span>{' '}
+              <button
+                type="button"
+                onClick={() => setDoseModalOpen(true)}
+                className="font-semibold underline hover:no-underline"
+              >
+                도수 등록하기 →
+              </button>
+            </div>
+          )}
+
+          {/* 제품 도수 미지원 경고 */}
+          {mismatch.length > 0 && (
+            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
+              ⚠ 선택한 제품 <span className="font-semibold">{selectedLens.name}</span>은(는){' '}
+              <span className="font-semibold">{mismatch.join('·')} 도수</span>를 제공하지 않습니다.
+              다른 제품을 선택하거나, 가능한 도수로 등록 도수를 조정해 주세요.
+            </div>
+          )}
+
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <EyeSelector
               title="왼쪽 (Left, OS)"
@@ -578,6 +700,45 @@ export default function CustomerOrderPage() {
         </div>
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </section>
+
+      {/* 도수 관리 모달 — 자식창 */}
+      {doseModalOpen && (
+        <div
+          className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+          onClick={async () => {
+            setDoseModalOpen(false);
+            await loadSavedDose();
+          }}
+        >
+          <div
+            className="flex max-h-[92vh] w-full max-w-2xl flex-col overflow-hidden rounded-t-3xl bg-white sm:rounded-3xl"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="sticky top-0 z-10 flex items-center justify-between border-b border-gray-100 bg-white px-5 py-4">
+              <div>
+                <h2 className="text-base font-bold text-gray-900">콘택트 도수 관리</h2>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  입력 후 닫기를 누르면 주문 화면에 자동 반영됩니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={async () => {
+                  setDoseModalOpen(false);
+                  await loadSavedDose();
+                }}
+                className="grid h-8 w-8 place-items-center rounded-full text-gray-400 hover:bg-gray-100"
+                aria-label="닫기"
+              >
+                ✕
+              </button>
+            </header>
+            <div className="flex-1 overflow-y-auto p-5">
+              <PrescriptionManager endpoint="/api/customer/prescriptions" canEdit />
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -663,4 +824,32 @@ function formatSign(v: string | null): string {
   const n = Number(v);
   if (!Number.isFinite(n)) return '-';
   return (n >= 0 ? '+' : '') + n.toFixed(2);
+}
+
+/** 저장된 도수가 제품 variants 에 존재하는지 매칭 (SPH/CYL/AXIS/ADD). */
+function matchVariant(variants: LensVariant[], dose: EyeData): LensVariant | null {
+  const targetSph = Number(dose.sphere);
+  const targetCyl = dose.cylinder != null ? Number(dose.cylinder) : null;
+  const targetAxis = dose.axis;
+  const targetAdd = dose.addPower != null ? Number(dose.addPower) : null;
+  return (
+    variants.find((v) => {
+      if (Number(v.sphere) !== targetSph) return false;
+      const vCyl = v.cylinder != null ? Number(v.cylinder) : null;
+      if ((vCyl ?? null) !== (targetCyl ?? null)) return false;
+      if ((v.axis ?? null) !== (targetAxis ?? null)) return false;
+      const vAdd = v.addPower != null ? Number(v.addPower) : null;
+      if ((vAdd ?? null) !== (targetAdd ?? null)) return false;
+      return true;
+    }) ?? null
+  );
+}
+
+function eyeSummary(eye: EyeData | null): string {
+  if (!eye) return '-';
+  const parts = [`SPH ${formatSign(eye.sphere)}`];
+  if (eye.cylinder) parts.push(`CYL ${formatSign(eye.cylinder)}`);
+  if (eye.axis !== null) parts.push(`AXIS ${eye.axis}`);
+  if (eye.addPower) parts.push(`ADD ${formatSign(eye.addPower)}`);
+  return parts.join(' · ');
 }
