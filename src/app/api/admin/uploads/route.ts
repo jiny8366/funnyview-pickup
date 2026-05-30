@@ -40,12 +40,20 @@ export async function POST(req: Request) {
 
   const bytes = Buffer.from(await file.arrayBuffer());
   const storage = getStorage();
-  const result = await storage.upload({
-    bytes,
-    filename: file.name,
-    mimeType: file.type,
-    folder: folder || 'home',
-  });
-
-  return NextResponse.json({ ...result });
+  try {
+    const result = await storage.upload({
+      bytes,
+      filename: file.name,
+      mimeType: file.type,
+      folder: folder || 'home',
+    });
+    return NextResponse.json({ ...result });
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[uploads] storage.upload failed', { storage: storage.name, msg });
+    return NextResponse.json(
+      { error: 'STORAGE_FAILED', detail: msg },
+      { status: 500 },
+    );
+  }
 }

@@ -199,6 +199,8 @@ function errorLabel(code: string): string {
       return '지원하지 않는 형식 (png/jpg/webp/gif/svg)';
     case 'FORBIDDEN':
       return '권한 없음';
+    case 'STORAGE_FAILED':
+      return '저장소 업로드 실패 — Vercel Blob 토큰 또는 storage 설정 확인';
     default:
       return code;
   }
