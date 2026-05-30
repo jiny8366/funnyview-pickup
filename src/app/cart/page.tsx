@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { ShopHeaderNav } from '@/components/shop/shop-header-nav';
+import { StorePicker, type PickerStore } from '@/components/shop/store-picker';
 import { useCart } from '@/hooks/use-cart';
 import {
   cartItemCount,
@@ -13,32 +14,33 @@ import {
   updateQuantity,
   type CartItem,
 } from '@/lib/cart/store';
-
-interface Store {
-  id: string;
-  code: string;
-  name: string;
-  phone: string;
-  address: string;
-}
+import { getPreferredStore, setPreferredStore } from '@/lib/cart/pickup-store';
 
 export default function CartPage() {
   const items = useCart();
   const router = useRouter();
-  const [stores, setStores] = useState<Store[]>([]);
   const [storeId, setStoreId] = useState<string | null>(null);
+  const [storeName, setStoreName] = useState<string | null>(null);
   const [payOnline, setPayOnline] = useState(true);
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loginRequired, setLoginRequired] = useState(false);
 
+  // 매장찾기에서 넘어온 선호 매장을 기본 선택
   useEffect(() => {
-    fetch('/api/stores')
-      .then((r) => r.json())
-      .then((j) => setStores(j.stores ?? []))
-      .catch(() => {});
+    const pref = getPreferredStore();
+    if (pref) {
+      setStoreId(pref.id);
+      setStoreName(pref.name);
+    }
   }, []);
+
+  function handleSelectStore(id: string, store: PickerStore) {
+    setStoreId(id);
+    setStoreName(store.name);
+    setPreferredStore({ id, name: store.name, address: store.address });
+  }
 
   const totalPrice = cartTotalPrice(items);
   const totalCount = cartItemCount(items);
@@ -133,24 +135,19 @@ export default function CartPage() {
                 </div>
               </div>
 
-              {/* Store select */}
+              {/* Store select — 위치 기반 추천 + 검색 */}
               <div className="rounded-2xl border border-gray-100 p-5">
-                <h2 className="text-sm font-bold text-gray-900">픽업 매장</h2>
-                <select
-                  value={storeId ?? ''}
-                  onChange={(e) => setStoreId(e.target.value || null)}
-                  className="mt-3 w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm focus:border-gray-900 focus:outline-none"
-                >
-                  <option value="" disabled>매장을 선택하세요</option>
-                  {stores.map((s) => (
-                    <option key={s.id} value={s.id}>
-                      {s.name} · {s.address.slice(0, 24)}
-                    </option>
-                  ))}
-                </select>
-                {stores.length === 0 && (
-                  <p className="mt-2 text-xs text-gray-400">매장 목록을 불러오는 중...</p>
-                )}
+                <div className="flex items-baseline justify-between">
+                  <h2 className="text-sm font-bold text-gray-900">픽업 매장</h2>
+                  {storeName && (
+                    <span className="truncate text-xs font-medium text-emerald-700">
+                      ✓ {storeName}
+                    </span>
+                  )}
+                </div>
+                <div className="mt-3">
+                  <StorePicker value={storeId} onSelect={handleSelectStore} />
+                </div>
               </div>
 
               {/* Payment */}

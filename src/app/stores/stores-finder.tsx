@@ -1,10 +1,11 @@
 'use client';
 
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { Card, CardBody } from '@/components/ui/card';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconSearch, IconStore } from '@/components/ui/icons';
+import { setPreferredStore } from '@/lib/cart/pickup-store';
 
 interface NearbyStore {
   id: string;
@@ -243,6 +244,7 @@ function StoreCard({
   store: NearbyStore;
   userPos: { lat: number; lng: number } | null;
 }) {
+  const router = useRouter();
   const hasDistance = store.distanceKm != null;
 
   return (
@@ -324,12 +326,16 @@ function StoreCard({
         </div>
 
         <div className="mt-auto pt-3">
-          <Link
-            href={`/order/new?store=${store.id}`}
+          <button
+            type="button"
+            onClick={() => {
+              setPreferredStore({ id: store.id, name: store.name, address: store.address });
+              router.push('/products');
+            }}
             className="inline-flex h-9 w-full items-center justify-center rounded-lg bg-brand-600 text-sm font-medium text-white hover:bg-brand-700"
           >
             이 매장으로 주문
-          </Link>
+          </button>
         </div>
       </CardBody>
     </Card>
