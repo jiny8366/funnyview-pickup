@@ -24,6 +24,9 @@ export async function GET(req: Request) {
       piecesPerBox: lenses.piecesPerBox,
       price: lenses.price,
       imageUrl: lenses.imageUrl,
+      colorName: lenses.colorName,
+      colorHex: lenses.colorHex,
+      isNew: lenses.isNew,
       variantId: lensVariants.id,
       sku: lensVariants.sku,
       sphere: lensVariants.sphere,
@@ -58,6 +61,9 @@ export async function GET(req: Request) {
       piecesPerBox: number;
       price: number;
       imageUrl: string | null;
+      colorName: string | null;
+      colorHex: string | null;
+      isNew: boolean;
       variants: Array<{
         variantId: string;
         sku: string;
@@ -84,6 +90,9 @@ export async function GET(req: Request) {
         piecesPerBox: r.piecesPerBox,
         price: r.price,
         imageUrl: r.imageUrl,
+        colorName: r.colorName,
+        colorHex: r.colorHex,
+        isNew: r.isNew,
         variants: [],
       };
       grouped.set(r.lensId, lens);

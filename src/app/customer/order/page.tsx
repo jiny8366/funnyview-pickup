@@ -26,6 +26,9 @@ interface Lens {
   piecesPerBox: number;
   price: number;
   imageUrl: string | null;
+  colorName: string | null;
+  colorHex: string | null;
+  isNew: boolean;
   variants: LensVariant[];
 }
 
@@ -35,6 +38,36 @@ interface Store {
   name: string;
   phone: string;
   address: string;
+}
+
+// 광역시·도 그룹 — '5대 광역시 및 도'
+const REGION_GROUPS = [
+  { key: '서울', match: ['서울'] },
+  { key: '경기', match: ['경기'] },
+  { key: '인천', match: ['인천'] },
+  { key: '부산', match: ['부산'] },
+  { key: '대구', match: ['대구'] },
+  { key: '대전', match: ['대전'] },
+  { key: '광주', match: ['광주'] },
+  { key: '울산', match: ['울산'] },
+  { key: '세종', match: ['세종'] },
+  { key: '강원', match: ['강원'] },
+  { key: '충북', match: ['충북', '충청북'] },
+  { key: '충남', match: ['충남', '충청남'] },
+  { key: '전북', match: ['전북', '전라북'] },
+  { key: '전남', match: ['전남', '전라남'] },
+  { key: '경북', match: ['경북', '경상북'] },
+  { key: '경남', match: ['경남', '경상남'] },
+  { key: '제주', match: ['제주'] },
+] as const;
+
+function regionOf(address: string): string | null {
+  const a = address?.trim() ?? '';
+  if (!a) return null;
+  for (const g of REGION_GROUPS) {
+    if (g.match.some((m) => a.startsWith(m))) return g.key;
+  }
+  return null;
 }
 
 type EyeSide = 'left' | 'right';
@@ -86,6 +119,7 @@ export default function CustomerOrderPage() {
   const [query, setQuery] = useState('');
   const [typeKey, setTypeKey] = useState<TypeKey>('all');
   const [brand, setBrand] = useState('');
+  const [storeRegion, setStoreRegion] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -328,6 +362,22 @@ export default function CustomerOrderPage() {
                     className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                   />
                   <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
+                  {l.isNew && !selected && (
+                    <span className="absolute left-2 top-2 rounded-full bg-pink-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow">
+                      NEW
+                    </span>
+                  )}
+                  {l.colorHex && (
+                    <div className="absolute bottom-10 right-2 flex items-center gap-1 rounded-full bg-white/90 px-1.5 py-0.5 shadow backdrop-blur">
+                      <span
+                        className="h-3 w-3 rounded-full border border-gray-200"
+                        style={{ background: `radial-gradient(circle at 35% 35%, ${l.colorHex}66, ${l.colorHex})` }}
+                      />
+                      {l.colorName && (
+                        <span className="text-[9px] font-medium text-gray-700">{l.colorName}</span>
+                      )}
+                    </div>
+                  )}
                   <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5 text-white">
                     <p className="truncate text-[10px] font-medium opacity-70">{l.brand}</p>
                     <p className="line-clamp-2 text-xs font-semibold leading-tight">{l.name}</p>
@@ -410,8 +460,51 @@ export default function CustomerOrderPage() {
       {/* 3. 픽업가맹점 */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-700">3. 픽업가맹점 선택</h2>
+
+        {/* 광역시·도 필터 */}
+        {stores.length > 0 && (() => {
+          const availableRegions = new Set(
+            stores.map((s) => regionOf(s.address)).filter((r): r is string => !!r),
+          );
+          const orderedRegions = REGION_GROUPS
+            .map((g) => g.key)
+            .filter((k) => availableRegions.has(k));
+          return (
+            <div className="flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setStoreRegion(null)}
+                className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                  !storeRegion
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'
+                }`}
+              >
+                전체 ({stores.length})
+              </button>
+              {orderedRegions.map((r) => {
+                const count = stores.filter((s) => regionOf(s.address) === r).length;
+                return (
+                  <button
+                    key={r}
+                    type="button"
+                    onClick={() => setStoreRegion(storeRegion === r ? null : r)}
+                    className={`rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                      storeRegion === r
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    {r} ({count})
+                  </button>
+                );
+              })}
+            </div>
+          );
+        })()}
+
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
-          {stores.map((s) => (
+          {(storeRegion ? stores.filter((s) => regionOf(s.address) === storeRegion) : stores).map((s) => (
             <button
               key={s.id}
               type="button"
@@ -422,7 +515,14 @@ export default function CustomerOrderPage() {
                   : 'border-gray-200 bg-white hover:border-brand-300'
               }`}
             >
-              <div className="font-semibold">{s.name}</div>
+              <div className="flex items-baseline justify-between gap-2">
+                <div className="font-semibold">{s.name}</div>
+                {regionOf(s.address) && (
+                  <span className="text-[10px] font-medium text-brand-600">
+                    {regionOf(s.address)}
+                  </span>
+                )}
+              </div>
               <div className="mt-1 text-xs text-gray-500">{s.phone}</div>
               <div className="mt-1 text-xs text-gray-500">{s.address}</div>
             </button>
@@ -430,6 +530,11 @@ export default function CustomerOrderPage() {
           {stores.length === 0 && (
             <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400 md:col-span-2">
               가맹점이 없습니다
+            </div>
+          )}
+          {stores.length > 0 && storeRegion && stores.filter((s) => regionOf(s.address) === storeRegion).length === 0 && (
+            <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400 md:col-span-2">
+              {storeRegion} 지역에 등록된 가맹점이 없습니다
             </div>
           )}
         </div>
