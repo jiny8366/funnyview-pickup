@@ -56,6 +56,7 @@ export const orders = pgTable(
     shippedAt: timestamp('shipped_at', { withTimezone: true }),
     arrivedAt: timestamp('arrived_at', { withTimezone: true }),
     readyAt: timestamp('ready_at', { withTimezone: true }), // 도착알림 발송 시각
+    lastReminderAt: timestamp('last_reminder_at', { withTimezone: true }), // 마지막 픽업 재독촉 시각 (cron)
     completedAt: timestamp('completed_at', { withTimezone: true }),
     cancelledAt: timestamp('cancelled_at', { withTimezone: true }),
     updatedAt: timestamp('updated_at', { withTimezone: true })

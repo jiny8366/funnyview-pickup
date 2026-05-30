@@ -13,7 +13,8 @@ export type NotificationKind =
   | 'low_stock'
   | 'order_cancelled'
   | 'pickup_no_show'
-  | 'order_returned';
+  | 'order_returned'
+  | 'pickup_reminder';
 
 export interface TemplateRendered {
   title: string;
@@ -109,7 +110,18 @@ export function renderTemplate(
     case 'order_returned':
       return {
         title: '반품 처리',
-        body: `${name}님, 주문 ${orderNo}이(가) 반품 처리되었습니다.${ctx.reason ? `\n사유: ${ctx.reason}` : ''}`,
+        body: `${name}님, 주문 ${orderNo}이(가) 반품 처리되었습니다.${ctx.reason ? `\n사유: ${ctx.reason}` : ''}\n선결제 환불은 ${store || '매장'}에 문의해 주세요.`,
+      };
+    case 'pickup_reminder':
+      return {
+        title: '픽업 안내',
+        body: `${name}님, 주문 ${orderNo}이(가) ${store}에서 픽업을 기다리고 있습니다. 가급적 빠른 시일 내 픽업해 주세요.${ctx.storeAddress ? `\n주소: ${ctx.storeAddress}` : ''}`,
+        kakaoTemplateId: process.env.KAKAO_TPL_PICKUP_REMINDER,
+        kakaoVariables: {
+          '#{orderNumber}': orderNo,
+          '#{customerName}': name,
+          '#{storeName}': store,
+        },
       };
   }
 }

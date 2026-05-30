@@ -102,6 +102,7 @@ export const notificationTypeEnum = pgEnum('notification_type', [
   'order_cancelled', // 주문 취소 (customer 대상)
   'pickup_no_show', // 픽업 미수령 (customer 대상)
   'order_returned', // 반품 (customer 대상)
+  'pickup_reminder', // 픽업 재독촉 (customer 대상, 2일마다)
 ]);
 
 // 알림 채널

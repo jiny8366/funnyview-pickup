@@ -121,6 +121,9 @@ const ALWAYS_ALLOWED = new Set([
   '/robots.txt',
 ]);
 
+// Vercel Cron 및 공통 정적 자원 — portal 무관 prefix 허용
+const ALWAYS_ALLOWED_PREFIX = ['/api/cron'];
+
 // portal 별 정확 일치 (Set) + prefix 매칭 (array) 으로 분리 — 매 요청 O(1) ~ O(prefix수) 룩업
 const PORTAL_EXACT: Record<Portal, Set<string>> = {
   customer: new Set(PORTAL_ALLOWED.customer),
@@ -131,6 +134,9 @@ const PORTAL_EXACT: Record<Portal, Set<string>> = {
 
 export function isPathAllowedOnPortal(portal: Portal, pathname: string): boolean {
   if (ALWAYS_ALLOWED.has(pathname)) return true;
+  for (const p of ALWAYS_ALLOWED_PREFIX) {
+    if (pathname === p || pathname.startsWith(p + '/')) return true;
+  }
   const exact = PORTAL_EXACT[portal];
   if (exact.has(pathname)) return true;
   // prefix 매칭 — '/products' 가 allowlist 면 '/products/abc' 도 허용
