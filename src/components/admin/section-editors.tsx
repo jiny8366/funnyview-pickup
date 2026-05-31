@@ -241,10 +241,7 @@ interface LensListItem {
 function ProductGridEditor({ config, onChange }: SectionEditorProps) {
   const c = config as Record<string, unknown>;
   const [lensList, setLensList] = useState<LensListItem[]>([]);
-  const [filterBrand, setFilterBrand] = useState<string>('');
-  const [filterType, setFilterType] = useState<string>('');
-  const [filterCycle, setFilterCycle] = useState<string>('');
-  const [query, setQuery] = useState('');
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/lenses')
@@ -274,204 +271,118 @@ function ProductGridEditor({ config, onChange }: SectionEditorProps) {
   }
 
   const lensIds = (c.lensIds as string[]) ?? [];
-  const brands = useMemoSorted(lensList.map((l) => l.brand));
-  const types = useMemoSorted(lensList.map((l) => l.lensType));
-  const cycles = useMemoSorted(lensList.map((l) => l.replacementCycle));
-
-  const filtered = lensList.filter((l) => {
-    if (filterBrand && l.brand !== filterBrand) return false;
-    if (filterType && l.lensType !== filterType) return false;
-    if (filterCycle && l.replacementCycle !== filterCycle) return false;
-    if (query.trim()) {
-      const q = query.trim().toLowerCase();
-      if (!l.name.toLowerCase().includes(q) && !l.brand.toLowerCase().includes(q)) {
-        return false;
-      }
-    }
-    return true;
-  });
+  const mode = (c.mode as string) ?? 'best';
+  const layout = (c.layout as 'grid' | 'carousel') ?? 'grid';
 
   const selectedLenses = lensIds
     .map((id) => lensList.find((l) => l.id === id))
     .filter((l): l is LensListItem => Boolean(l));
 
-  function reorder(idx: number, dir: -1 | 1) {
-    const next = [...lensIds];
-    const t = idx + dir;
-    if (t < 0 || t >= next.length) return;
-    [next[idx], next[t]] = [next[t], next[idx]];
-    patch('lensIds', next);
-  }
-
-  const layout = (c.layout as 'grid' | 'carousel') ?? 'grid';
-
   return (
     <div className="space-y-4">
       <Field label="큐레이션 모드">
         <SelectField
-          value={(c.mode as string) ?? 'best'}
+          value={mode}
           options={[
-            { value: 'best', label: '베스트 (총 주문량 기준)' },
-            { value: 'trending', label: '트렌딩 (최근 7일 주문량)' },
-            { value: 'new', label: '신상품 (등록일 최신순)' },
-            { value: 'manual', label: '수동 선택' },
+            { value: 'best', label: '베스트 (총 주문량 기준 — 자동)' },
+            { value: 'trending', label: '트렌딩 (최근 7일 주문량 — 자동)' },
+            { value: 'new', label: '신상품 (등록일 최신순 — 자동)' },
+            { value: 'manual', label: '수동 선택 (운영자가 직접 지정)' },
           ]}
           onChange={(v) => patch('mode', v)}
         />
       </Field>
 
-      {c.mode === 'manual' && (
-        <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-2.5">
-          <div className="flex items-baseline justify-between">
-            <div className="text-xs font-semibold text-gray-700">
-              노출할 상품{' '}
-              <span className="text-brand-600">({lensIds.length}종 선택)</span>
-            </div>
-            {lensIds.length > 0 && (
-              <button
-                type="button"
-                onClick={() => patch('lensIds', [])}
-                className="text-[10px] text-gray-400 hover:text-gray-700"
-              >
-                전체 해제
-              </button>
+      {/* 진열 제품 — 모드와 무관하게 항상 노출. 수동 모드면 source-of-truth, 자동 모드면 override */}
+      <div className="rounded-xl border border-gray-200 bg-gray-50 p-3 space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="text-xs font-semibold text-gray-700">
+            진열 제품{' '}
+            {mode === 'manual' ? (
+              <span className="text-brand-600">({lensIds.length}종 직접 지정)</span>
+            ) : (
+              <span className="text-gray-400">
+                ({lensIds.length}종 직접 지정 — 모드 {'‘'}수동 선택{'’'} 시 적용)
+              </span>
             )}
           </div>
+          <button
+            type="button"
+            onClick={() => setPickerOpen(true)}
+            className="rounded-lg bg-brand-600 px-3 py-1.5 text-xs font-semibold text-white shadow hover:bg-brand-700"
+          >
+            🛍️ 제품 선택 / 변경
+          </button>
+        </div>
 
-          {/* 카테고리 필터 */}
-          <div className="grid grid-cols-3 gap-2">
-            <select
-              value={filterBrand}
-              onChange={(e) => setFilterBrand(e.target.value)}
-              className="h-8 rounded-lg border border-gray-300 px-2 text-xs"
+        {selectedLenses.length === 0 ? (
+          <div className="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-center text-[11px] text-gray-400">
+            아직 직접 지정한 제품이 없습니다.{' '}
+            <button
+              type="button"
+              onClick={() => setPickerOpen(true)}
+              className="text-brand-600 underline hover:no-underline"
             >
-              <option value="">브랜드 전체</option>
-              {brands.map((b) => (
-                <option key={b} value={b}>
-                  {b}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filterType}
-              onChange={(e) => setFilterType(e.target.value)}
-              className="h-8 rounded-lg border border-gray-300 px-2 text-xs"
-            >
-              <option value="">유형 전체</option>
-              {types.map((t) => (
-                <option key={t} value={t}>
-                  {LENS_TYPE_LABEL[t] ?? t}
-                </option>
-              ))}
-            </select>
-            <select
-              value={filterCycle}
-              onChange={(e) => setFilterCycle(e.target.value)}
-              className="h-8 rounded-lg border border-gray-300 px-2 text-xs"
-            >
-              <option value="">주기 전체</option>
-              {cycles.map((cy) => (
-                <option key={cy} value={cy}>
-                  {CYCLE_LABEL[cy] ?? cy}
-                </option>
-              ))}
-            </select>
+              제품 선택하기 →
+            </button>
           </div>
-          <input
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="제품명 검색"
-            className="h-8 w-full rounded-lg border border-gray-300 px-2 text-xs"
-          />
-
-          {/* 필터 결과 — 체크박스 리스트 */}
-          <div className="max-h-56 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2">
-            <div className="mb-1 text-[10px] text-gray-400">
-              검색 결과 {filtered.length}종
-            </div>
-            {filtered.map((l) => (
-              <label key={l.id} className="flex items-center gap-2 py-1 text-xs hover:bg-gray-50">
-                <input
-                  type="checkbox"
-                  checked={lensIds.includes(l.id)}
-                  onChange={(e) => {
-                    const next = e.target.checked
-                      ? [...lensIds, l.id]
-                      : lensIds.filter((x) => x !== l.id);
-                    patch('lensIds', next);
-                  }}
-                />
+        ) : (
+          <ol className="space-y-1">
+            {selectedLenses.map((l, idx) => (
+              <li
+                key={l.id}
+                className="flex items-center gap-2 rounded border border-gray-100 bg-white px-2 py-1 text-xs"
+              >
+                <span className="w-5 text-center text-[10px] font-mono text-gray-400">
+                  {idx + 1}
+                </span>
                 <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">
                   {l.brand}
                 </span>
-                <span className="truncate">{l.name}</span>
-                <span className="ml-auto text-[10px] text-gray-400">
+                <span className="flex-1 truncate">{l.name}</span>
+                <span className="text-[10px] text-gray-400">
                   {LENS_TYPE_LABEL[l.lensType] ?? l.lensType}
                   {' · '}
                   {CYCLE_LABEL[l.replacementCycle] ?? l.replacementCycle}
                 </span>
-              </label>
+              </li>
             ))}
-            {filtered.length === 0 && (
-              <div className="py-6 text-center text-[11px] text-gray-400">
-                필터 조건에 맞는 제품이 없습니다
-              </div>
-            )}
-          </div>
+          </ol>
+        )}
 
-          {/* 선택된 순서 */}
-          {selectedLenses.length > 0 && (
-            <div className="rounded-lg border border-brand-200 bg-white p-2">
-              <div className="mb-1 text-[10px] font-medium text-brand-700">
-                노출 순서 (위에서부터 표시)
-              </div>
-              <ol className="space-y-1">
-                {selectedLenses.map((l, idx) => (
-                  <li
-                    key={l.id}
-                    className="flex items-center gap-2 rounded border border-gray-100 bg-gray-50 px-2 py-1 text-xs"
-                  >
-                    <span className="text-[10px] font-mono text-gray-400">
-                      {idx + 1}
-                    </span>
-                    <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">
-                      {l.brand}
-                    </span>
-                    <span className="flex-1 truncate">{l.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => reorder(idx, -1)}
-                      disabled={idx === 0}
-                      className="text-gray-400 hover:text-gray-900 disabled:opacity-30"
-                      aria-label="위로"
-                    >
-                      ▲
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => reorder(idx, 1)}
-                      disabled={idx === selectedLenses.length - 1}
-                      className="text-gray-400 hover:text-gray-900 disabled:opacity-30"
-                      aria-label="아래로"
-                    >
-                      ▼
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() =>
-                        patch('lensIds', lensIds.filter((x) => x !== l.id))
-                      }
-                      className="text-red-500 hover:text-red-700"
-                      aria-label="삭제"
-                    >
-                      ✕
-                    </button>
-                  </li>
-                ))}
-              </ol>
-            </div>
-          )}
-        </div>
+        {mode !== 'manual' && lensIds.length > 0 && (
+          <div className="rounded-md bg-amber-50 px-2 py-1.5 text-[11px] text-amber-700">
+            ⓘ 현재 모드는{' '}
+            <strong>
+              {mode === 'best' ? '베스트(자동)' : mode === 'trending' ? '트렌딩(자동)' : '신상품(자동)'}
+            </strong>{' '}
+            입니다. 직접 지정한 제품을 표시하려면{' '}
+            <button
+              type="button"
+              onClick={() => patch('mode', 'manual')}
+              className="font-semibold text-amber-800 underline hover:no-underline"
+            >
+              수동 선택 모드로 전환
+            </button>
+            하세요.
+          </div>
+        )}
+      </div>
+
+      {pickerOpen && (
+        <ProductPickerDialog
+          lensList={lensList}
+          selectedIds={lensIds}
+          onClose={() => setPickerOpen(false)}
+          onSave={(ids) => {
+            patch('lensIds', ids);
+            // 처음 제품을 선택하면 자동으로 manual 모드로 전환
+            if (ids.length > 0 && mode !== 'manual') {
+              onChange({ ...config, lensIds: ids, mode: 'manual' });
+            }
+            setPickerOpen(false);
+          }}
+        />
       )}
 
       <div className="grid grid-cols-3 gap-3">
@@ -552,6 +463,292 @@ function ProductGridEditor({ config, onChange }: SectionEditorProps) {
 
 function useMemoSorted(items: string[]): string[] {
   return Array.from(new Set(items)).sort();
+}
+
+// ─────────────────────────────────────────────────────
+// Product Picker Dialog (자식 창)
+// 진열 제품 선택 — 카테고리 필터 + 체크박스 + 순서 조정.
+// ─────────────────────────────────────────────────────
+function ProductPickerDialog({
+  lensList,
+  selectedIds,
+  onClose,
+  onSave,
+}: {
+  lensList: LensListItem[];
+  selectedIds: string[];
+  onClose: () => void;
+  onSave: (ids: string[]) => void;
+}) {
+  const [working, setWorking] = useState<string[]>(selectedIds);
+  const [filterBrand, setFilterBrand] = useState<string>('');
+  const [filterType, setFilterType] = useState<string>('');
+  const [filterCycle, setFilterCycle] = useState<string>('');
+  const [query, setQuery] = useState('');
+
+  const brands = useMemoSorted(lensList.map((l) => l.brand));
+  const types = useMemoSorted(lensList.map((l) => l.lensType));
+  const cycles = useMemoSorted(lensList.map((l) => l.replacementCycle));
+
+  const filtered = lensList.filter((l) => {
+    if (filterBrand && l.brand !== filterBrand) return false;
+    if (filterType && l.lensType !== filterType) return false;
+    if (filterCycle && l.replacementCycle !== filterCycle) return false;
+    if (query.trim()) {
+      const q = query.trim().toLowerCase();
+      if (
+        !l.name.toLowerCase().includes(q) &&
+        !l.brand.toLowerCase().includes(q)
+      ) {
+        return false;
+      }
+    }
+    return true;
+  });
+
+  function toggle(id: string) {
+    setWorking((prev) =>
+      prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id],
+    );
+  }
+
+  function reorder(idx: number, dir: -1 | 1) {
+    setWorking((prev) => {
+      const next = [...prev];
+      const t = idx + dir;
+      if (t < 0 || t >= next.length) return prev;
+      [next[idx], next[t]] = [next[t], next[idx]];
+      return next;
+    });
+  }
+
+  const selectedItems = working
+    .map((id) => lensList.find((l) => l.id === id))
+    .filter((l): l is LensListItem => Boolean(l));
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-stretch justify-center bg-black/50 p-0 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="flex h-full w-full flex-col overflow-hidden bg-white sm:h-auto sm:max-h-[90vh] sm:max-w-4xl sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex shrink-0 items-center justify-between border-b border-gray-200 px-5 py-3">
+          <div>
+            <h3 className="text-base font-bold">진열 제품 선택</h3>
+            <p className="mt-0.5 text-[11px] text-gray-500">
+              카테고리로 좁힌 뒤 체크하여 추가 · 우측에서 순서 조정
+            </p>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="닫기"
+            className="grid h-8 w-8 place-items-center rounded-full text-gray-400 hover:bg-gray-100"
+          >
+            ✕
+          </button>
+        </header>
+
+        {/* 필터 바 */}
+        <div className="shrink-0 border-b border-gray-100 bg-gray-50 px-5 py-3 space-y-2">
+          <div className="grid grid-cols-1 gap-2 sm:grid-cols-4">
+            <select
+              value={filterBrand}
+              onChange={(e) => setFilterBrand(e.target.value)}
+              className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-xs"
+            >
+              <option value="">브랜드 전체</option>
+              {brands.map((b) => (
+                <option key={b} value={b}>
+                  {b}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterType}
+              onChange={(e) => setFilterType(e.target.value)}
+              className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-xs"
+            >
+              <option value="">유형 전체</option>
+              {types.map((t) => (
+                <option key={t} value={t}>
+                  {LENS_TYPE_LABEL[t] ?? t}
+                </option>
+              ))}
+            </select>
+            <select
+              value={filterCycle}
+              onChange={(e) => setFilterCycle(e.target.value)}
+              className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-xs"
+            >
+              <option value="">주기 전체</option>
+              {cycles.map((cy) => (
+                <option key={cy} value={cy}>
+                  {CYCLE_LABEL[cy] ?? cy}
+                </option>
+              ))}
+            </select>
+            <input
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              placeholder="제품명 검색"
+              className="h-9 rounded-lg border border-gray-300 bg-white px-2 text-xs"
+            />
+          </div>
+          {(filterBrand || filterType || filterCycle || query) && (
+            <button
+              type="button"
+              onClick={() => {
+                setFilterBrand('');
+                setFilterType('');
+                setFilterCycle('');
+                setQuery('');
+              }}
+              className="text-[10px] text-gray-500 hover:text-gray-900 underline"
+            >
+              필터 초기화
+            </button>
+          )}
+        </div>
+
+        {/* 본문: 좌 후보 / 우 선택된 목록 */}
+        <div className="flex flex-1 min-h-0 flex-col md:flex-row">
+          <div className="flex flex-1 flex-col overflow-hidden border-b border-gray-100 md:border-b-0 md:border-r">
+            <div className="flex items-center justify-between px-5 py-2 text-[11px] text-gray-500">
+              <span>검색 결과 {filtered.length}종</span>
+              {lensList.length === 0 && (
+                <span className="text-amber-600">렌즈 데이터 로드 중…</span>
+              )}
+            </div>
+            <ul className="flex-1 overflow-y-auto px-2 pb-3">
+              {filtered.map((l) => {
+                const checked = working.includes(l.id);
+                return (
+                  <li key={l.id}>
+                    <label
+                      className={`flex items-center gap-2 rounded-lg px-3 py-2 text-xs ${
+                        checked ? 'bg-brand-50' : 'hover:bg-gray-50'
+                      }`}
+                    >
+                      <input
+                        type="checkbox"
+                        checked={checked}
+                        onChange={() => toggle(l.id)}
+                        className="h-4 w-4"
+                      />
+                      <span className="rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">
+                        {l.brand}
+                      </span>
+                      <span className="flex-1 truncate">{l.name}</span>
+                      <span className="text-[10px] text-gray-400">
+                        {LENS_TYPE_LABEL[l.lensType] ?? l.lensType}
+                        {' · '}
+                        {CYCLE_LABEL[l.replacementCycle] ?? l.replacementCycle}
+                      </span>
+                    </label>
+                  </li>
+                );
+              })}
+              {filtered.length === 0 && lensList.length > 0 && (
+                <li className="py-10 text-center text-xs text-gray-400">
+                  조건에 맞는 제품이 없습니다
+                </li>
+              )}
+            </ul>
+          </div>
+
+          {/* 우측 — 선택된 목록 + 순서 조정 */}
+          <div className="flex w-full flex-col md:w-80">
+            <div className="flex items-center justify-between px-5 py-2 text-[11px] text-gray-500">
+              <span>
+                선택됨{' '}
+                <strong className="text-brand-600">{working.length}</strong>종
+              </span>
+              {working.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setWorking([])}
+                  className="text-gray-400 hover:text-red-600"
+                >
+                  전체 해제
+                </button>
+              )}
+            </div>
+            <ol className="flex-1 overflow-y-auto px-3 pb-3 space-y-1">
+              {selectedItems.length === 0 ? (
+                <li className="rounded-lg border border-dashed border-gray-200 py-8 text-center text-[11px] text-gray-400">
+                  좌측에서 제품을 체크하여 추가
+                </li>
+              ) : (
+                selectedItems.map((l, idx) => (
+                  <li
+                    key={l.id}
+                    className="flex items-center gap-1.5 rounded-lg border border-gray-100 bg-gray-50 px-2 py-1.5 text-xs"
+                  >
+                    <span className="w-5 shrink-0 text-center font-mono text-[10px] text-gray-400">
+                      {idx + 1}
+                    </span>
+                    <span className="min-w-0 flex-1 truncate">{l.name}</span>
+                    <button
+                      type="button"
+                      onClick={() => reorder(idx, -1)}
+                      disabled={idx === 0}
+                      className="text-gray-400 hover:text-gray-900 disabled:opacity-30"
+                      aria-label="위로"
+                    >
+                      ▲
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => reorder(idx, 1)}
+                      disabled={idx === selectedItems.length - 1}
+                      className="text-gray-400 hover:text-gray-900 disabled:opacity-30"
+                      aria-label="아래로"
+                    >
+                      ▼
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => toggle(l.id)}
+                      className="text-red-500 hover:text-red-700"
+                      aria-label="제거"
+                    >
+                      ✕
+                    </button>
+                  </li>
+                ))
+              )}
+            </ol>
+          </div>
+        </div>
+
+        <footer className="flex shrink-0 items-center justify-between gap-2 border-t border-gray-200 bg-gray-50 px-5 py-3">
+          <span className="text-[11px] text-gray-500">
+            {working.length}종 선택 · 저장 시 모드가 자동으로 {'‘'}수동 선택{'’'} 으로 전환됩니다
+          </span>
+          <div className="flex gap-2">
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+            >
+              취소
+            </button>
+            <button
+              type="button"
+              onClick={() => onSave(working)}
+              className="rounded-lg bg-brand-600 px-4 py-2 text-sm font-semibold text-white shadow hover:bg-brand-700"
+            >
+              저장 ({working.length}종)
+            </button>
+          </div>
+        </footer>
+      </div>
+    </div>
+  );
 }
 
 // ─────────────────────────────────────────────────────
