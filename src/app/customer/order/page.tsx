@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { PrescriptionManager } from '@/components/prescription/prescription-manager';
 import { formatKRW } from '@/lib/utils/format';
+import { powerVector, dioptricDistance } from '@/lib/prescription/convert';
 
 interface LensVariant {
   variantId: string;
@@ -109,13 +110,54 @@ function matchesType(l: Lens, key: TypeKey) {
   if (key === 'all') return true;
   if (key === 'color') return isColored(l);
   if (key === '1day') return l.replacementCycle === '1day' && !isColored(l);
-  if (key === 'extended') return l.replacementCycle !== '1day' && !isColored(l) && l.lensType !== 'multifocal';
+  // 장기착용 = 교착주기 필터 — 원데이가 아닌 모든(구면/난시용/다초점) 비컬러 렌즈 포함
+  if (key === 'extended') return l.replacementCycle !== '1day' && !isColored(l);
   if (key === 'toric') return l.lensType === 'toric';
   if (key === 'multifocal') return l.lensType === 'multifocal';
   return true;
 }
 
 type MatchMethod = 'exact' | 'se';
+
+/** 추천 조합의 우선순위 단계.
+ *  same-exact: 양안 동일 제품(정확) / same-se: 양안 동일 제품(구면등가 변환) /
+ *  brand-line: 같은 브랜드·같은 라인(난시용+구면) / brand: 같은 브랜드(제품 매칭). */
+type PairTier = 'same-exact' | 'same-se' | 'brand-line' | 'brand';
+
+const TIER_RANK: Record<PairTier, number> = {
+  'same-exact': 0,
+  'same-se': 1,
+  'brand-line': 2,
+  brand: 3,
+};
+
+const TIER_LABEL: Record<PairTier, string> = {
+  'same-exact': '양안 동일 제품',
+  'same-se': '양안 동일 제품 · 구면등가',
+  'brand-line': '같은 브랜드 · 같은 라인',
+  brand: '같은 브랜드',
+};
+
+interface EyePick {
+  lens: Lens;
+  variant: LensVariant;
+  method: MatchMethod;
+}
+
+interface PairRec {
+  key: string;
+  tier: PairTier;
+  right: EyePick;
+  left: EyePick;
+  /** 양안이 같은 제품(lens)인가. */
+  sameProduct: boolean;
+  /** 양안이 같은 브랜드인가. */
+  sameBrand: boolean;
+  /** 양안 모두 재고 보유. */
+  inStock: boolean;
+  /** 1박스 기준 합계(우+좌). */
+  total: number;
+}
 
 interface LensEligibility {
   /** 모든 필요 눈에 (exact || SE) 매칭이 존재 (재고 무관). 구면등가 토글이 켜졌을 때 적용. */
@@ -152,8 +194,9 @@ export default function CustomerOrderPage() {
   const [leftQty, setLeftQty] = useState(1);
   const [rightQty, setRightQty] = useState(1);
 
-  // 제품 선택
+  // 제품 선택 — 단일 제품(selectedLensId) 또는 추천 조합(pairPickKey) 중 하나
   const [selectedLensId, setSelectedLensId] = useState<string | null>(null);
+  const [pairPickKey, setPairPickKey] = useState<string | null>(null);
 
   // 매장 / 결제
   const [storeId, setStoreId] = useState<string | null>(null);
@@ -288,6 +331,73 @@ export default function CustomerOrderPage() {
     }
   }, [selectedLens, selectedElig]);
 
+  // 추천 조합 — 양안 모드 + 좌·우 도수 모두 있을 때, 우선순위별 좌·우 페어.
+  // 선택한 카테고리(원데이/장기착용 등)로 후보를 한정해 같은 교착주기 안에서 묶는다
+  // (예: 원데이 → 원데이 구면 + 원데이 난시용/다초점).
+  const pairRecs = useMemo(() => {
+    if (eyeMode !== 'both' || !needLeft || !needRight) return [];
+    if (!savedDose.left || !savedDose.right) return [];
+    const pool = lenses.filter((l) => matchesType(l, typeKey));
+    return buildPairRecs(pool, savedDose.right, savedDose.left);
+  }, [lenses, typeKey, eyeMode, needLeft, needRight, savedDose.left, savedDose.right]);
+
+  const resolvedPair = useMemo(
+    () => pairRecs.find((r) => r.key === pairPickKey) ?? null,
+    [pairRecs, pairPickKey],
+  );
+
+  // 양안 모드를 벗어나면 추천 조합 선택 해제
+  useEffect(() => {
+    if (eyeMode !== 'both' && pairPickKey) setPairPickKey(null);
+  }, [eyeMode, pairPickKey]);
+
+  // 통합 선택 — 추천 조합(pairPick) 우선, 없으면 단일 제품(selectedLens)
+  const resolved = useMemo<{
+    right: EyePick | null;
+    left: EyePick | null;
+    isPair: boolean;
+  } | null>(() => {
+    if (resolvedPair) {
+      return {
+        right: needRight ? resolvedPair.right : null,
+        left: needLeft ? resolvedPair.left : null,
+        isPair: true,
+      };
+    }
+    if (selectedLens && selectedElig && selectedElig.doseMatch) {
+      return {
+        right: selectedElig.rightVariant
+          ? {
+              lens: selectedLens,
+              variant: selectedElig.rightVariant,
+              method: selectedElig.rightMethod ?? 'exact',
+            }
+          : null,
+        left: selectedElig.leftVariant
+          ? {
+              lens: selectedLens,
+              variant: selectedElig.leftVariant,
+              method: selectedElig.leftMethod ?? 'exact',
+            }
+          : null,
+        isPair: false,
+      };
+    }
+    return null;
+  }, [resolvedPair, selectedLens, selectedElig, needRight, needLeft]);
+
+  const resolvedInStock =
+    !!resolved &&
+    (!resolved.right || resolved.right.variant.available > 0) &&
+    (!resolved.left || resolved.left.variant.available > 0);
+
+  /** 양안이 같은 제품인가 (요약 표시 분기용). */
+  const resolvedSameLens =
+    !resolved ||
+    !resolved.right ||
+    !resolved.left ||
+    resolved.right.lens.lensId === resolved.left.lens.lensId;
+
   const brands = useMemo(
     () => [...new Set(lenses.map((l) => l.brand))].sort(),
     [lenses],
@@ -364,23 +474,23 @@ export default function CustomerOrderPage() {
 
   /** 난시가 있는 눈 (양안 모드 + 한쪽이라도 CYL>0). 구면등가 토글 의미가 있는지 판단용. */
   const hasAstigmaticEye = useMemo(() => {
-    const leftCyl = savedDose.left ? normCorrection(savedDose.left.cylinder) : 0;
-    const rightCyl = savedDose.right ? normCorrection(savedDose.right.cylinder) : 0;
     return (
-      (needLeft && leftCyl !== 0) || (needRight && rightCyl !== 0)
+      (needLeft && !!savedDose.left && isAstigmatic(savedDose.left.cylinder)) ||
+      (needRight && !!savedDose.right && isAstigmatic(savedDose.right.cylinder))
     );
   }, [savedDose, needLeft, needRight]);
 
   /** 난시 눈의 구면등가 변환 결과 표시용 (SPH -3.00 등). */
   const seSummary = useMemo(() => {
     const result: { side: '좌' | '우'; original: string; se: string }[] = [];
-    if (needLeft && savedDose.left) {
-      const se = sphericalEquivalent(savedDose.left);
-      if (se) result.push({ side: '좌', original: eyeSummary(savedDose.left), se: se.sphere });
-    }
+    // 표시 순서는 우안 먼저
     if (needRight && savedDose.right) {
       const se = sphericalEquivalent(savedDose.right);
       if (se) result.push({ side: '우', original: eyeSummary(savedDose.right), se: se.sphere });
+    }
+    if (needLeft && savedDose.left) {
+      const se = sphericalEquivalent(savedDose.left);
+      if (se) result.push({ side: '좌', original: eyeSummary(savedDose.left), se: se.sphere });
     }
     return result;
   }, [savedDose, needLeft, needRight]);
@@ -406,38 +516,38 @@ export default function CustomerOrderPage() {
   const hasFilter = Boolean(brand || typeKey !== 'all' || query.trim());
 
   const total = useMemo(() => {
-    if (!selectedElig) return 0;
+    if (!resolved) return 0;
     let sum = 0;
-    if (selectedElig.leftVariant) sum += selectedElig.leftVariant.price * leftQty;
-    if (selectedElig.rightVariant) sum += selectedElig.rightVariant.price * rightQty;
+    if (resolved.right) sum += resolved.right.variant.price * rightQty;
+    if (resolved.left) sum += resolved.left.variant.price * leftQty;
     return sum;
-  }, [selectedElig, leftQty, rightQty]);
+  }, [resolved, leftQty, rightQty]);
 
   const canSubmit =
-    !!selectedLens &&
-    !!selectedElig &&
-    selectedElig.inStock &&
+    !!resolved &&
+    resolvedInStock &&
     !!storeId &&
     hasDoseToOrder &&
     !submitting;
 
   async function onSubmit() {
-    if (!canSubmit || !selectedElig) return;
+    if (!canSubmit || !resolved) return;
     setSubmitting(true);
     setError(null);
+    // 라인 순서는 우안 먼저
     const lines: Array<{ variantId: string; eyeSide: EyeSide; quantity: number }> = [];
-    if (selectedElig.leftVariant) {
+    if (resolved.right) {
       lines.push({
-        variantId: selectedElig.leftVariant.variantId,
-        eyeSide: 'left',
-        quantity: leftQty,
-      });
-    }
-    if (selectedElig.rightVariant) {
-      lines.push({
-        variantId: selectedElig.rightVariant.variantId,
+        variantId: resolved.right.variant.variantId,
         eyeSide: 'right',
         quantity: rightQty,
+      });
+    }
+    if (resolved.left) {
+      lines.push({
+        variantId: resolved.left.variant.variantId,
+        eyeSide: 'left',
+        quantity: leftQty,
       });
     }
 
@@ -604,62 +714,86 @@ export default function CustomerOrderPage() {
           </div>
         ) : (
           <>
-            {/* 선택된 제품 요약 + 수량 입력 — 양안 모드면 좌·우 별 수량 */}
-            {selectedLens && selectedElig && (
-              <div className="space-y-2 rounded-2xl border-2 border-brand-600 bg-brand-50 p-3">
-                <div className="flex items-center gap-3">
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={selectedLens.imageUrl ?? `/api/lens-image/${selectedLens.productCode}`}
-                    alt={selectedLens.name}
-                    className="h-14 w-14 shrink-0 rounded-lg bg-white object-cover"
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="truncate text-[10px] font-medium uppercase tracking-wider text-brand-700">
-                      {selectedLens.brand} · 선택됨
-                    </p>
-                    <p className="truncate text-sm font-semibold text-gray-900">
-                      {selectedLens.name}
-                    </p>
-                    <p className="text-[11px] text-gray-500">
-                      {selectedLens.replacementCycle} · {selectedLens.piecesPerBox}매
-                    </p>
+            {/* 선택 요약 + 수량 입력 — 단일 제품 또는 추천 조합(양안 다른 제품) */}
+            {resolved && (() => {
+              const headLens = resolved.right?.lens ?? resolved.left?.lens ?? null;
+              return (
+                <div className="space-y-2 rounded-2xl border-2 border-brand-600 bg-brand-50 p-3">
+                  <div className="flex items-center gap-3">
+                    {resolvedSameLens && headLens ? (
+                      <>
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={headLens.imageUrl ?? `/api/lens-image/${headLens.productCode}`}
+                          alt={headLens.name}
+                          className="h-14 w-14 shrink-0 rounded-lg bg-white object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate text-[10px] font-medium uppercase tracking-wider text-brand-700">
+                            {headLens.brand} · 선택됨
+                          </p>
+                          <p className="truncate text-sm font-semibold text-gray-900">
+                            {headLens.name}
+                          </p>
+                          <p className="text-[11px] text-gray-500">
+                            {headLens.replacementCycle} · {headLens.piecesPerBox}매
+                          </p>
+                        </div>
+                      </>
+                    ) : (
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[10px] font-medium uppercase tracking-wider text-brand-700">
+                          추천 조합 · 선택됨
+                        </p>
+                        <p className="text-sm font-semibold text-gray-900">
+                          좌·우 다른 제품{headLens ? ` · ${headLens.brand}` : ''}
+                        </p>
+                        <p className="text-[11px] text-gray-500">
+                          한쪽 난시로 눈마다 최적 제품을 매칭했습니다.
+                        </p>
+                      </div>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedLensId(null);
+                        setPairPickKey(null);
+                      }}
+                      className="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:border-gray-400"
+                    >
+                      변경
+                    </button>
                   </div>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedLensId(null)}
-                    className="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:border-gray-400"
-                  >
-                    변경
-                  </button>
+                  <div className="space-y-1.5 text-xs">
+                    {resolved.right && (
+                      <VariantQtyRow
+                        side="우 (R)"
+                        product={resolvedSameLens ? undefined : `${resolved.right.lens.brand} ${resolved.right.lens.name}`}
+                        variant={resolved.right.variant}
+                        qty={rightQty}
+                        onQtyChange={setRightQty}
+                        method={resolved.right.method}
+                      />
+                    )}
+                    {resolved.left && (
+                      <VariantQtyRow
+                        side="좌 (L)"
+                        product={resolvedSameLens ? undefined : `${resolved.left.lens.brand} ${resolved.left.lens.name}`}
+                        variant={resolved.left.variant}
+                        qty={leftQty}
+                        onQtyChange={setLeftQty}
+                        method={resolved.left.method}
+                      />
+                    )}
+                    {!resolvedInStock && (
+                      <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+                        도수는 맞지만 재고가 입고 대기 중입니다 — 주문 불가.
+                      </div>
+                    )}
+                  </div>
                 </div>
-                <div className="space-y-1.5 text-xs">
-                  {selectedElig.rightVariant && (
-                    <VariantQtyRow
-                      side="우 (R)"
-                      variant={selectedElig.rightVariant}
-                      qty={rightQty}
-                      onQtyChange={setRightQty}
-                      method={selectedElig.rightMethod}
-                    />
-                  )}
-                  {selectedElig.leftVariant && (
-                    <VariantQtyRow
-                      side="좌 (L)"
-                      variant={selectedElig.leftVariant}
-                      qty={leftQty}
-                      onQtyChange={setLeftQty}
-                      method={selectedElig.leftMethod}
-                    />
-                  )}
-                  {!selectedElig.inStock && (
-                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
-                      이 제품은 도수가 맞지만 재고가 입고 대기 중입니다 — 주문 불가.
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
+              );
+            })()}
 
             {/* 브랜드 선택 — 1차 필터 (도수 다음 단계) */}
             {brands.length > 0 && (
@@ -780,8 +914,9 @@ export default function CustomerOrderPage() {
                 </div>
                 <ul className="space-y-0.5 text-[11px] text-amber-900">
                   <li>
-                    정확 매칭 (토릭 SPH/CYL/AX){' '}
+                    난시용(토릭) 매칭{' '}
                     <strong>{exactMatchCount}종</strong>
+                    <span className="text-amber-700"> · 가장 가까운 CYL/축으로 근사</span>
                   </li>
                   {seSummary.map((s) => (
                     <li key={s.side}>
@@ -807,6 +942,37 @@ export default function CustomerOrderPage() {
                   ⓘ 구면등가는 |CYL|≤0.75 의 약한 난시에서 일반 렌즈로 간이 보정하는 방법입니다.
                   강한 난시는 토릭(난시용) 렌즈를 권장합니다.
                 </p>
+              </div>
+            )}
+
+            {/* 🎯 추천 조합 — 한쪽 난시 등으로 양안에 다른 제품이 필요할 때 우선순위별 페어 */}
+            {eyeMode === 'both' && hasAstigmaticEye && pairRecs.length > 0 && (
+              <div className="space-y-2 rounded-2xl border border-brand-200 bg-white p-3">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-xs font-semibold text-gray-900">
+                    🎯 추천 조합
+                  </div>
+                  <div className="text-[10px] text-gray-400">우안 우선 · 가까운 순</div>
+                </div>
+                <p className="text-[11px] text-gray-500">
+                  좌·우 도수에 맞춰 ① 양안 동일 제품 → ② 같은 브랜드 순으로 추천합니다. 선택하면 양안에
+                  한 번에 적용됩니다.
+                </p>
+                <div className="space-y-1.5">
+                  {pairRecs.map((rec) => (
+                    <PairCard
+                      key={rec.key}
+                      rec={rec}
+                      needRight={needRight}
+                      needLeft={needLeft}
+                      selected={pairPickKey === rec.key}
+                      onSelect={() => {
+                        setPairPickKey(pairPickKey === rec.key ? null : rec.key);
+                        setSelectedLensId(null);
+                      }}
+                    />
+                  ))}
+                </div>
               </div>
             )}
 
@@ -893,7 +1059,10 @@ export default function CustomerOrderPage() {
                     key={l.lensId}
                     type="button"
                     onClick={() => {
-                      if (clickable) setSelectedLensId(l.lensId);
+                      if (clickable) {
+                        setSelectedLensId(l.lensId);
+                        setPairPickKey(null);
+                      }
                     }}
                     disabled={!clickable}
                     aria-disabled={!clickable}
@@ -1231,23 +1400,31 @@ function EyeModeRadio({
   );
 }
 
-/** 선택된 제품의 한쪽 변형 + 수량 입력 + 라인 합계. */
+/** 선택된 제품의 한쪽 변형 + 수량 입력 + 라인 합계.
+ *  product 가 주어지면(양안 다른 제품) 눈별 제품명을 함께 표시. */
 function VariantQtyRow({
   side,
   variant,
   qty,
   onQtyChange,
   method,
+  product,
 }: {
   side: string;
   variant: LensVariant;
   qty: number;
   onQtyChange: (q: number) => void;
   method?: MatchMethod | null;
+  product?: string;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 text-gray-700">
       <span className="text-[11px] font-semibold text-gray-600">{side}</span>
+      {product && (
+        <span className="min-w-0 max-w-[45%] truncate text-[11px] font-medium text-brand-700">
+          {product}
+        </span>
+      )}
       <span className="min-w-0 truncate text-xs">{formatVariantLabel(variant)}</span>
       {method === 'se' && (
         <span
@@ -1282,6 +1459,65 @@ function VariantQtyRow({
   );
 }
 
+/** 추천 조합 카드 — 우/좌 각각의 추천 렌즈를 한 그룹(조합)으로 제시. */
+function PairCard({
+  rec,
+  needRight,
+  needLeft,
+  selected,
+  onSelect,
+}: {
+  rec: PairRec;
+  needRight: boolean;
+  needLeft: boolean;
+  selected: boolean;
+  onSelect: () => void;
+}) {
+  const eyeRow = (label: string, pick: EyePick) => (
+    <div className="flex flex-wrap items-baseline gap-1.5 text-[11px]">
+      <span className="font-semibold text-gray-600">{label}</span>
+      <span className="font-medium text-brand-700">
+        {pick.lens.brand} {pick.lens.name}
+      </span>
+      <span className="font-mono text-gray-700">{formatVariantLabel(pick.variant)}</span>
+      {pick.method === 'se' && (
+        <span className="rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-700">
+          구면등가
+        </span>
+      )}
+      {pick.variant.available <= 0 && (
+        <span className="rounded bg-amber-100 px-1 text-[10px] font-medium text-amber-700">
+          재고 대기
+        </span>
+      )}
+    </div>
+  );
+  return (
+    <button
+      type="button"
+      onClick={onSelect}
+      className={`w-full rounded-xl border p-2.5 text-left transition ${
+        selected
+          ? 'border-brand-600 bg-brand-50 ring-1 ring-brand-600'
+          : 'border-gray-200 bg-white hover:border-brand-300'
+      }`}
+    >
+      <div className="mb-1.5 flex items-center justify-between gap-2">
+        <span className="rounded-full bg-gray-900 px-2 py-0.5 text-[10px] font-medium text-white">
+          {TIER_LABEL[rec.tier]}
+        </span>
+        <span className="shrink-0 text-[11px] font-semibold text-gray-900">
+          {formatKRW(rec.total)} <span className="font-normal text-gray-400">/ 1박스</span>
+        </span>
+      </div>
+      <div className="space-y-0.5">
+        {needRight && eyeRow('우 (R)', rec.right)}
+        {needLeft && eyeRow('좌 (L)', rec.left)}
+      </div>
+    </button>
+  );
+}
+
 /** 도수 표시 칩 — read-only. 양/우/좌 한 줄(데스크탑) 또는 stacked(모바일) 노출. */
 function EyeChip({ label, dose }: { label: string; dose: EyeData | null }) {
   if (!dose) {
@@ -1310,36 +1546,49 @@ function formatSign(v: string | null): string {
 
 /** 저장된 도수가 제품 variants 에 존재하는지 매칭 (재고 무관).
  *  재고 확인은 호출 측에서 별도 처리 — 재고 없음 vs 도수 미지원을 구분해서 보여주기 위함.
- *  규칙 ('변형이 보정할 수 있는 것' 기준):
- *   - SPH: 엄격 일치 (필수)
- *   - 구면 변형 (vCyl=0): 누구나 착용 가능 — 고객 CYL/AXIS 무관 (난시는 미보정될 뿐)
- *   - 토릭 변형 (vCyl≠0): 고객의 CYL + AXIS 와 정확히 일치해야 함
- *     (토릭은 비-난시 고객에게 오히려 난시 추가 → 거부)
+ *  규칙:
+ *   - 난시 고객 (|CYL|≥0.5): 토릭 변형만. 굴절력 벡터(M/J0/J45) 거리를 최소화하는 SKU 선택 —
+ *     가용 축 중 가장 가까운 축을 적용하고 축·원주 차이를 구면등가/원주로 보정한 최적 도수가 됨.
+ *     (구면 렌즈로 간이 보정하려면 호출 측에서 구면등가(SE) 도수로 별도 매칭)
+ *   - 비-난시 고객: 구면 변형만 (SPH 엄격 일치). 토릭은 오히려 난시 추가 → 거부.
  *   - 비-다초점 변형 (vAdd=0): 누구나 — 다초점 필요한 고객도 거리 시력 보정만 받음
  *   - 다초점 변형 (vAdd≠0): 고객 ADD 와 정확 일치 필요
- *     (다초점은 비-노안 고객에게 거리 시력 저하 → 거부)
- *  여러 매칭 후보 중에서는 (1) 정확 매칭 우선, (2) 재고 많은 순으로 선택. */
+ *  동점/후보 다수면 재고 있는 variant 우선. */
 function matchVariant(variants: LensVariant[], dose: EyeData): LensVariant | null {
   const targetSph = Number(dose.sphere);
   const targetCyl = normCorrection(dose.cylinder);
   const targetAdd = normCorrection(dose.addPower);
+  const astig = Math.abs(targetCyl) >= ASTIGMATISM_MIN; // 난시 교정 대상
   let best: LensVariant | null = null;
-  let bestScore = -1;
+  let bestScore = Infinity; // 작을수록 우선
+  if (astig) {
+    // 난시 → 토릭만. 굴절력 벡터 거리로 매칭: 가용 축 중 가장 가까운 축을 적용하고,
+    // 축·원주 차이를 구면등가/원주로 보정한 "가장 가까운 도수" SKU 를 자동 선택.
+    const target = powerVector(targetSph, targetCyl, dose.axis);
+    for (const v of variants) {
+      const vCyl = normCorrection(v.cylinder);
+      if (vCyl === 0) continue; // 구면 렌즈는 난시 미보정 → 제외
+      const vAdd = normCorrection(v.addPower);
+      if (vAdd !== 0 && vAdd !== targetAdd) continue; // 다초점은 ADD 정확 일치
+      const dist = dioptricDistance(target, powerVector(Number(v.sphere), vCyl, v.axis));
+      if (dist > TORIC_MATCH_MAX) continue; // 교정 불가 수준이면 제외
+      const score = dist + (v.available > 0 ? 0 : 1000); // 재고 있는 variant 우선
+      if (score < bestScore) {
+        best = v;
+        bestScore = score;
+      }
+    }
+    return best;
+  }
+  // 비난시 → 구면만 (토릭은 오히려 난시 추가 → 제외). SPH 정확, 다초점 ADD 정확.
   for (const v of variants) {
     if (Number(v.sphere) !== targetSph) continue;
     const vCyl = normCorrection(v.cylinder);
-    if (vCyl !== 0) {
-      if (vCyl !== targetCyl) continue;
-      if ((v.axis ?? null) !== (dose.axis ?? null)) continue;
-    }
+    if (vCyl !== 0) continue;
     const vAdd = normCorrection(v.addPower);
     if (vAdd !== 0 && vAdd !== targetAdd) continue;
-    // 점수: 정확 매칭 가산 + 재고 있음 가산
-    let score = 0;
-    if (vCyl === targetCyl) score += 2;
-    if (vAdd === targetAdd) score += 2;
-    if (v.available > 0) score += 10; // 재고 있는 variant 우선
-    if (score > bestScore) {
+    const score = v.available > 0 ? 0 : 1000;
+    if (score < bestScore) {
       best = v;
       bestScore = score;
     }
@@ -1386,6 +1635,137 @@ function normCorrection(v: string | null | undefined): number {
   if (v == null || v === '') return 0;
   const n = Number(v);
   return Number.isFinite(n) ? n : 0;
+}
+
+/** 난시 교정 대상 최소 CYL — |CYL| ≥ 0.5 면 토릭(난시용) 필요, 미만은 구면 취급.
+ *  (recommend.ts 의 needToric, convert.ts 의 mapToricCylinder 와 동일 임계값) */
+const ASTIGMATISM_MIN = 0.5;
+function isAstigmatic(cyl: string | null | undefined): boolean {
+  return Math.abs(normCorrection(cyl)) >= ASTIGMATISM_MIN;
+}
+
+/** 토릭 근사 매칭 최대 허용 굴절력 거리(디옵터). 이 이상 차이나면 그 제품은 해당 눈을
+ *  제대로 교정 못 하는 것으로 보고 제외. (축 스냅·원주 1단계 반올림은 보통 이 안에 들어옴) */
+const TORIC_MATCH_MAX = 0.75;
+
+/** 제품군(라인) 키 — 같은 브랜드의 구면/난시용 같은 라인을 묶기 위한 정규화 제품명.
+ *  '난시용/토릭/다초점/구면' 등 변형 표기를 제거한 베이스 제품명 + 브랜드. */
+function productLineKey(lens: Lens): string {
+  const base = lens.name
+    .replace(/난시(용)?|토릭|toric|astigmat\w*|for\s+astigmatism|다초점|멀티포컬|multifocal|구면/gi, '')
+    .replace(/\s+/g, ' ')
+    .trim()
+    .toLowerCase();
+  return `${lens.brand.toLowerCase()}|${base}`;
+}
+
+/** 한 제품에서 한쪽 눈 매칭 — 정확 우선, 실패 시 구면등가(SE) 후보. */
+function pickEye(
+  lens: Lens,
+  dose: EyeData,
+  se: EyeData | null,
+): { variant: LensVariant; method: MatchMethod } | null {
+  const exact = matchVariant(lens.variants, dose);
+  if (exact) return { variant: exact, method: 'exact' };
+  if (se) {
+    const seMatch = matchVariant(lens.variants, se);
+    if (seMatch) return { variant: seMatch, method: 'se' };
+  }
+  return null;
+}
+
+/** 추천 조합 정렬 점수 (작을수록 우선): tier → 재고 → 동일제품 → 저가. */
+function rankPair(r: PairRec): number {
+  let s = TIER_RANK[r.tier] * 1000;
+  if (!r.inStock) s += 400; // 재고 없는 조합은 뒤로
+  if (!r.sameProduct) s += 30; // 같은 단계면 동일 제품을 살짝 우대
+  s += Math.min(r.total / 100000, 20); // 가격 미세 가중
+  return s;
+}
+
+/**
+ * 좌·우 도수에 맞춘 추천 조합 생성 — 한쪽만 난시 등으로 단일 제품 양안 매칭이
+ * 어려운 경우의 대안. 우선순위:
+ *   ① 양안 동일 제품(정확)  ② 양안 동일 제품(난시 쪽 구면등가 변환)
+ *   ③ 같은 브랜드·같은 라인(난시용+구면)  ④ 같은 브랜드(제품 매칭)
+ * 반환은 우선순위 정렬, 상위 6개. (right/left 는 항상 우안 먼저로 다룬다)
+ */
+function buildPairRecs(lenses: Lens[], rightDose: EyeData, leftDose: EyeData): PairRec[] {
+  const rightSE = sphericalEquivalent(rightDose); // 난시 아니면 null
+  const leftSE = sphericalEquivalent(leftDose);
+
+  const recs: PairRec[] = [];
+  const seen = new Set<string>();
+  const mk = (tier: PairTier, right: EyePick, left: EyePick): PairRec => ({
+    key: `${right.lens.lensId}:${right.variant.variantId}|${left.lens.lensId}:${left.variant.variantId}`,
+    tier,
+    right,
+    left,
+    sameProduct: right.lens.lensId === left.lens.lensId,
+    sameBrand: right.lens.brand === left.lens.brand,
+    inStock: right.variant.available > 0 && left.variant.available > 0,
+    total: right.variant.price + left.variant.price,
+  });
+  const push = (r: PairRec) => {
+    if (seen.has(r.key)) return;
+    seen.add(r.key);
+    recs.push(r);
+  };
+
+  // 눈별 정확 매칭 후보 (제품별 1 variant)
+  const rightExact: EyePick[] = [];
+  const leftExact: EyePick[] = [];
+  for (const l of lenses) {
+    const rv = matchVariant(l.variants, rightDose);
+    if (rv) rightExact.push({ lens: l, variant: rv, method: 'exact' });
+    const lv = matchVariant(l.variants, leftDose);
+    if (lv) leftExact.push({ lens: l, variant: lv, method: 'exact' });
+  }
+
+  // ① 양안 동일 제품(정확)
+  const rightExactByLens = new Map(rightExact.map((p) => [p.lens.lensId, p]));
+  for (const lp of leftExact) {
+    const rp = rightExactByLens.get(lp.lens.lensId);
+    if (rp) push(mk('same-exact', rp, lp));
+  }
+
+  // ② 양안 동일 제품(구면등가) — 난시 쪽을 SE 변환해 한 제품으로 양안
+  if (rightSE || leftSE) {
+    for (const l of lenses) {
+      const rp = pickEye(l, rightDose, rightSE);
+      const lp = pickEye(l, leftDose, leftSE);
+      if (rp && lp && (rp.method === 'se' || lp.method === 'se')) {
+        push(mk('same-se', { lens: l, ...rp }, { lens: l, ...lp }));
+      }
+    }
+  }
+
+  // ③④ 같은 브랜드 서로 다른 제품 페어 (브랜드별 best 1개씩)
+  const brands = new Set([...rightExact, ...leftExact].map((p) => p.lens.brand));
+  for (const brand of brands) {
+    const rs = rightExact.filter((p) => p.lens.brand === brand);
+    const ls = leftExact.filter((p) => p.lens.brand === brand);
+    if (!rs.length || !ls.length) continue;
+
+    let bestLine: PairRec | null = null; // ③ 같은 라인
+    let bestBrand: PairRec | null = null; // ④ 같은 브랜드 임의 제품
+    for (const r of rs) {
+      for (const l of ls) {
+        if (r.lens.lensId === l.lens.lensId) continue; // 동일 제품은 ①②에서 처리
+        const candBrand = mk('brand', r, l);
+        if (!bestBrand || rankPair(candBrand) < rankPair(bestBrand)) bestBrand = candBrand;
+        if (productLineKey(r.lens) === productLineKey(l.lens)) {
+          const candLine = mk('brand-line', r, l);
+          if (!bestLine || rankPair(candLine) < rankPair(bestLine)) bestLine = candLine;
+        }
+      }
+    }
+    if (bestLine) push(bestLine);
+    if (bestBrand) push(bestBrand);
+  }
+
+  recs.sort((a, b) => rankPair(a) - rankPair(b));
+  return recs.slice(0, 6);
 }
 
 function formatVariantLabel(v: LensVariant): string {
