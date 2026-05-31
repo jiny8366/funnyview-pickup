@@ -115,13 +115,20 @@ function matchesType(l: Lens, key: TypeKey) {
   return true;
 }
 
+type MatchMethod = 'exact' | 'se';
+
 interface LensEligibility {
-  /** 도수가 매칭되는 variant 가 존재 (재고 무관). */
+  /** 모든 필요 눈에 (exact || SE) 매칭이 존재 (재고 무관). 구면등가 토글이 켜졌을 때 적용. */
   doseMatch: boolean;
+  /** 모든 필요 눈에 exact 매칭 — SE 도움 없이도 가능. */
+  doseMatchExact: boolean;
   /** 매칭 variant 들이 모두 재고가 있음 (주문 가능). */
   inStock: boolean;
   leftVariant: LensVariant | null;
   rightVariant: LensVariant | null;
+  /** 각 눈의 매칭 방식 ('exact' = 정확, 'se' = 구면등가 변환). */
+  leftMethod: MatchMethod | null;
+  rightMethod: MatchMethod | null;
   reasons: string[];
 }
 
@@ -162,6 +169,8 @@ export default function CustomerOrderPage() {
   const [typeKey, setTypeKey] = useState<TypeKey>('all');
   const [brand, setBrand] = useState('');
   const [showOnlyEligible, setShowOnlyEligible] = useState(true);
+  /** 난시 변형이 없을 때 구면등가(Spherical Equivalent) 변환 도수도 후보로 포함. */
+  const [includeSEFallback, setIncludeSEFallback] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -222,26 +231,47 @@ export default function CustomerOrderPage() {
   const eligibilityByLens = useMemo(() => {
     const map = new Map<string, LensEligibility>();
     for (const l of lenses) {
-      const leftVariant = needLeft && savedDose.left
-        ? matchVariant(l.variants, savedDose.left)
-        : null;
-      const rightVariant = needRight && savedDose.right
-        ? matchVariant(l.variants, savedDose.right)
-        : null;
+      const leftMatch =
+        needLeft && savedDose.left
+          ? matchEye(l.variants, savedDose.left, includeSEFallback)
+          : null;
+      const rightMatch =
+        needRight && savedDose.right
+          ? matchEye(l.variants, savedDose.right, includeSEFallback)
+          : null;
+      const leftMatchExact =
+        needLeft && savedDose.left ? matchVariant(l.variants, savedDose.left) : null;
+      const rightMatchExact =
+        needRight && savedDose.right
+          ? matchVariant(l.variants, savedDose.right)
+          : null;
       const doseMatch =
-        (!needLeft || !!leftVariant) && (!needRight || !!rightVariant);
+        (!needLeft || !!leftMatch) && (!needRight || !!rightMatch);
+      const doseMatchExact =
+        (!needLeft || !!leftMatchExact) && (!needRight || !!rightMatchExact);
+      const leftVariant = leftMatch?.variant ?? null;
+      const rightVariant = rightMatch?.variant ?? null;
       const inStock =
         doseMatch &&
         (!leftVariant || leftVariant.available > 0) &&
         (!rightVariant || rightVariant.available > 0);
       const reasons: string[] = [];
-      if (needLeft && !leftVariant) reasons.push('좌안 도수 미지원');
-      if (needRight && !rightVariant) reasons.push('우안 도수 미지원');
+      if (needLeft && !leftMatch) reasons.push('좌안 도수 미지원');
+      if (needRight && !rightMatch) reasons.push('우안 도수 미지원');
       if (doseMatch && !inStock) reasons.push('재고 없음');
-      map.set(l.lensId, { doseMatch, inStock, leftVariant, rightVariant, reasons });
+      map.set(l.lensId, {
+        doseMatch,
+        doseMatchExact,
+        inStock,
+        leftVariant,
+        rightVariant,
+        leftMethod: leftMatch?.method ?? null,
+        rightMethod: rightMatch?.method ?? null,
+        reasons,
+      });
     }
     return map;
-  }, [lenses, savedDose, needLeft, needRight]);
+  }, [lenses, savedDose, needLeft, needRight, includeSEFallback]);
 
   const selectedLens = useMemo(
     () => lenses.find((l) => l.lensId === selectedLensId) ?? null,
@@ -319,6 +349,41 @@ export default function CustomerOrderPage() {
         : lenses.length,
     [lenses, eligibilityByLens, hasDoseToOrder],
   );
+
+  /** 정확 매칭 (구면등가 미사용) 제품 수. */
+  const exactMatchCount = useMemo(
+    () =>
+      hasDoseToOrder
+        ? lenses.filter((l) => eligibilityByLens.get(l.lensId)?.doseMatchExact).length
+        : lenses.length,
+    [lenses, eligibilityByLens, hasDoseToOrder],
+  );
+
+  /** SE 변환만으로 추가된 제품 수 (정확 매칭에 없는 것). */
+  const seOnlyCount = doseMatchCount - exactMatchCount;
+
+  /** 난시가 있는 눈 (양안 모드 + 한쪽이라도 CYL>0). 구면등가 토글 의미가 있는지 판단용. */
+  const hasAstigmaticEye = useMemo(() => {
+    const leftCyl = savedDose.left ? normCorrection(savedDose.left.cylinder) : 0;
+    const rightCyl = savedDose.right ? normCorrection(savedDose.right.cylinder) : 0;
+    return (
+      (needLeft && leftCyl !== 0) || (needRight && rightCyl !== 0)
+    );
+  }, [savedDose, needLeft, needRight]);
+
+  /** 난시 눈의 구면등가 변환 결과 표시용 (SPH -3.00 등). */
+  const seSummary = useMemo(() => {
+    const result: { side: '좌' | '우'; original: string; se: string }[] = [];
+    if (needLeft && savedDose.left) {
+      const se = sphericalEquivalent(savedDose.left);
+      if (se) result.push({ side: '좌', original: eyeSummary(savedDose.left), se: se.sphere });
+    }
+    if (needRight && savedDose.right) {
+      const se = sphericalEquivalent(savedDose.right);
+      if (se) result.push({ side: '우', original: eyeSummary(savedDose.right), se: se.sphere });
+    }
+    return result;
+  }, [savedDose, needLeft, needRight]);
 
   /** 브랜드별 도수 매칭 / 재고 있는 제품 수. */
   const countsByBrand = useMemo(() => {
@@ -575,6 +640,7 @@ export default function CustomerOrderPage() {
                       variant={selectedElig.rightVariant}
                       qty={rightQty}
                       onQtyChange={setRightQty}
+                      method={selectedElig.rightMethod}
                     />
                   )}
                   {selectedElig.leftVariant && (
@@ -583,6 +649,7 @@ export default function CustomerOrderPage() {
                       variant={selectedElig.leftVariant}
                       qty={leftQty}
                       onQtyChange={setLeftQty}
+                      method={selectedElig.leftMethod}
                     />
                   )}
                   {!selectedElig.inStock && (
@@ -690,6 +757,55 @@ export default function CustomerOrderPage() {
                       </strong>
                     </>
                   )}
+                </p>
+              </div>
+            )}
+
+            {/* 💡 도수 매칭 가이드 — 난시 / 구면등가 / 카테고리 추천 */}
+            {hasDoseToOrder && hasAstigmaticEye && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 space-y-2">
+                <div className="flex items-baseline justify-between">
+                  <div className="text-xs font-semibold text-amber-900">
+                    💡 도수 매칭 가이드
+                  </div>
+                  {typeKey !== 'toric' && (
+                    <button
+                      type="button"
+                      onClick={() => setTypeKey('toric')}
+                      className="text-[10px] font-medium text-amber-800 underline hover:no-underline"
+                    >
+                      난시용 카테고리로 →
+                    </button>
+                  )}
+                </div>
+                <ul className="space-y-0.5 text-[11px] text-amber-900">
+                  <li>
+                    정확 매칭 (토릭 SPH/CYL/AX){' '}
+                    <strong>{exactMatchCount}종</strong>
+                  </li>
+                  {seSummary.map((s) => (
+                    <li key={s.side}>
+                      {s.side}안 구면등가 ≈ <strong>SPH {s.se}</strong> (원: {s.original})
+                    </li>
+                  ))}
+                </ul>
+                <label className="flex items-center gap-1.5 rounded-md bg-white/60 px-2 py-1.5 text-[11px]">
+                  <input
+                    type="checkbox"
+                    checked={includeSEFallback}
+                    onChange={(e) => setIncludeSEFallback(e.target.checked)}
+                    className="h-3.5 w-3.5"
+                  />
+                  <span>
+                    구면등가 변환 제품도 포함{' '}
+                    {seOnlyCount > 0 && (
+                      <span className="text-amber-700">(+{seOnlyCount}종 추가)</span>
+                    )}
+                  </span>
+                </label>
+                <p className="text-[10px] text-amber-700">
+                  ⓘ 구면등가는 |CYL|≤0.75 의 약한 난시에서 일반 렌즈로 간이 보정하는 방법입니다.
+                  강한 난시는 토릭(난시용) 렌즈를 권장합니다.
                 </p>
               </div>
             )}
@@ -837,6 +953,12 @@ export default function CustomerOrderPage() {
                           재고 없음 (도수 매칭 ✓)
                         </div>
                       )}
+                      {doseOK && stockOK &&
+                        (elig?.leftMethod === 'se' || elig?.rightMethod === 'se') && (
+                          <div className="absolute left-2 top-2 rounded-full bg-amber-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow">
+                            구면등가
+                          </div>
+                        )}
                     </div>
                     <div className="flex items-center justify-between px-3 py-2">
                       <span className="text-[10px] text-gray-400">
@@ -1115,16 +1237,26 @@ function VariantQtyRow({
   variant,
   qty,
   onQtyChange,
+  method,
 }: {
   side: string;
   variant: LensVariant;
   qty: number;
   onQtyChange: (q: number) => void;
+  method?: MatchMethod | null;
 }) {
   return (
     <div className="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 text-gray-700">
       <span className="text-[11px] font-semibold text-gray-600">{side}</span>
       <span className="min-w-0 truncate text-xs">{formatVariantLabel(variant)}</span>
+      {method === 'se' && (
+        <span
+          className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+          title="구면등가 변환으로 매칭됨 — 약한 난시의 간이 보정"
+        >
+          구면등가
+        </span>
+      )}
       {variant.available <= 0 && (
         <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
           재고 없음
@@ -1216,6 +1348,40 @@ function matchVariant(variants: LensVariant[], dose: EyeData): LensVariant | nul
 }
 
 /** "0", "0.00", "", null → 0. 그 외엔 Number(). 보정값(CYL/ADD) 비교용. */
+/** 구면등가(SE = SPH + CYL/2) 변환. CYL=0 또는 |CYL|>0.75 면 null (난시 없음 / 강한 난시는 토릭 권장).
+ *  반환값은 SPH 만 가진 도수 (CYL/AXIS null) — 구면 lens 와 매칭 가능. */
+function sphericalEquivalent(dose: EyeData): EyeData | null {
+  const sph = Number(dose.sphere);
+  const cyl = normCorrection(dose.cylinder);
+  if (cyl === 0) return null;
+  if (Math.abs(cyl) > 0.75) return null;
+  const se = sph + cyl / 2;
+  const seRounded = Math.round(se * 4) / 4; // 0.25 단위
+  const sign = seRounded >= 0 ? '+' : '';
+  return {
+    sphere: `${sign}${seRounded.toFixed(2)}`,
+    cylinder: null,
+    axis: null,
+    addPower: dose.addPower,
+  };
+}
+
+/** 한쪽 눈 매칭 — 정확(exact) 시도 → 실패 시 구면등가(SE) fallback (허용 시).
+ *  반환값에 매칭 방법 표시. */
+function matchEye(
+  variants: LensVariant[],
+  dose: EyeData,
+  allowSE: boolean,
+): { variant: LensVariant; method: MatchMethod } | null {
+  const exact = matchVariant(variants, dose);
+  if (exact) return { variant: exact, method: 'exact' };
+  if (!allowSE) return null;
+  const se = sphericalEquivalent(dose);
+  if (!se) return null;
+  const seMatch = matchVariant(variants, se);
+  return seMatch ? { variant: seMatch, method: 'se' } : null;
+}
+
 function normCorrection(v: string | null | undefined): number {
   if (v == null || v === '') return 0;
   const n = Number(v);
