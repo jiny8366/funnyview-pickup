@@ -77,6 +77,25 @@ PW:  2282
 
 **다음 세션은 ~/funnyview-pickup 에서 시작** → sandbox UI 가 frame-ops 표시 영구 종료.
 
+## 다중 환경 공유 기억 규약 (M1 · M3 · claude.ai/code 웹)
+
+> **단일 기억공간 = GitHub 레포(jiny8366/funnyview-pickup).** 세 환경 모두 같은 레포를 본다.
+> 공유되는 기억: 코드 + `CLAUDE.md`(이 파일) + `docs/spec.json`(확정 사양 SoT).
+> **공유 안 되는 것**: `.env.local`(시크릿, gitignore), `~/.claude` 개인 메모리 — 머신별 로컬.
+
+| 환경 | 접근 |
+|---|---|
+| M1 / M3 (로컬) | `~/funnyview-pickup`, VS Code + Claude Code |
+| claude.ai/code (웹) | 같은 GitHub 레포에 연결된 클라우드 세션, 브라우저 어디서나 |
+
+**동기화 의식 (반드시)**
+```bash
+git pull --ff-only origin main   # 작업 시작 전 — 항상 최신 기억 받기
+git push origin main             # 작업 끝 — 즉시 공유 (다른 환경이 보게)
+```
+- 한 환경에서 push 안 하면 다른 환경은 그 작업을 모른다. **작업 끝나면 즉시 push.**
+- 새 머신 셋업: `git clone` → `.env.local` 별도 복사(시크릿) → `npm install`.
+
 ## 빠른 명령 reference
 
 ```bash
