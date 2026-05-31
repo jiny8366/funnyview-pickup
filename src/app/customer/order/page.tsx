@@ -87,6 +87,9 @@ function regionOf(address: string): string | null {
 
 type EyeSide = 'left' | 'right';
 
+/** 주문 대상 — 양안 / 우안만 / 좌안만 (라디오) */
+type EyeMode = 'both' | 'right-only' | 'left-only';
+
 type TypeKey = 'all' | 'color' | '1day' | 'extended' | 'toric' | 'multifocal';
 
 const TYPE_TABS: { key: TypeKey; label: string }[] = [
@@ -136,9 +139,9 @@ export default function CustomerOrderPage() {
   const [doseModalOpen, setDoseModalOpen] = useState(false);
   const [doseLoaded, setDoseLoaded] = useState(false);
 
-  // 주문 의도 — 눈별 미주문 / 수량
-  const [leftSkip, setLeftSkip] = useState(false);
-  const [rightSkip, setRightSkip] = useState(false);
+  // 주문 대상 (양안 / 좌안만 / 우안만) — 도수 로드 후 자동 결정
+  const [eyeMode, setEyeMode] = useState<EyeMode>('both');
+  // 수량은 제품 선택 후 입력 — 기본 1박스
   const [leftQty, setLeftQty] = useState(1);
   const [rightQty, setRightQty] = useState(1);
 
@@ -200,10 +203,20 @@ export default function CustomerOrderPage() {
     loadSavedDose();
   }, [loadSavedDose]);
 
-  // 도수 + 미주문 토글로부터 "필요 도수" 도출
-  const needLeft = !!savedDose.left && !leftSkip;
-  const needRight = !!savedDose.right && !rightSkip;
+  // 도수 + 주문 대상 모드(eyeMode) 로부터 "필요 도수" 도출
+  const needLeft =
+    !!savedDose.left && (eyeMode === 'both' || eyeMode === 'left-only');
+  const needRight =
+    !!savedDose.right && (eyeMode === 'both' || eyeMode === 'right-only');
   const hasDoseToOrder = needLeft || needRight;
+
+  // 도수 로드 후 eyeMode 자동 초기화 — 양안 도수 모두 있으면 양안, 아니면 가능한 쪽
+  useEffect(() => {
+    if (!doseLoaded) return;
+    if (savedDose.left && savedDose.right) setEyeMode('both');
+    else if (savedDose.right) setEyeMode('right-only');
+    else if (savedDose.left) setEyeMode('left-only');
+  }, [doseLoaded, savedDose.left, savedDose.right]);
 
   // 제품별 적합성 계산 — 도수 매칭과 재고를 분리하여 사용자에게 원인 노출
   const eligibilityByLens = useMemo(() => {
@@ -432,27 +445,11 @@ export default function CustomerOrderPage() {
                 기준일: {new Date(savedDose.recordedAt).toLocaleDateString('ko-KR')}
               </p>
             )}
-            <EyeDoseRow
-              label="좌 (L, OS)"
-              dose={savedDose.left}
-              skip={leftSkip}
-              onSkipChange={setLeftSkip}
-              quantity={leftQty}
-              onQuantityChange={setLeftQty}
-            />
-            <EyeDoseRow
-              label="우 (R, OD)"
-              dose={savedDose.right}
-              skip={rightSkip}
-              onSkipChange={setRightSkip}
-              quantity={rightQty}
-              onQuantityChange={setRightQty}
-            />
-            {!hasDoseToOrder && (
-              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                주문할 눈을 최소 1개 이상 선택해 주세요.
-              </div>
-            )}
+            {/* 모바일: 우(상) / 좌(하) 세로. 데스크탑: 우(좌) / 좌(우) 한 줄. */}
+            <div className="grid gap-2 md:grid-cols-2">
+              <EyeChip label="우 (R, OD)" dose={savedDose.right} />
+              <EyeChip label="좌 (L, OS)" dose={savedDose.left} />
+            </div>
           </div>
         )}
       </section>
@@ -474,13 +471,75 @@ export default function CustomerOrderPage() {
           )}
         </div>
 
+        {/* 주문 대상 라디오 (양안 / 우안만 / 좌안만) */}
+        {(savedDose.left || savedDose.right) && (
+          <div className="rounded-xl border border-gray-200 bg-white px-3 py-2.5">
+            <div className="mb-1.5 text-[11px] font-semibold text-gray-700">
+              주문 대상
+            </div>
+            <div className="flex flex-wrap gap-3 text-xs">
+              <EyeModeRadio
+                value="both"
+                current={eyeMode}
+                onChange={setEyeMode}
+                disabled={!savedDose.left || !savedDose.right}
+                label="양안"
+              />
+              <EyeModeRadio
+                value="right-only"
+                current={eyeMode}
+                onChange={setEyeMode}
+                disabled={!savedDose.right}
+                label="우안만"
+              />
+              <EyeModeRadio
+                value="left-only"
+                current={eyeMode}
+                onChange={setEyeMode}
+                disabled={!savedDose.left}
+                label="좌안만"
+              />
+            </div>
+          </div>
+        )}
+
+        {/* 양안 매칭 0종 경고 — 좌·우 각각 주문 권장 */}
+        {eyeMode === 'both' && hasDoseToOrder && lenses.length > 0 && doseMatchCount === 0 && (
+          <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-3">
+            <div className="text-sm font-semibold text-red-700">
+              양안 모두 충족하는 제품이 없습니다.
+            </div>
+            <p className="mt-1 text-xs text-red-600">
+              좌·우 렌즈를 각각 선택해 주십시오.
+            </p>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <button
+                type="button"
+                onClick={() => setEyeMode('right-only')}
+                disabled={!savedDose.right}
+                className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-40"
+              >
+                먼저 우안 선택
+              </button>
+              <button
+                type="button"
+                onClick={() => setEyeMode('left-only')}
+                disabled={!savedDose.left}
+                className="rounded-lg border border-red-300 bg-white px-3 py-1.5 text-xs font-semibold text-red-700 hover:bg-red-100 disabled:opacity-40"
+              >
+                먼저 좌안 선택
+              </button>
+            </div>
+          </div>
+        )}
+
         {!hasDoseToOrder ? (
           <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
-            먼저 도수를 등록하고 주문할 눈을 선택해 주세요.
+            먼저 도수를 등록하고 주문 대상을 선택해 주세요.
           </div>
         ) : (
           <>
-            {/* 선택된 제품 요약 (선택 후에도 상단 노출) */}
+            {/* 선택된 제품 요약 + 수량 입력 — 양안 모드면 좌·우 별 수량 */}
             {selectedLens && selectedElig && (
               <div className="space-y-2 rounded-2xl border-2 border-brand-600 bg-brand-50 p-3">
                 <div className="flex items-center gap-3">
@@ -509,36 +568,22 @@ export default function CustomerOrderPage() {
                     변경
                   </button>
                 </div>
-                <div className="space-y-1 text-xs">
-                  {selectedElig.leftVariant && (
-                    <div className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-gray-700">
-                      <span>
-                        좌 (L): {formatVariantLabel(selectedElig.leftVariant)} × {leftQty}박스
-                        {selectedElig.leftVariant.available <= 0 && (
-                          <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                            재고 없음
-                          </span>
-                        )}
-                      </span>
-                      <span className="font-semibold">
-                        {formatKRW(selectedElig.leftVariant.price * leftQty)}
-                      </span>
-                    </div>
-                  )}
+                <div className="space-y-1.5 text-xs">
                   {selectedElig.rightVariant && (
-                    <div className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-gray-700">
-                      <span>
-                        우 (R): {formatVariantLabel(selectedElig.rightVariant)} × {rightQty}박스
-                        {selectedElig.rightVariant.available <= 0 && (
-                          <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
-                            재고 없음
-                          </span>
-                        )}
-                      </span>
-                      <span className="font-semibold">
-                        {formatKRW(selectedElig.rightVariant.price * rightQty)}
-                      </span>
-                    </div>
+                    <VariantQtyRow
+                      side="우 (R)"
+                      variant={selectedElig.rightVariant}
+                      qty={rightQty}
+                      onQtyChange={setRightQty}
+                    />
+                  )}
+                  {selectedElig.leftVariant && (
+                    <VariantQtyRow
+                      side="좌 (L)"
+                      variant={selectedElig.leftVariant}
+                      qty={leftQty}
+                      onQtyChange={setLeftQty}
+                    />
                   )}
                   {!selectedElig.inStock && (
                     <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
@@ -1027,81 +1072,98 @@ export default function CustomerOrderPage() {
   );
 }
 
-function EyeDoseRow({
+/** 주문 대상 라디오 (양안 / 우안만 / 좌안만). */
+function EyeModeRadio({
+  value,
+  current,
+  onChange,
+  disabled,
   label,
-  dose,
-  skip,
-  onSkipChange,
-  quantity,
-  onQuantityChange,
 }: {
+  value: EyeMode;
+  current: EyeMode;
+  onChange: (m: EyeMode) => void;
+  disabled?: boolean;
   label: string;
-  dose: EyeData | null;
-  skip: boolean;
-  onSkipChange: (v: boolean) => void;
-  quantity: number;
-  onQuantityChange: (v: number) => void;
 }) {
+  const active = current === value;
+  return (
+    <label
+      className={`inline-flex items-center gap-1.5 ${
+        disabled ? 'cursor-not-allowed opacity-40' : 'cursor-pointer'
+      }`}
+    >
+      <input
+        type="radio"
+        name="eyeMode"
+        value={value}
+        checked={active}
+        disabled={disabled}
+        onChange={() => onChange(value)}
+        className="h-3.5 w-3.5 accent-brand-600"
+      />
+      <span className={active ? 'font-semibold text-brand-700' : 'text-gray-700'}>
+        {label}
+      </span>
+    </label>
+  );
+}
+
+/** 선택된 제품의 한쪽 변형 + 수량 입력 + 라인 합계. */
+function VariantQtyRow({
+  side,
+  variant,
+  qty,
+  onQtyChange,
+}: {
+  side: string;
+  variant: LensVariant;
+  qty: number;
+  onQtyChange: (q: number) => void;
+}) {
+  return (
+    <div className="flex flex-wrap items-center gap-2 rounded-lg bg-white px-3 py-2 text-gray-700">
+      <span className="text-[11px] font-semibold text-gray-600">{side}</span>
+      <span className="min-w-0 truncate text-xs">{formatVariantLabel(variant)}</span>
+      {variant.available <= 0 && (
+        <span className="rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+          재고 없음
+        </span>
+      )}
+      <div className="ml-auto flex items-center gap-1.5">
+        <span className="text-[11px] text-gray-500">수량</span>
+        <input
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={20}
+          value={qty}
+          onChange={(e) => onQtyChange(Math.max(1, Number(e.target.value) || 1))}
+          className="h-8 w-14 rounded-lg border border-gray-300 px-2 text-center text-sm"
+        />
+        <span className="text-[11px] text-gray-500">박스</span>
+        <span className="ml-2 min-w-[70px] text-right text-xs font-semibold">
+          {formatKRW(variant.price * qty)}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+/** 도수 표시 칩 — read-only. 양/우/좌 한 줄(데스크탑) 또는 stacked(모바일) 노출. */
+function EyeChip({ label, dose }: { label: string; dose: EyeData | null }) {
   if (!dose) {
     return (
-      <div className="rounded-lg border border-dashed border-gray-200 px-3 py-2.5 text-xs text-gray-400">
+      <div className="rounded-lg border border-dashed border-gray-200 px-3 py-2 text-xs text-gray-400">
         <span className="font-medium text-gray-600">{label}</span> · 등록된 도수 없음
       </div>
     );
   }
-  const active = !skip;
   return (
-    <div
-      className={`rounded-lg border px-3 py-2.5 transition ${
-        active
-          ? 'border-emerald-200 bg-emerald-50'
-          : 'border-gray-200 bg-gray-50'
-      }`}
-    >
-      <div className="flex flex-wrap items-center justify-between gap-2">
-        <div className="min-w-0">
-          <div
-            className={`text-xs font-semibold ${
-              active ? 'text-emerald-900' : 'text-gray-500'
-            }`}
-          >
-            {label}
-          </div>
-          <div
-            className={`mt-0.5 text-xs font-mono ${
-              active ? 'text-emerald-800' : 'text-gray-400 line-through'
-            }`}
-          >
-            {eyeSummary(dose)}
-          </div>
-        </div>
-        <div className="flex items-center gap-3">
-          {active && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-[11px] text-gray-500">수량</span>
-              <input
-                type="number"
-                min={1}
-                max={20}
-                value={quantity}
-                onChange={(e) =>
-                  onQuantityChange(Math.max(1, Number(e.target.value) || 1))
-                }
-                className="h-8 w-14 rounded-lg border border-gray-300 px-2 text-center text-sm"
-              />
-              <span className="text-[11px] text-gray-500">박스</span>
-            </div>
-          )}
-          <label className="flex items-center gap-1 text-[11px] text-gray-600">
-            <input
-              type="checkbox"
-              checked={skip}
-              onChange={(e) => onSkipChange(e.target.checked)}
-              className="h-3.5 w-3.5 rounded"
-            />
-            주문 안 함
-          </label>
-        </div>
+    <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2">
+      <div className="flex flex-wrap items-baseline justify-between gap-1.5">
+        <div className="text-xs font-semibold text-emerald-900">{label}</div>
+        <div className="text-xs font-mono text-emerald-800">{eyeSummary(dose)}</div>
       </div>
     </div>
   );
