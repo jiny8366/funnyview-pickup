@@ -56,7 +56,6 @@ interface Store {
   address: string;
 }
 
-// 광역시·도 그룹 — '5대 광역시 및 도'
 const REGION_GROUPS = [
   { key: '서울', match: ['서울'] },
   { key: '경기', match: ['경기'] },
@@ -88,11 +87,6 @@ function regionOf(address: string): string | null {
 
 type EyeSide = 'left' | 'right';
 
-interface EyeSelection {
-  variantId: string | null;
-  quantity: number;
-}
-
 type TypeKey = 'all' | 'color' | '1day' | 'extended' | 'toric' | 'multifocal';
 
 const TYPE_TABS: { key: TypeKey; label: string }[] = [
@@ -118,28 +112,50 @@ function matchesType(l: Lens, key: TypeKey) {
   return true;
 }
 
+interface LensEligibility {
+  eligible: boolean;
+  leftVariant: LensVariant | null;
+  rightVariant: LensVariant | null;
+  reasons: string[];
+}
+
 export default function CustomerOrderPage() {
   const router = useRouter();
   const [lenses, setLenses] = useState<Lens[]>([]);
   const [stores, setStores] = useState<Store[]>([]);
-  const [selectedLensId, setSelectedLensId] = useState<string | null>(null);
-  const [leftSel, setLeftSel] = useState<EyeSelection>({ variantId: null, quantity: 1 });
-  const [rightSel, setRightSel] = useState<EyeSelection>({ variantId: null, quantity: 1 });
-  // 등록된 콘택트 도수 (고객정보의 시력관리에서 저장한 최신값)
-  const [savedDose, setSavedDose] = useState<{ left: EyeData | null; right: EyeData | null; recordedAt: string | null }>({ left: null, right: null, recordedAt: null });
+
+  // 도수 (도수정보가 모든 흐름의 출발점)
+  const [savedDose, setSavedDose] = useState<{
+    left: EyeData | null;
+    right: EyeData | null;
+    recordedAt: string | null;
+  }>({ left: null, right: null, recordedAt: null });
   const [doseModalOpen, setDoseModalOpen] = useState(false);
   const [doseLoaded, setDoseLoaded] = useState(false);
-  const [mismatch, setMismatch] = useState<string[]>([]);
+
+  // 주문 의도 — 눈별 미주문 / 수량
+  const [leftSkip, setLeftSkip] = useState(false);
+  const [rightSkip, setRightSkip] = useState(false);
+  const [leftQty, setLeftQty] = useState(1);
+  const [rightQty, setRightQty] = useState(1);
+
+  // 제품 선택
+  const [selectedLensId, setSelectedLensId] = useState<string | null>(null);
+
+  // 매장 / 결제
   const [storeId, setStoreId] = useState<string | null>(null);
+  const [storeRegion, setStoreRegion] = useState<string | null>(null);
   const [note, setNote] = useState('');
+
+  // 제출
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // 제품 찾기 필터
+  // 제품 필터
   const [query, setQuery] = useState('');
   const [typeKey, setTypeKey] = useState<TypeKey>('all');
   const [brand, setBrand] = useState('');
-  const [storeRegion, setStoreRegion] = useState<string | null>(null);
+  const [showOnlyEligible, setShowOnlyEligible] = useState(true);
 
   useEffect(() => {
     Promise.all([
@@ -153,15 +169,9 @@ export default function CustomerOrderPage() {
       .catch(() => setError('데이터를 불러오지 못했습니다'));
   }, []);
 
-  // 등록된 콘택트 도수 불러오기 — 마이페이지 > 내 시력정보에서 저장한 값
   const loadSavedDose = useCallback(async () => {
     try {
       const res = await fetch('/api/customer/prescriptions');
-      if (res.status === 401) {
-        // 비로그인은 무시 (로그인 후 다시 진입 시 자동 로드)
-        setDoseLoaded(true);
-        return;
-      }
       if (!res.ok) {
         setDoseLoaded(true);
         return;
@@ -177,7 +187,7 @@ export default function CustomerOrderPage() {
         });
       }
     } catch {
-      // ignore
+      /* ignore */
     } finally {
       setDoseLoaded(true);
     }
@@ -187,27 +197,45 @@ export default function CustomerOrderPage() {
     loadSavedDose();
   }, [loadSavedDose]);
 
+  // 도수 + 미주문 토글로부터 "필요 도수" 도출
+  const needLeft = !!savedDose.left && !leftSkip;
+  const needRight = !!savedDose.right && !rightSkip;
+  const hasDoseToOrder = needLeft || needRight;
+
+  // 제품별 적합성 계산
+  const eligibilityByLens = useMemo(() => {
+    const map = new Map<string, LensEligibility>();
+    for (const l of lenses) {
+      const leftVariant = needLeft && savedDose.left
+        ? matchVariant(l.variants, savedDose.left)
+        : null;
+      const rightVariant = needRight && savedDose.right
+        ? matchVariant(l.variants, savedDose.right)
+        : null;
+      const eligible =
+        (!needLeft || !!leftVariant) && (!needRight || !!rightVariant);
+      const reasons: string[] = [];
+      if (needLeft && !leftVariant) reasons.push('좌안 도수 없음');
+      if (needRight && !rightVariant) reasons.push('우안 도수 없음');
+      map.set(l.lensId, { eligible, leftVariant, rightVariant, reasons });
+    }
+    return map;
+  }, [lenses, savedDose, needLeft, needRight]);
+
   const selectedLens = useMemo(
     () => lenses.find((l) => l.lensId === selectedLensId) ?? null,
     [lenses, selectedLensId],
   );
+  const selectedElig = selectedLens
+    ? eligibilityByLens.get(selectedLens.lensId) ?? null
+    : null;
 
-  // 선택한 제품의 variants 중 등록 도수와 매칭되는 것을 자동 선택, 매칭 실패 시 경고.
-  // 매칭이 truthy → 셋팅, 매칭이 null → 명시적으로 null 로 클리어 (stale variantId 방지).
+  // 선택한 제품이 도수 변경 등으로 부적합해지면 해제
   useEffect(() => {
-    if (!selectedLens) {
-      setMismatch([]);
-      return;
+    if (selectedLens && selectedElig && !selectedElig.eligible) {
+      setSelectedLensId(null);
     }
-    const rMatch = savedDose.right ? matchVariant(selectedLens.variants, savedDose.right) : null;
-    const lMatch = savedDose.left ? matchVariant(selectedLens.variants, savedDose.left) : null;
-    setRightSel({ variantId: rMatch ? rMatch.variantId : null, quantity: 1 });
-    setLeftSel({ variantId: lMatch ? lMatch.variantId : null, quantity: 1 });
-    const missing: string[] = [];
-    if (savedDose.right && !rMatch) missing.push('우안');
-    if (savedDose.left && !lMatch) missing.push('좌안');
-    setMismatch(missing);
-  }, [selectedLens, savedDose]);
+  }, [selectedLens, selectedElig]);
 
   const brands = useMemo(
     () => [...new Set(lenses.map((l) => l.brand))].sort(),
@@ -220,40 +248,73 @@ export default function CustomerOrderPage() {
     list = list.filter((l) => matchesType(l, typeKey));
     if (query.trim()) {
       const q = query.trim().toLowerCase();
-      list = list.filter((l) =>
-        l.name.toLowerCase().includes(q) ||
-        l.brand.toLowerCase().includes(q),
+      list = list.filter(
+        (l) =>
+          l.name.toLowerCase().includes(q) ||
+          l.brand.toLowerCase().includes(q),
+      );
+    }
+    if (showOnlyEligible && hasDoseToOrder) {
+      list = list.filter(
+        (l) => eligibilityByLens.get(l.lensId)?.eligible ?? false,
       );
     }
     return list;
-  }, [lenses, brand, typeKey, query]);
+  }, [
+    lenses,
+    brand,
+    typeKey,
+    query,
+    showOnlyEligible,
+    hasDoseToOrder,
+    eligibilityByLens,
+  ]);
+
+  const eligibleCount = useMemo(
+    () =>
+      hasDoseToOrder
+        ? lenses.filter((l) => eligibilityByLens.get(l.lensId)?.eligible).length
+        : lenses.length,
+    [lenses, eligibilityByLens, hasDoseToOrder],
+  );
 
   const hasFilter = Boolean(brand || typeKey !== 'all' || query.trim());
 
   const total = useMemo(() => {
+    if (!selectedElig) return 0;
     let sum = 0;
-    if (selectedLens) {
-      const lv = selectedLens.variants.find((v) => v.variantId === leftSel.variantId);
-      const rv = selectedLens.variants.find((v) => v.variantId === rightSel.variantId);
-      if (lv) sum += lv.price * leftSel.quantity;
-      if (rv) sum += rv.price * rightSel.quantity;
-    }
+    if (selectedElig.leftVariant) sum += selectedElig.leftVariant.price * leftQty;
+    if (selectedElig.rightVariant) sum += selectedElig.rightVariant.price * rightQty;
     return sum;
-  }, [selectedLens, leftSel, rightSel]);
+  }, [selectedElig, leftQty, rightQty]);
 
   const canSubmit =
     !!selectedLens &&
+    !!selectedElig &&
+    selectedElig.eligible &&
     !!storeId &&
-    (leftSel.variantId !== null || rightSel.variantId !== null) &&
+    hasDoseToOrder &&
     !submitting;
 
   async function onSubmit() {
-    if (!canSubmit) return;
+    if (!canSubmit || !selectedElig) return;
     setSubmitting(true);
     setError(null);
     const lines: Array<{ variantId: string; eyeSide: EyeSide; quantity: number }> = [];
-    if (leftSel.variantId) lines.push({ variantId: leftSel.variantId, eyeSide: 'left', quantity: leftSel.quantity });
-    if (rightSel.variantId) lines.push({ variantId: rightSel.variantId, eyeSide: 'right', quantity: rightSel.quantity });
+    if (selectedElig.leftVariant) {
+      lines.push({
+        variantId: selectedElig.leftVariant.variantId,
+        eyeSide: 'left',
+        quantity: leftQty,
+      });
+    }
+    if (selectedElig.rightVariant) {
+      lines.push({
+        variantId: selectedElig.rightVariant.variantId,
+        eyeSide: 'right',
+        quantity: rightQty,
+      });
+    }
 
     const res = await fetch('/api/orders', {
       method: 'POST',
@@ -279,204 +340,363 @@ export default function CustomerOrderPage() {
     <div className="space-y-6 pb-32 md:space-y-8 md:pb-0">
       <header>
         <h1 className="text-xl font-bold md:text-2xl">주문하기</h1>
-        <p className="mt-1 text-sm text-gray-500">상품 → 도수 → 픽업가맹점 → 결제</p>
+        <p className="mt-1 text-sm text-gray-500">
+          도수 확인 → 제품 선택 → 픽업가맹점 → 결제
+        </p>
       </header>
 
-      {/* 1. 상품 선택 */}
+      {/* 1. 도수 정보 — 모든 흐름의 출발점 */}
       <section className="space-y-3">
         <div className="flex items-baseline justify-between">
-          <h2 className="text-sm font-semibold text-gray-700">1. 상품 선택</h2>
-          {lenses.length > 0 && (
-            <span className="text-xs text-gray-400">
-              {filteredLenses.length === lenses.length
-                ? `${lenses.length}종`
-                : `${filteredLenses.length} / ${lenses.length}종`}
-            </span>
-          )}
-        </div>
-
-        {/* 선택된 제품 요약 (선택 후에도 항상 보임) */}
-        {selectedLens && (
-          <div className="flex items-center gap-3 rounded-2xl border-2 border-brand-600 bg-brand-50 p-2.5">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src={selectedLens.imageUrl ?? `/api/lens-image/${selectedLens.productCode}`}
-              alt={selectedLens.name}
-              className="h-14 w-14 shrink-0 rounded-lg bg-white object-cover"
-            />
-            <div className="min-w-0 flex-1">
-              <p className="truncate text-[10px] font-medium uppercase tracking-wider text-brand-700">
-                {selectedLens.brand} · 선택됨
-              </p>
-              <p className="truncate text-sm font-semibold text-gray-900">{selectedLens.name}</p>
-              <p className="text-[11px] text-gray-500">
-                {selectedLens.replacementCycle} · {selectedLens.piecesPerBox}매 · {formatKRW(selectedLens.price)}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => {
-                setSelectedLensId(null);
-                setLeftSel({ variantId: null, quantity: 1 });
-                setRightSel({ variantId: null, quantity: 1 });
-              }}
-              className="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:border-gray-400"
-            >
-              변경
-            </button>
-          </div>
-        )}
-
-        {/* 검색바 */}
-        <div className="relative">
-          <svg
-            width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
-            className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+          <h2 className="text-sm font-semibold text-gray-700">1. 내 도수 정보</h2>
+          <button
+            type="button"
+            onClick={() => setDoseModalOpen(true)}
+            className="text-xs font-medium text-brand-700 underline hover:text-brand-800"
           >
-            <circle cx="11" cy="11" r="7" />
-            <path d="m21 21-4.3-4.3" />
-          </svg>
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="제품명, 브랜드로 검색"
-            className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none"
-          />
-          {query && (
+            {savedDose.left || savedDose.right ? '수정/관리' : '등록하기'}
+          </button>
+        </div>
+
+        {!doseLoaded ? (
+          <div className="rounded-xl border border-gray-200 bg-white p-4 text-sm text-gray-400">
+            불러오는 중...
+          </div>
+        ) : !savedDose.left && !savedDose.right ? (
+          <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
+            <div className="text-sm font-semibold text-amber-800">
+              등록된 콘택트 도수가 없습니다.
+            </div>
+            <p className="mt-1 text-xs text-amber-700">
+              제품 선택을 위해 먼저 좌·우 도수를 등록해 주세요.
+            </p>
             <button
               type="button"
-              onClick={() => setQuery('')}
-              aria-label="검색 지우기"
-              className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+              onClick={() => setDoseModalOpen(true)}
+              className="mt-3 rounded-lg bg-amber-600 px-4 py-2 text-xs font-semibold text-white shadow hover:bg-amber-700"
             >
-              ✕
+              도수 등록하기 →
             </button>
+          </div>
+        ) : (
+          <div className="space-y-2 rounded-xl border border-gray-200 bg-white p-4">
+            {savedDose.recordedAt && (
+              <p className="text-[10px] text-gray-400">
+                기준일: {new Date(savedDose.recordedAt).toLocaleDateString('ko-KR')}
+              </p>
+            )}
+            <EyeDoseRow
+              label="좌 (L, OS)"
+              dose={savedDose.left}
+              skip={leftSkip}
+              onSkipChange={setLeftSkip}
+              quantity={leftQty}
+              onQuantityChange={setLeftQty}
+            />
+            <EyeDoseRow
+              label="우 (R, OD)"
+              dose={savedDose.right}
+              skip={rightSkip}
+              onSkipChange={setRightSkip}
+              quantity={rightQty}
+              onQuantityChange={setRightQty}
+            />
+            {!hasDoseToOrder && (
+              <div className="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                주문할 눈을 최소 1개 이상 선택해 주세요.
+              </div>
+            )}
+          </div>
+        )}
+      </section>
+
+      {/* 2. 상품 선택 — 도수 적합성 기반 */}
+      <section className="space-y-3">
+        <div className="flex items-baseline justify-between gap-2">
+          <h2 className="text-sm font-semibold text-gray-700">2. 상품 선택</h2>
+          {lenses.length > 0 && hasDoseToOrder && (
+            <label className="flex items-center gap-1.5 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={showOnlyEligible}
+                onChange={(e) => setShowOnlyEligible(e.target.checked)}
+                className="h-3.5 w-3.5 rounded"
+              />
+              내 도수 가능 제품만
+            </label>
           )}
         </div>
 
-        {/* 타입 필터 */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
-          {TYPE_TABS.map((t) => (
-            <button
-              key={t.key}
-              type="button"
-              onClick={() => setTypeKey(t.key)}
-              className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
-                typeKey === t.key
-                  ? 'bg-gray-900 text-white'
-                  : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
-              }`}
-            >
-              {t.label}
-            </button>
-          ))}
-        </div>
-
-        {/* 브랜드 필터 */}
-        {brands.length > 1 && (
-          <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
-            <button
-              type="button"
-              onClick={() => setBrand('')}
-              className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium transition ${
-                brand === ''
-                  ? 'border-gray-900 bg-gray-900 text-white'
-                  : 'border-gray-200 text-gray-500 hover:border-gray-400'
-              }`}
-            >
-              전체
-            </button>
-            {brands.map((b) => (
-              <button
-                key={b}
-                type="button"
-                onClick={() => setBrand(brand === b ? '' : b)}
-                className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium transition ${
-                  brand === b
-                    ? 'border-gray-900 bg-gray-900 text-white'
-                    : 'border-gray-200 text-gray-500 hover:border-gray-400'
-                }`}
-              >
-                {b}
-              </button>
-            ))}
+        {!hasDoseToOrder ? (
+          <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
+            먼저 도수를 등록하고 주문할 눈을 선택해 주세요.
           </div>
-        )}
-
-        {/* 결과 */}
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
-          {filteredLenses.map((l) => {
-            const imageSrc = l.imageUrl ?? `/api/lens-image/${l.productCode}`;
-            const selected = selectedLensId === l.lensId;
-            return (
-              <button
-                key={l.lensId}
-                type="button"
-                onClick={() => {
-                  setSelectedLensId(l.lensId);
-                  setLeftSel({ variantId: null, quantity: 1 });
-                  setRightSel({ variantId: null, quantity: 1 });
-                }}
-                className={`group overflow-hidden rounded-2xl border text-left transition ${
-                  selected
-                    ? 'border-brand-600 ring-2 ring-brand-600'
-                    : 'border-gray-200 hover:border-brand-300'
-                }`}
-              >
-                <div className="relative aspect-[3/4] w-full overflow-hidden bg-gray-100">
+        ) : (
+          <>
+            {/* 선택된 제품 요약 (선택 후에도 상단 노출) */}
+            {selectedLens && selectedElig && (
+              <div className="space-y-2 rounded-2xl border-2 border-brand-600 bg-brand-50 p-3">
+                <div className="flex items-center gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={imageSrc}
-                    alt={l.name}
-                    loading="lazy"
-                    className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                    src={selectedLens.imageUrl ?? `/api/lens-image/${selectedLens.productCode}`}
+                    alt={selectedLens.name}
+                    className="h-14 w-14 shrink-0 rounded-lg bg-white object-cover"
                   />
-                  <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
-                  {l.isNew && !selected && (
-                    <span className="absolute left-2 top-2 rounded-full bg-pink-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow">
-                      NEW
-                    </span>
-                  )}
-                  {l.colorHex && (
-                    <div className="absolute bottom-10 right-2 flex items-center gap-1 rounded-full bg-white/90 px-1.5 py-0.5 shadow backdrop-blur">
-                      <span
-                        className="h-3 w-3 rounded-full border border-gray-200"
-                        style={{ background: `radial-gradient(circle at 35% 35%, ${l.colorHex}66, ${l.colorHex})` }}
-                      />
-                      {l.colorName && (
-                        <span className="text-[9px] font-medium text-gray-700">{l.colorName}</span>
-                      )}
+                  <div className="min-w-0 flex-1">
+                    <p className="truncate text-[10px] font-medium uppercase tracking-wider text-brand-700">
+                      {selectedLens.brand} · 선택됨
+                    </p>
+                    <p className="truncate text-sm font-semibold text-gray-900">
+                      {selectedLens.name}
+                    </p>
+                    <p className="text-[11px] text-gray-500">
+                      {selectedLens.replacementCycle} · {selectedLens.piecesPerBox}매
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setSelectedLensId(null)}
+                    className="shrink-0 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-600 hover:border-gray-400"
+                  >
+                    변경
+                  </button>
+                </div>
+                <div className="space-y-1 text-xs">
+                  {selectedElig.leftVariant && (
+                    <div className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-gray-700">
+                      <span>
+                        좌 (L): {formatVariantLabel(selectedElig.leftVariant)} × {leftQty}박스
+                      </span>
+                      <span className="font-semibold">
+                        {formatKRW(selectedElig.leftVariant.price * leftQty)}
+                      </span>
                     </div>
                   )}
-                  <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5 text-white">
-                    <p className="truncate text-[10px] font-medium opacity-70">{l.brand}</p>
-                    <p className="line-clamp-2 text-xs font-semibold leading-tight">{l.name}</p>
-                  </div>
-                  {selected && (
-                    <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-brand-600 text-white text-sm font-bold shadow">
-                      ✓
-                    </span>
+                  {selectedElig.rightVariant && (
+                    <div className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-gray-700">
+                      <span>
+                        우 (R): {formatVariantLabel(selectedElig.rightVariant)} × {rightQty}박스
+                      </span>
+                      <span className="font-semibold">
+                        {formatKRW(selectedElig.rightVariant.price * rightQty)}
+                      </span>
+                    </div>
                   )}
                 </div>
-                <div className="flex items-center justify-between px-3 py-2">
-                  <span className="text-[10px] text-gray-400">
-                    {l.replacementCycle} · {l.piecesPerBox}매
-                  </span>
-                  <span className="text-xs font-bold text-brand-700">{formatKRW(l.price)}</span>
-                </div>
-              </button>
-            );
-          })}
-          {lenses.length === 0 && (
-            <div className="col-span-full rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
-              등록된 렌즈가 없습니다
+              </div>
+            )}
+
+            {/* 검색바 */}
+            <div className="relative">
+              <svg
+                width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
+                className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 text-gray-400"
+              >
+                <circle cx="11" cy="11" r="7" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
+              <input
+                type="text"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                placeholder="제품명, 브랜드로 검색"
+                className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none"
+              />
+              {query && (
+                <button
+                  type="button"
+                  onClick={() => setQuery('')}
+                  aria-label="검색 지우기"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-700"
+                >
+                  ✕
+                </button>
+              )}
             </div>
-          )}
-          {lenses.length > 0 && filteredLenses.length === 0 && (
-            <div className="col-span-full rounded-2xl border border-dashed border-gray-300 p-8 text-center">
-              <p className="text-4xl">🔍</p>
-              <p className="mt-3 text-sm font-medium text-gray-600">조건에 맞는 제품이 없습니다</p>
+
+            {/* 타입 필터 */}
+            <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
+              {TYPE_TABS.map((t) => (
+                <button
+                  key={t.key}
+                  type="button"
+                  onClick={() => setTypeKey(t.key)}
+                  className={`shrink-0 rounded-full px-3.5 py-1.5 text-xs font-medium transition ${
+                    typeKey === t.key
+                      ? 'bg-gray-900 text-white'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
+            {/* 브랜드 필터 */}
+            {brands.length > 1 && (
+              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
+                <button
+                  type="button"
+                  onClick={() => setBrand('')}
+                  className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                    brand === ''
+                      ? 'border-gray-900 bg-gray-900 text-white'
+                      : 'border-gray-200 text-gray-500 hover:border-gray-400'
+                  }`}
+                >
+                  전체
+                </button>
+                {brands.map((b) => (
+                  <button
+                    key={b}
+                    type="button"
+                    onClick={() => setBrand(brand === b ? '' : b)}
+                    className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium transition ${
+                      brand === b
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 text-gray-500 hover:border-gray-400'
+                    }`}
+                  >
+                    {b}
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* 카운트 */}
+            {lenses.length > 0 && (
+              <div className="text-[11px] text-gray-500">
+                {filteredLenses.length} / {lenses.length}종 표시
+                {hasDoseToOrder && (
+                  <span className="ml-1 text-brand-700">
+                    · 내 도수 가능: {eligibleCount}종
+                  </span>
+                )}
+              </div>
+            )}
+
+            {/* 그리드 */}
+            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+              {filteredLenses.map((l) => {
+                const elig = eligibilityByLens.get(l.lensId);
+                const isEligible = elig?.eligible ?? !hasDoseToOrder;
+                const selected = selectedLensId === l.lensId;
+                const imageSrc = l.imageUrl ?? `/api/lens-image/${l.productCode}`;
+                return (
+                  <button
+                    key={l.lensId}
+                    type="button"
+                    onClick={() => {
+                      if (isEligible) setSelectedLensId(l.lensId);
+                    }}
+                    disabled={!isEligible}
+                    aria-disabled={!isEligible}
+                    className={`group overflow-hidden rounded-2xl border text-left transition ${
+                      selected
+                        ? 'border-brand-600 ring-2 ring-brand-600'
+                        : isEligible
+                          ? 'border-gray-200 hover:border-brand-300'
+                          : 'border-gray-200 cursor-not-allowed'
+                    }`}
+                  >
+                    <div
+                      className={`relative aspect-[3/4] w-full overflow-hidden bg-gray-100 ${
+                        !isEligible ? 'opacity-60 grayscale' : ''
+                      }`}
+                    >
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
+                        src={imageSrc}
+                        alt={l.name}
+                        loading="lazy"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+                      />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
+                      {l.isNew && !selected && isEligible && (
+                        <span className="absolute left-2 top-2 rounded-full bg-pink-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow">
+                          NEW
+                        </span>
+                      )}
+                      {l.colorHex && isEligible && (
+                        <div className="absolute bottom-10 right-2 flex items-center gap-1 rounded-full bg-white/90 px-1.5 py-0.5 shadow backdrop-blur">
+                          <span
+                            className="h-3 w-3 rounded-full border border-gray-200"
+                            style={{ background: `radial-gradient(circle at 35% 35%, ${l.colorHex}66, ${l.colorHex})` }}
+                          />
+                          {l.colorName && (
+                            <span className="text-[9px] font-medium text-gray-700">{l.colorName}</span>
+                          )}
+                        </div>
+                      )}
+                      <div className="absolute bottom-0 left-0 right-0 px-2.5 pb-2.5 text-white">
+                        <p className="truncate text-[10px] font-medium opacity-70">{l.brand}</p>
+                        <p className="line-clamp-2 text-xs font-semibold leading-tight">{l.name}</p>
+                      </div>
+                      {selected && (
+                        <span className="absolute right-2 top-2 grid h-7 w-7 place-items-center rounded-full bg-brand-600 text-white text-sm font-bold shadow">
+                          ✓
+                        </span>
+                      )}
+                      {!isEligible && elig && elig.reasons.length > 0 && (
+                        <div className="absolute inset-x-0 top-0 bg-red-600/95 px-2 py-1 text-center text-[10px] font-medium text-white">
+                          {elig.reasons.join(' · ')}
+                        </div>
+                      )}
+                    </div>
+                    <div className="flex items-center justify-between px-3 py-2">
+                      <span className="text-[10px] text-gray-400">
+                        {l.replacementCycle} · {l.piecesPerBox}매
+                      </span>
+                      <span className="text-xs font-bold text-brand-700">
+                        {formatKRW(l.price)}
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+              {lenses.length === 0 && (
+                <div className="col-span-full rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-400">
+                  등록된 렌즈가 없습니다
+                </div>
+              )}
+              {lenses.length > 0 && filteredLenses.length === 0 && (
+                <div className="col-span-full rounded-2xl border border-dashed border-gray-300 p-8 text-center">
+                  <p className="text-4xl">🔍</p>
+                  <p className="mt-3 text-sm font-medium text-gray-600">
+                    {showOnlyEligible && hasDoseToOrder
+                      ? '내 도수로 주문 가능한 제품이 없습니다'
+                      : '조건에 맞는 제품이 없습니다'}
+                  </p>
+                  <div className="mt-3 flex justify-center gap-2">
+                    {hasFilter && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setQuery('');
+                          setTypeKey('all');
+                          setBrand('');
+                        }}
+                        className="rounded-full bg-gray-900 px-4 py-1.5 text-xs font-medium text-white hover:bg-gray-700"
+                      >
+                        필터 초기화
+                      </button>
+                    )}
+                    {showOnlyEligible && hasDoseToOrder && (
+                      <button
+                        type="button"
+                        onClick={() => setShowOnlyEligible(false)}
+                        className="rounded-full border border-gray-300 bg-white px-4 py-1.5 text-xs font-medium text-gray-600 hover:bg-gray-50"
+                      >
+                        전체 제품 보기
+                      </button>
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {hasFilter && filteredLenses.length > 0 && (
               <button
                 type="button"
                 onClick={() => {
@@ -484,106 +704,19 @@ export default function CustomerOrderPage() {
                   setTypeKey('all');
                   setBrand('');
                 }}
-                className="mt-3 rounded-full bg-gray-900 px-4 py-1.5 text-xs font-medium text-white hover:bg-gray-700"
+                className="text-xs text-gray-500 underline hover:text-gray-700"
               >
                 필터 초기화
               </button>
-            </div>
-          )}
-        </div>
-
-        {hasFilter && filteredLenses.length > 0 && (
-          <button
-            type="button"
-            onClick={() => {
-              setQuery('');
-              setTypeKey('all');
-              setBrand('');
-            }}
-            className="text-xs text-gray-500 underline hover:text-gray-700"
-          >
-            필터 초기화
-          </button>
+            )}
+          </>
         )}
       </section>
-
-      {/* 2. 도수 선택 (좌/우) */}
-      {selectedLens && (
-        <section className="space-y-3">
-          <div className="flex flex-wrap items-baseline justify-between gap-2">
-            <h2 className="text-sm font-semibold text-gray-700">2. 좌우 도수 입력</h2>
-            <button
-              type="button"
-              onClick={() => setDoseModalOpen(true)}
-              className="text-xs font-medium text-brand-700 underline hover:text-brand-800"
-            >
-              {savedDose.right || savedDose.left ? '도수 수정/관리' : '도수 등록'}
-            </button>
-          </div>
-
-          {/* 등록된 도수 안내 */}
-          {doseLoaded && (savedDose.right || savedDose.left) && (
-            <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-3 py-2.5 text-xs">
-              <div className="font-semibold text-emerald-800">
-                ✓ 등록된 콘택트 도수가 자동 입력됩니다
-                {savedDose.recordedAt && (
-                  <span className="ml-1 font-normal text-emerald-700">
-                    ({new Date(savedDose.recordedAt).toLocaleDateString('ko-KR')} 기준)
-                  </span>
-                )}
-              </div>
-              <div className="mt-1 space-y-0.5 text-emerald-700">
-                <div>우(R): {eyeSummary(savedDose.right)}</div>
-                <div>좌(L): {eyeSummary(savedDose.left)}</div>
-              </div>
-            </div>
-          )}
-
-          {/* 등록 도수 없음 안내 */}
-          {doseLoaded && !savedDose.right && !savedDose.left && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
-              <span className="font-semibold">등록된 콘택트 도수가 없습니다.</span>{' '}
-              <button
-                type="button"
-                onClick={() => setDoseModalOpen(true)}
-                className="font-semibold underline hover:no-underline"
-              >
-                도수 등록하기 →
-              </button>
-            </div>
-          )}
-
-          {/* 제품 도수 미지원 경고 */}
-          {mismatch.length > 0 && (
-            <div className="rounded-xl border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-700">
-              ⚠ 선택한 제품 <span className="font-semibold">{selectedLens.name}</span>은(는){' '}
-              <span className="font-semibold">{mismatch.join('·')} 도수</span>를 제공하지 않습니다.
-              다른 제품을 선택하거나, 가능한 도수로 등록 도수를 조정해 주세요.
-            </div>
-          )}
-
-          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-            <EyeSelector
-              title="왼쪽 (Left, OS)"
-              variants={selectedLens.variants}
-              value={leftSel}
-              onChange={setLeftSel}
-            />
-            <EyeSelector
-              title="오른쪽 (Right, OD)"
-              variants={selectedLens.variants}
-              value={rightSel}
-              onChange={setRightSel}
-            />
-          </div>
-        </section>
-      )}
 
       {/* 3. 픽업가맹점 */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-700">3. 픽업가맹점 선택</h2>
 
-        {/* 광역시·도 필터 */}
         {stores.length > 0 && (() => {
           const availableRegions = new Set(
             stores.map((s) => regionOf(s.address)).filter((r): r is string => !!r),
@@ -625,7 +758,6 @@ export default function CustomerOrderPage() {
           );
         })()}
 
-        {/* 지역 선택 전엔 안내, 선택 시 해당 지역 매장 리스트 */}
         {!storeRegion ? (
           <div className="rounded-2xl border border-dashed border-gray-300 p-8 text-center text-sm text-gray-500">
             {stores.length === 0
@@ -669,7 +801,7 @@ export default function CustomerOrderPage() {
         )}
       </section>
 
-      {/* 4. 결제 — 매장 결제 전용 */}
+      {/* 4. 결제 */}
       <section className="space-y-3">
         <h2 className="text-sm font-semibold text-gray-700">4. 결제 방식</h2>
         <div className="rounded-2xl border border-gray-200 bg-gray-50 p-4 text-sm text-gray-700">
@@ -685,7 +817,7 @@ export default function CustomerOrderPage() {
         />
       </section>
 
-      {/* 합계 + 제출 — 모바일 하단 탭 위로 고정 / 데스크탑은 sticky */}
+      {/* 합계 + 제출 */}
       <section
         className="fixed inset-x-0 bottom-14 z-20 border-t border-gray-200 bg-white p-4 shadow-[0_-4px_12px_rgba(0,0,0,0.06)] md:sticky md:bottom-4 md:inset-x-auto md:rounded-2xl md:border md:shadow-md"
         style={{ paddingBottom: 'calc(env(safe-area-inset-bottom) + 1rem)' }}
@@ -702,7 +834,7 @@ export default function CustomerOrderPage() {
         {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
       </section>
 
-      {/* 도수 관리 모달 — 자식창 */}
+      {/* 도수 관리 모달 */}
       {doseModalOpen && (
         <div
           className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
@@ -744,78 +876,82 @@ export default function CustomerOrderPage() {
   );
 }
 
-function EyeSelector({
-  title,
-  variants,
-  value,
-  onChange,
+function EyeDoseRow({
+  label,
+  dose,
+  skip,
+  onSkipChange,
+  quantity,
+  onQuantityChange,
 }: {
-  title: string;
-  variants: LensVariant[];
-  value: EyeSelection;
-  onChange: (v: EyeSelection) => void;
+  label: string;
+  dose: EyeData | null;
+  skip: boolean;
+  onSkipChange: (v: boolean) => void;
+  quantity: number;
+  onQuantityChange: (v: number) => void;
 }) {
-  const [skipEye, setSkipEye] = useState(value.variantId == null);
-
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-4">
-      <div className="mb-2 flex items-center justify-between">
-        <div className="font-medium">{title}</div>
-        <label className="text-xs text-gray-500">
-          <input
-            type="checkbox"
-            checked={skipEye}
-            onChange={(e) => {
-              setSkipEye(e.target.checked);
-              if (e.target.checked) onChange({ variantId: null, quantity: 1 });
-            }}
-            className="mr-1"
-          />
-          이 눈은 주문 안 함
-        </label>
+  if (!dose) {
+    return (
+      <div className="rounded-lg border border-dashed border-gray-200 px-3 py-2.5 text-xs text-gray-400">
+        <span className="font-medium text-gray-600">{label}</span> · 등록된 도수 없음
       </div>
-
-      {!skipEye && (
-        <div className="space-y-3">
-          <div>
-            <label className="text-xs text-gray-500">도수 선택 (SKU)</label>
-            <select
-              className="mt-1 h-11 w-full rounded-lg border border-gray-300 px-3"
-              value={value.variantId ?? ''}
-              onChange={(e) =>
-                onChange({ ...value, variantId: e.target.value || null })
-              }
-            >
-              <option value="">선택...</option>
-              {variants
-                .filter((v) => v.available > 0)
-                .map((v) => (
-                  <option key={v.variantId} value={v.variantId}>
-                    S {formatSign(v.sphere)}
-                    {v.cylinder && Number(v.cylinder) !== 0
-                      ? ` / C ${formatSign(v.cylinder)} / Ax ${v.axis ?? ''}`
-                      : ''}
-                    {' '}— 재고 {v.available}
-                  </option>
-                ))}
-            </select>
+    );
+  }
+  const active = !skip;
+  return (
+    <div
+      className={`rounded-lg border px-3 py-2.5 transition ${
+        active
+          ? 'border-emerald-200 bg-emerald-50'
+          : 'border-gray-200 bg-gray-50'
+      }`}
+    >
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div
+            className={`text-xs font-semibold ${
+              active ? 'text-emerald-900' : 'text-gray-500'
+            }`}
+          >
+            {label}
           </div>
-          <div>
-            <label className="text-xs text-gray-500">수량 (박스)</label>
-            <input
-              type="number"
-              inputMode="numeric"
-              min={1}
-              max={20}
-              value={value.quantity}
-              onChange={(e) =>
-                onChange({ ...value, quantity: Math.max(1, Number(e.target.value)) })
-              }
-              className="mt-1 h-11 w-full rounded-lg border border-gray-300 px-3"
-            />
+          <div
+            className={`mt-0.5 text-xs font-mono ${
+              active ? 'text-emerald-800' : 'text-gray-400 line-through'
+            }`}
+          >
+            {eyeSummary(dose)}
           </div>
         </div>
-      )}
+        <div className="flex items-center gap-3">
+          {active && (
+            <div className="flex items-center gap-1.5">
+              <span className="text-[11px] text-gray-500">수량</span>
+              <input
+                type="number"
+                min={1}
+                max={20}
+                value={quantity}
+                onChange={(e) =>
+                  onQuantityChange(Math.max(1, Number(e.target.value) || 1))
+                }
+                className="h-8 w-14 rounded-lg border border-gray-300 px-2 text-center text-sm"
+              />
+              <span className="text-[11px] text-gray-500">박스</span>
+            </div>
+          )}
+          <label className="flex items-center gap-1 text-[11px] text-gray-600">
+            <input
+              type="checkbox"
+              checked={skip}
+              onChange={(e) => onSkipChange(e.target.checked)}
+              className="h-3.5 w-3.5 rounded"
+            />
+            주문 안 함
+          </label>
+        </div>
+      </div>
     </div>
   );
 }
@@ -846,6 +982,14 @@ function matchVariant(variants: LensVariant[], dose: EyeData): LensVariant | nul
       return true;
     }) ?? null
   );
+}
+
+function formatVariantLabel(v: LensVariant): string {
+  const parts = [`SPH ${formatSign(v.sphere)}`];
+  if (v.cylinder && Number(v.cylinder) !== 0) parts.push(`CYL ${formatSign(v.cylinder)}`);
+  if (v.axis != null) parts.push(`AX ${v.axis}`);
+  if (v.addPower && Number(v.addPower) !== 0) parts.push(`ADD ${formatSign(v.addPower)}`);
+  return parts.join(' · ');
 }
 
 function eyeSummary(eye: EyeData | null): string {
