@@ -244,26 +244,31 @@ function ProductGridEditor({ config, onChange }: SectionEditorProps) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
-    fetch('/api/lenses')
-      .then((r) => r.json())
+    // admin 포털 미들웨어는 /api/lenses 를 차단 → admin 전용 /api/admin/lenses 사용
+    fetch('/api/admin/lenses')
+      .then((r) => (r.ok ? r.json() : { lenses: [] }))
       .then((j) => {
         const items = (j.lenses ?? []) as Array<{
-          lensId: string;
+          id: string;
           brand: string;
           name: string;
           lensType: string;
           replacementCycle: string;
+          isActive?: boolean;
         }>;
         setLensList(
-          items.map((l) => ({
-            id: l.lensId,
-            brand: l.brand,
-            name: l.name,
-            lensType: l.lensType,
-            replacementCycle: l.replacementCycle,
-          })),
+          items
+            .filter((l) => l.isActive !== false)
+            .map((l) => ({
+              id: l.id,
+              brand: l.brand,
+              name: l.name,
+              lensType: l.lensType,
+              replacementCycle: l.replacementCycle,
+            })),
         );
-      });
+      })
+      .catch(() => setLensList([]));
   }, []);
 
   function patch(k: string, v: unknown) {
