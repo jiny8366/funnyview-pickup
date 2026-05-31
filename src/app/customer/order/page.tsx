@@ -1148,13 +1148,34 @@ export default function CustomerOrderPage() {
               {lenses.length > 0 && filteredLenses.length === 0 && (
                 <div className="col-span-full rounded-2xl border border-dashed border-gray-300 p-8 text-center">
                   <p className="text-4xl">🔍</p>
-                  <p className="mt-3 text-sm font-medium text-gray-600">
-                    {showOnlyEligible && hasDoseToOrder
-                      ? doseMatchCount === 0
-                        ? '내 도수로 매칭되는 제품이 없습니다'
-                        : `내 도수 가능 ${doseMatchCount}종 중 해당 필터에 해당하는 제품이 없습니다`
-                      : '조건에 맞는 제품이 없습니다'}
-                  </p>
+                  <div className="mt-3 text-sm font-medium text-gray-600">
+                    {showOnlyEligible && hasDoseToOrder ? (
+                      doseMatchCount === 0 ? (
+                        <>
+                          <span>
+                            {eyeMode === 'right-only'
+                              ? '우안'
+                              : eyeMode === 'left-only'
+                                ? '좌안'
+                                : '양안'}{' '}
+                            도수에 맞는{' '}
+                            {typeKey !== 'all'
+                              ? `‘${TYPE_TABS.find((t) => t.key === typeKey)?.label ?? ''}’ `
+                              : ''}
+                            제품이 없습니다
+                          </span>
+                          <span className="mt-1.5 block text-xs font-normal text-gray-400">
+                            다른 카테고리를 고르거나, 아래 <strong>전체 제품 보기</strong>로 확인하세요.
+                            {typeKey !== 'all' && ' (카테고리 필터를 풀면 더 많이 보일 수 있어요)'}
+                          </span>
+                        </>
+                      ) : (
+                        `내 도수 가능 ${doseMatchCount}종 중 해당 필터에 해당하는 제품이 없습니다`
+                      )
+                    ) : (
+                      '조건에 맞는 제품이 없습니다'
+                    )}
+                  </div>
                   <div className="mt-3 flex justify-center gap-2">
                     {hasFilter && (
                       <button
