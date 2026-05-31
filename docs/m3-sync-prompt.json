@@ -1,0 +1,52 @@
+{
+  "task": "이 머신(M3)을 funnyview-pickup 공유 레포 기준으로 동기화하고, M1과 동일한 로컬 개발 컨디션으로 맞춘 뒤 지문을 출력해 보고하라.",
+  "context": {
+    "project": "Funnyview Pickup — (주)퍼니뷰 콘택트렌즈 픽업 플랫폼",
+    "stack": "Next.js 14 + Drizzle + 로컬 Postgres16/Redis7(컨테이너) / 운영=Neon+Vercel",
+    "shared_memory_model": "단일 기억공간 = GitHub 레포(jiny8366/funnyview-pickup). M1·M3·claude.ai/code 웹이 같은 레포를 본다. 진입점은 CLAUDE.md, 확정사양 SoT는 docs/spec.json.",
+    "this_machine": "M3",
+    "peer_machine": "M1 — 이미 셋업 완료, origin/main 과 0/0 동기화 상태",
+    "channel": "M1·M3 는 직접 통신 불가. 소통 채널은 GitHub 레포(한쪽 push → 다른쪽 pull)."
+  },
+  "preconditions": {
+    "engine": "컨테이너 엔진은 Colima 사용(상업용 무료). 없으면: brew install colima docker docker-compose. (OrbStack/Docker Desktop은 사업용 유료/조건부라 지양)",
+    "secrets": ".env.local 은 git 으로 안 옴(시크릿). 이미 M3 에 있으면 그대로 사용, 없으면 M1 에서 AirDrop 으로 받아 레포 루트에 둘 것. 키 목록은 .env.example 참고(33개)."
+  },
+  "setup_steps": [
+    "git pull --ff-only origin main   # 새 스크립트/규약/known-issues 포함 최신화",
+    ".env.local 존재 확인 (없으면 M1에서 AirDrop)",
+    "colima 설치 여부 확인, 없으면 brew install colima docker docker-compose",
+    "bash scripts/dev-up.sh   # colima 기동 → docker compose up → drizzle-kit push → db:seed (멱등)",
+    "bash scripts/sync-check.sh   # 지문 출력"
+  ],
+  "schema_policy": {
+    "use": "drizzle-kit push (TS 스키마 직접 반영). dev-up.sh 가 자동 수행.",
+    "do_not": "drizzle-kit generate 금지 — drizzle/meta 스냅샷이 0013에서 손상되어 collision 으로 실패함.",
+    "reason": "docs/known-issues.md 참조"
+  },
+  "m1_reference_fingerprint": {
+    "note": "HEAD/origin은 커밋이 흐르며 바뀜 — pull 후 둘이 같고(behind/ahead 0/0) 아래 구조 지표가 일치하면 동일 컨디션.",
+    "branch": "main",
+    "behind_ahead": "0/0",
+    "postgres": "healthy",
+    "redis": "healthy",
+    "seed_counts": "users=8 lenses=7 variants=31 stores=3 home_sections=7",
+    "env_keys": "33개 (.env.local)",
+    "as_of_HEAD": "4c6cb53"
+  },
+  "verification": "sync-check.sh 출력에서 behind/ahead=0/0, postgres=healthy, seed_counts 와 env_keys 가 위 m1_reference_fingerprint 와 일치하는지 확인. 불일치 항목이 있으면 원인 진단 후 보고.",
+  "sync_protocol": [
+    "작업 시작 전: git pull --ff-only origin main",
+    "작업 끝나면 즉시: git push origin main (안 하면 M1/웹이 그 작업을 모름)",
+    "커밋은 작게, 자주. push 전 npx tsc --noEmit 통과 확인.",
+    "DB 스키마 변경 필요 시: docs/known-issues.md 의 마이그레이션 메타 손상 상태를 먼저 고려하고 사용자 동의 후 진행."
+  ],
+  "data_sharing_caveat": "로컬 Postgres 컨테이너 데이터는 머신별 로컬 — M1에서 만든 주문/재고는 M3에 안 나타남. '동일 컨디션'은 코드+스키마+시드 기준선 일치이지 실시간 데이터 공유가 아님. 실데이터 공유가 필요하면 양쪽 DATABASE_URL 을 공용 원격 dev DB(Neon dev 브랜치 등)로 맞춰야 함.",
+  "known_issues_ack": "docs/known-issues.md 의 P1(FIFO 스키마가 prod·로컬·마이그레이션에 없음, 마이그레이션 메타 0013 손상)을 인지할 것. prod DDL 은 별도 세션에서 신중히 — 이번 동기화에서는 prod 미변경.",
+  "report_back": "sync-check.sh 전체 출력을 M1 세션(사용자)에게 전달. M1·M3 지문을 나란히 대조해 동일 여부를 확정한다.",
+  "constraints": [
+    "frame-ops 와 완전 무관 — 이 레포 단독, 매개 push 금지(CLAUDE.md 절대원칙).",
+    "docs/spec.json(확정사양) 임의 변경 금지 — 사용자 명시 동의 후.",
+    "prod 스키마/데이터 변경 금지(이번 작업 범위는 로컬 동기화)."
+  ]
+}
