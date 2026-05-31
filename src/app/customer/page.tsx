@@ -28,14 +28,37 @@ interface OrderRow {
   itemCount: number;
 }
 
+interface CustomerProfile {
+  id: string;
+  name: string;
+  gender: 'male' | 'female' | 'other' | null;
+  birthDate: string | null;
+  phone: string;
+  landlinePhone: string | null;
+  postalCode: string | null;
+  addressLine1: string | null;
+  addressLine2: string | null;
+  memberType: string;
+  referrerCode: string | null;
+  referredByCode: string | null;
+  createdAt: string;
+  email: string | null;
+  username: string | null;
+}
+
 export default function CustomerMyPage() {
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
+  const [profile, setProfile] = useState<CustomerProfile | null>(null);
 
   useEffect(() => {
     fetch('/api/orders')
       .then((r) => r.json())
       .then((d) => setOrders(d.orders ?? []))
       .catch(() => setOrders([]));
+    fetch('/api/customer/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((d) => setProfile(d?.customer ?? null))
+      .catch(() => setProfile(null));
   }, []);
 
   const counts = useMemo(() => {
@@ -59,7 +82,71 @@ export default function CustomerMyPage() {
     <div className="space-y-6">
       <section>
         <h1 className="text-2xl font-bold">마이페이지</h1>
-        <p className="mt-1 text-sm text-gray-500">주문 현황과 시력정보를 한 곳에서 확인하세요.</p>
+        <p className="mt-1 text-sm text-gray-500">내 정보, 주문 현황, 시력정보를 한 곳에서 확인하세요.</p>
+      </section>
+
+      {/* 내 정보 */}
+      <section>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-base font-semibold">내 정보</h2>
+        </div>
+        {profile === null ? (
+          <SkeletonCard />
+        ) : (
+          <div className="rounded-2xl border border-gray-200 bg-white p-4">
+            <div className="flex items-center justify-between border-b border-gray-100 pb-3">
+              <div>
+                <div className="text-base font-semibold text-gray-900">{profile.name}</div>
+                <div className="mt-0.5 text-xs text-gray-500">
+                  {profile.username && <span className="font-mono">@{profile.username}</span>}
+                  {profile.memberType && (
+                    <span className="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-[10px] text-gray-600">
+                      {profile.memberType === 'online' ? '온라인 가입' : '오프라인 가입'}
+                    </span>
+                  )}
+                </div>
+              </div>
+              <div className="text-right text-[10px] text-gray-400">
+                가입일: {new Date(profile.createdAt).toLocaleDateString('ko-KR')}
+              </div>
+            </div>
+            <dl className="mt-3 grid grid-cols-1 gap-2 text-xs sm:grid-cols-2">
+              <Info label="휴대전화" value={profile.phone || '—'} />
+              <Info label="이메일" value={profile.email || '—'} />
+              <Info
+                label="생년월일"
+                value={profile.birthDate ? new Date(profile.birthDate).toLocaleDateString('ko-KR') : '—'}
+              />
+              <Info
+                label="성별"
+                value={
+                  profile.gender === 'male'
+                    ? '남'
+                    : profile.gender === 'female'
+                    ? '여'
+                    : profile.gender === 'other'
+                    ? '기타'
+                    : '—'
+                }
+              />
+              <Info
+                label="주소"
+                value={
+                  [profile.postalCode && `(${profile.postalCode})`, profile.addressLine1, profile.addressLine2]
+                    .filter(Boolean)
+                    .join(' ') || '—'
+                }
+                full
+              />
+              {profile.referrerCode && (
+                <Info label="내 추천코드" value={profile.referrerCode} mono />
+              )}
+              {profile.referredByCode && (
+                <Info label="추천인" value={profile.referredByCode} mono />
+              )}
+            </dl>
+          </div>
+        )}
       </section>
 
       <section>
@@ -170,6 +257,31 @@ export default function CustomerMyPage() {
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+function Info({
+  label,
+  value,
+  full,
+  mono,
+}: {
+  label: string;
+  value: string;
+  full?: boolean;
+  mono?: boolean;
+}) {
+  return (
+    <div className={full ? 'sm:col-span-2' : undefined}>
+      <dt className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+        {label}
+      </dt>
+      <dd
+        className={`mt-0.5 text-sm text-gray-800 ${mono ? 'font-mono' : ''}`}
+      >
+        {value}
+      </dd>
     </div>
   );
 }

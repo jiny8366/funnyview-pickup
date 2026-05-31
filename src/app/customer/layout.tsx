@@ -2,9 +2,11 @@ import { CustomerBottomNav } from '@/components/layout/customer-bottom-nav';
 import { RoleHeader } from '@/components/layout/role-header';
 
 const NAV = [
-  { href: '/customer', label: '홈' },
+  { href: '/', label: '홈' },
+  { href: '/customer', label: '마이페이지' },
   { href: '/customer/order', label: '주문하기' },
   { href: '/customer/orders', label: '내 주문' },
+  { href: '/customer/prescriptions', label: '도수 정보' },
 ] as const;
 
 export default function CustomerLayout({
