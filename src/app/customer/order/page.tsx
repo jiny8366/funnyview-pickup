@@ -192,7 +192,8 @@ export default function CustomerOrderPage() {
     [lenses, selectedLensId],
   );
 
-  // 선택한 제품의 variants 중 등록 도수와 매칭되는 것을 자동 선택, 매칭 실패 시 경고
+  // 선택한 제품의 variants 중 등록 도수와 매칭되는 것을 자동 선택, 매칭 실패 시 경고.
+  // 매칭이 truthy → 셋팅, 매칭이 null → 명시적으로 null 로 클리어 (stale variantId 방지).
   useEffect(() => {
     if (!selectedLens) {
       setMismatch([]);
@@ -200,8 +201,8 @@ export default function CustomerOrderPage() {
     }
     const rMatch = savedDose.right ? matchVariant(selectedLens.variants, savedDose.right) : null;
     const lMatch = savedDose.left ? matchVariant(selectedLens.variants, savedDose.left) : null;
-    if (rMatch) setRightSel({ variantId: rMatch.variantId, quantity: 1 });
-    if (lMatch) setLeftSel({ variantId: lMatch.variantId, quantity: 1 });
+    setRightSel({ variantId: rMatch ? rMatch.variantId : null, quantity: 1 });
+    setLeftSel({ variantId: lMatch ? lMatch.variantId : null, quantity: 1 });
     const missing: string[] = [];
     if (savedDose.right && !rMatch) missing.push('우안');
     if (savedDose.left && !lMatch) missing.push('좌안');
@@ -826,7 +827,8 @@ function formatSign(v: string | null): string {
   return (n >= 0 ? '+' : '') + n.toFixed(2);
 }
 
-/** 저장된 도수가 제품 variants 에 존재하는지 매칭 (SPH/CYL/AXIS/ADD). */
+/** 저장된 도수가 제품 variants 에 존재하는지 매칭 (SPH/CYL/AXIS/ADD).
+ *  재고 0 인 variant 는 주문 불가이므로 매칭에서 제외. */
 function matchVariant(variants: LensVariant[], dose: EyeData): LensVariant | null {
   const targetSph = Number(dose.sphere);
   const targetCyl = dose.cylinder != null ? Number(dose.cylinder) : null;
@@ -834,6 +836,7 @@ function matchVariant(variants: LensVariant[], dose: EyeData): LensVariant | nul
   const targetAdd = dose.addPower != null ? Number(dose.addPower) : null;
   return (
     variants.find((v) => {
+      if (v.available <= 0) return false;
       if (Number(v.sphere) !== targetSph) return false;
       const vCyl = v.cylinder != null ? Number(v.cylinder) : null;
       if ((vCyl ?? null) !== (targetCyl ?? null)) return false;

@@ -40,7 +40,17 @@ export async function POST(req: Request) {
     );
   }
 
-  const customerId = user.customerId ?? (await ensureCustomerForUser(user.id));
+  let customerId: string;
+  try {
+    customerId = user.customerId ?? (await ensureCustomerForUser(user.id));
+  } catch (e) {
+    const msg = e instanceof Error ? e.message : String(e);
+    console.error('[POST /api/orders] ensureCustomer failed', { userId: user.id, msg });
+    return NextResponse.json(
+      { error: 'CUSTOMER_ENSURE_FAILED', message: `고객 정보 보장 실패: ${msg}` },
+      { status: 500 },
+    );
+  }
 
   try {
     const order = await createOrder({
@@ -67,7 +77,19 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-    throw e;
+    const msg = e instanceof Error ? e.message : String(e);
+    const stack = e instanceof Error ? e.stack : undefined;
+    console.error('[POST /api/orders] unexpected error', {
+      userId: user.id,
+      customerId,
+      lines: parsed.data.lines,
+      msg,
+      stack,
+    });
+    return NextResponse.json(
+      { error: 'ORDER_CREATE_FAILED', message: `주문 생성 중 오류: ${msg}` },
+      { status: 500 },
+    );
   }
 }
 
