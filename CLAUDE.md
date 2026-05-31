@@ -94,7 +94,31 @@ git pull --ff-only origin main   # 작업 시작 전 — 항상 최신 기억 �
 git push origin main             # 작업 끝 — 즉시 공유 (다른 환경이 보게)
 ```
 - 한 환경에서 push 안 하면 다른 환경은 그 작업을 모른다. **작업 끝나면 즉시 push.**
-- 새 머신 셋업: `git clone` → `.env.local` 별도 복사(시크릿) → `npm install`.
+
+### 새 머신(M3 등) 온보딩 — 한 방 셋업
+```bash
+git clone https://github.com/jiny8366/funnyview-pickup.git && cd funnyview-pickup
+# ① .env.local 을 M1 에서 안전하게 복사 (AirDrop 권장) — git 으로 안 옴(시크릿)
+# ② 컨테이너 엔진 (없으면): brew install colima docker docker-compose
+bash scripts/dev-up.sh        # 엔진 기동 → DB/Redis → drizzle-kit push → seed
+npm run dev                   # http://localhost:3001
+```
+
+### 동기화 검증 (핸드셰이크)
+```bash
+bash scripts/sync-check.sh    # M1·M3 에서 각각 실행 → 출력 대조
+```
+HEAD · behind/ahead(0/0) · postgres=healthy · seed-counts · env-keys 가 같으면 동일 컨디션.
+
+### ⚠️ 공유되는 것 / 안 되는 것 (오해 주의)
+- **git 으로 공유**: 코드, 스키마(`src/db/schema`), 시드 스크립트, 마이그레이션, 문서.
+- **공유 안 됨 (머신별 로컬)**: 각 PC 의 **로컬 Postgres 컨테이너 안 데이터**. M1 에서 만든 주문/재고는 M3 에 안 나타난다. "동일 컨디션"=같은 코드+같은 스키마+같은 시드 기준선이지, 실시간 데이터 공유가 아님.
+- 실시간 데이터까지 공유하려면 양쪽 `.env.local` 의 `DATABASE_URL` 을 **공용 원격 DB(예: Neon dev 브랜치)** 로 맞춰야 함.
+- `.env.local`(시크릿) · `~/.claude` 개인 메모리도 머신별 로컬.
+
+### 스키마 적용 주의 (현재 마이그레이션 메타 손상)
+- `drizzle/meta` 스냅샷이 0013 에서 고장 → `db:generate` 불가, **로컬은 `drizzle-kit push` 사용**(dev-up.sh 가 처리).
+- prod FIFO 스키마 누락 + 메타 복구는 별도 트래킹 (`docs/known-issues.md`).
 
 ## 빠른 명령 reference
 
