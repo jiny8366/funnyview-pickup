@@ -180,12 +180,16 @@ function HeroSection({ section }: { section: Section }) {
 function ProductGridRender({ section }: { section: ProductGridSection }) {
   const ref = useImpression(section.id, section.variant);
   const c = section.config as {
-    subtitle?: string; // '베스트' 등
+    subtitle?: string;
     viewAllHref?: string;
+    layout?: 'grid' | 'carousel';
+    autoplay?: boolean;
+    autoplaySeconds?: number;
+    showArrows?: boolean;
+    showDots?: boolean;
   };
   const items = section.lenses ?? [];
 
-  // 같은 series 내 컬러 수 (variantCount) 계산
   const seriesCount = new Map<string, number>();
   for (const l of items) {
     if (l.seriesCode) {
@@ -227,6 +231,13 @@ function ProductGridRender({ section }: { section: ProductGridSection }) {
         subtitle={c.subtitle}
         viewAllHref={c.viewAllHref}
         products={products}
+        carousel={{
+          carousel: c.layout === 'carousel',
+          autoplay: c.autoplay,
+          autoplaySeconds: c.autoplaySeconds,
+          showArrows: c.showArrows,
+          showDots: c.showDots,
+        }}
       />
     </div>
   );

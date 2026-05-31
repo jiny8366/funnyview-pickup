@@ -25,6 +25,15 @@ export interface ProductGridConfig {
   layout?: 'grid' | 'carousel';
   showPrice?: boolean;
   cardTone?: 'minimal' | 'photo';
+  // carousel(가로 스크롤) 전용 옵션
+  /** 자동 이동 켜기 (carousel layout 일 때만 동작) */
+  autoplay?: boolean;
+  /** 자동 이동 간격(초). 기본 5 */
+  autoplaySeconds?: number;
+  /** 좌/우 화살표 표시. 기본 true */
+  showArrows?: boolean;
+  /** 하단 닷 인디케이터 표시. 기본 false */
+  showDots?: boolean;
 }
 
 export interface CategoryChipsConfig {
@@ -103,6 +112,10 @@ export function defaultConfig(kind: SectionKind): Record<string, unknown> {
         layout: 'grid',
         showPrice: true,
         cardTone: 'minimal',
+        autoplay: false,
+        autoplaySeconds: 5,
+        showArrows: true,
+        showDots: false,
       } satisfies ProductGridConfig;
     case 'category_chips':
       return {
