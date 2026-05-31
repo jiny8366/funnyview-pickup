@@ -106,12 +106,19 @@ export function PrescriptionManager({
   function eyePayload(f: EyeForm) {
     const sphere = normalizeSignedDiopter(f.sphere);
     if (!sphere) return null;
-    const axis = normalizeAxis(f.axis);
+    // CYL/ADD: 0 또는 빈 값은 null 로 통일 (no-correction).
+    // axis 는 CYL 이 의미 있을 때만 보존.
+    const cylRaw = normalizeSignedDiopter(f.cylinder);
+    const cylinder = !cylRaw || Number(cylRaw) === 0 ? null : cylRaw;
+    const addRaw = normalizeAddDiopter(f.addPower);
+    const addPower = !addRaw || Number(addRaw) === 0 ? null : addRaw;
+    const axisStr = normalizeAxis(f.axis);
+    const axis = cylinder == null ? null : axisStr ? Number(axisStr) : null;
     return {
       sphere,
-      cylinder: normalizeSignedDiopter(f.cylinder) || null,
-      axis: axis ? Number(axis) : null,
-      addPower: normalizeAddDiopter(f.addPower) || null,
+      cylinder,
+      axis,
+      addPower,
     };
   }
 

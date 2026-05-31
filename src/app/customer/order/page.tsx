@@ -254,10 +254,19 @@ export default function CustomerOrderPage() {
           l.brand.toLowerCase().includes(q),
       );
     }
-    if (showOnlyEligible && hasDoseToOrder) {
-      list = list.filter(
-        (l) => eligibilityByLens.get(l.lensId)?.eligible ?? false,
-      );
+    if (hasDoseToOrder) {
+      if (showOnlyEligible) {
+        list = list.filter(
+          (l) => eligibilityByLens.get(l.lensId)?.eligible ?? false,
+        );
+      } else {
+        // 전체 보기에서도 적합 제품을 앞쪽으로 정렬
+        list = [...list].sort((a, b) => {
+          const ae = eligibilityByLens.get(a.lensId)?.eligible ? 0 : 1;
+          const be = eligibilityByLens.get(b.lensId)?.eligible ? 0 : 1;
+          return ae - be;
+        });
+      }
     }
     return list;
   }, [
@@ -1043,24 +1052,38 @@ function formatSign(v: string | null): string {
 }
 
 /** 저장된 도수가 제품 variants 에 존재하는지 매칭 (SPH/CYL/AXIS/ADD).
- *  재고 0 인 variant 는 주문 불가이므로 매칭에서 제외. */
+ *  규칙:
+ *   - SPH: 엄격 일치 (필수)
+ *   - CYL: 0 과 null 동치 (난시 보정 없음). 그 외엔 엄격 일치
+ *   - AXIS: CYL 이 의미 있을 때만 비교 (CYL=0/null 이면 무관)
+ *   - ADD: 0 과 null 동치 (다초점 보정 없음). 그 외엔 엄격 일치
+ *   - 재고 0 인 variant 는 매칭 제외 */
 function matchVariant(variants: LensVariant[], dose: EyeData): LensVariant | null {
   const targetSph = Number(dose.sphere);
-  const targetCyl = dose.cylinder != null ? Number(dose.cylinder) : null;
-  const targetAxis = dose.axis;
-  const targetAdd = dose.addPower != null ? Number(dose.addPower) : null;
+  const targetCyl = normCorrection(dose.cylinder);
+  const targetAdd = normCorrection(dose.addPower);
+  const targetAxis = targetCyl === 0 ? null : dose.axis;
   return (
     variants.find((v) => {
       if (v.available <= 0) return false;
       if (Number(v.sphere) !== targetSph) return false;
-      const vCyl = v.cylinder != null ? Number(v.cylinder) : null;
-      if ((vCyl ?? null) !== (targetCyl ?? null)) return false;
-      if ((v.axis ?? null) !== (targetAxis ?? null)) return false;
-      const vAdd = v.addPower != null ? Number(v.addPower) : null;
-      if ((vAdd ?? null) !== (targetAdd ?? null)) return false;
+      const vCyl = normCorrection(v.cylinder);
+      if (vCyl !== targetCyl) return false;
+      if (targetCyl !== 0) {
+        if ((v.axis ?? null) !== (targetAxis ?? null)) return false;
+      }
+      const vAdd = normCorrection(v.addPower);
+      if (vAdd !== targetAdd) return false;
       return true;
     }) ?? null
   );
+}
+
+/** "0", "0.00", "", null → 0. 그 외엔 Number(). 보정값(CYL/ADD) 비교용. */
+function normCorrection(v: string | null | undefined): number {
+  if (v == null || v === '') return 0;
+  const n = Number(v);
+  return Number.isFinite(n) ? n : 0;
 }
 
 function formatVariantLabel(v: LensVariant): string {
