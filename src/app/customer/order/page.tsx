@@ -113,7 +113,10 @@ function matchesType(l: Lens, key: TypeKey) {
 }
 
 interface LensEligibility {
-  eligible: boolean;
+  /** 도수가 매칭되는 variant 가 존재 (재고 무관). */
+  doseMatch: boolean;
+  /** 매칭 variant 들이 모두 재고가 있음 (주문 가능). */
+  inStock: boolean;
   leftVariant: LensVariant | null;
   rightVariant: LensVariant | null;
   reasons: string[];
@@ -202,7 +205,7 @@ export default function CustomerOrderPage() {
   const needRight = !!savedDose.right && !rightSkip;
   const hasDoseToOrder = needLeft || needRight;
 
-  // 제품별 적합성 계산
+  // 제품별 적합성 계산 — 도수 매칭과 재고를 분리하여 사용자에게 원인 노출
   const eligibilityByLens = useMemo(() => {
     const map = new Map<string, LensEligibility>();
     for (const l of lenses) {
@@ -212,12 +215,17 @@ export default function CustomerOrderPage() {
       const rightVariant = needRight && savedDose.right
         ? matchVariant(l.variants, savedDose.right)
         : null;
-      const eligible =
+      const doseMatch =
         (!needLeft || !!leftVariant) && (!needRight || !!rightVariant);
+      const inStock =
+        doseMatch &&
+        (!leftVariant || leftVariant.available > 0) &&
+        (!rightVariant || rightVariant.available > 0);
       const reasons: string[] = [];
-      if (needLeft && !leftVariant) reasons.push('좌안 도수 없음');
-      if (needRight && !rightVariant) reasons.push('우안 도수 없음');
-      map.set(l.lensId, { eligible, leftVariant, rightVariant, reasons });
+      if (needLeft && !leftVariant) reasons.push('좌안 도수 미지원');
+      if (needRight && !rightVariant) reasons.push('우안 도수 미지원');
+      if (doseMatch && !inStock) reasons.push('재고 없음');
+      map.set(l.lensId, { doseMatch, inStock, leftVariant, rightVariant, reasons });
     }
     return map;
   }, [lenses, savedDose, needLeft, needRight]);
@@ -230,9 +238,9 @@ export default function CustomerOrderPage() {
     ? eligibilityByLens.get(selectedLens.lensId) ?? null
     : null;
 
-  // 선택한 제품이 도수 변경 등으로 부적합해지면 해제
+  // 선택한 제품이 도수 변경으로 도수 미지원이 되면 해제 (재고만 없는 경우는 유지)
   useEffect(() => {
-    if (selectedLens && selectedElig && !selectedElig.eligible) {
+    if (selectedLens && selectedElig && !selectedElig.doseMatch) {
       setSelectedLensId(null);
     }
   }, [selectedLens, selectedElig]);
@@ -256,17 +264,19 @@ export default function CustomerOrderPage() {
     }
     if (hasDoseToOrder) {
       if (showOnlyEligible) {
+        // 토글 ON: 도수 매칭 제품만 (재고 없는 것도 포함 — 사유 노출)
         list = list.filter(
-          (l) => eligibilityByLens.get(l.lensId)?.eligible ?? false,
+          (l) => eligibilityByLens.get(l.lensId)?.doseMatch ?? false,
         );
-      } else {
-        // 전체 보기에서도 적합 제품을 앞쪽으로 정렬
-        list = [...list].sort((a, b) => {
-          const ae = eligibilityByLens.get(a.lensId)?.eligible ? 0 : 1;
-          const be = eligibilityByLens.get(b.lensId)?.eligible ? 0 : 1;
-          return ae - be;
-        });
       }
+      // 정렬: 재고 있는 것 > 도수만 매칭 > 도수 미지원
+      list = [...list].sort((a, b) => {
+        const ea = eligibilityByLens.get(a.lensId);
+        const eb = eligibilityByLens.get(b.lensId);
+        const sa = ea?.inStock ? 0 : ea?.doseMatch ? 1 : 2;
+        const sb = eb?.inStock ? 0 : eb?.doseMatch ? 1 : 2;
+        return sa - sb;
+      });
     }
     return list;
   }, [
@@ -279,25 +289,38 @@ export default function CustomerOrderPage() {
     eligibilityByLens,
   ]);
 
-  const eligibleCount = useMemo(
+  /** 도수 매칭 + 재고 있는 제품 수 (실제 주문 가능). */
+  const inStockCount = useMemo(
     () =>
       hasDoseToOrder
-        ? lenses.filter((l) => eligibilityByLens.get(l.lensId)?.eligible).length
+        ? lenses.filter((l) => eligibilityByLens.get(l.lensId)?.inStock).length
         : lenses.length,
     [lenses, eligibilityByLens, hasDoseToOrder],
   );
 
-  /** 브랜드별 내 도수 가능 제품 수 — 브랜드 선택 시 카운트 노출. */
-  const eligibleCountByBrand = useMemo(() => {
-    const map = new Map<string, number>();
+  /** 도수 매칭 제품 수 (재고 무관). */
+  const doseMatchCount = useMemo(
+    () =>
+      hasDoseToOrder
+        ? lenses.filter((l) => eligibilityByLens.get(l.lensId)?.doseMatch).length
+        : lenses.length,
+    [lenses, eligibilityByLens, hasDoseToOrder],
+  );
+
+  /** 브랜드별 도수 매칭 / 재고 있는 제품 수. */
+  const countsByBrand = useMemo(() => {
+    const map = new Map<string, { doseMatch: number; inStock: number }>();
     for (const l of lenses) {
+      const cur = map.get(l.brand) ?? { doseMatch: 0, inStock: 0 };
       if (hasDoseToOrder) {
-        if (eligibilityByLens.get(l.lensId)?.eligible) {
-          map.set(l.brand, (map.get(l.brand) ?? 0) + 1);
-        }
+        const e = eligibilityByLens.get(l.lensId);
+        if (e?.doseMatch) cur.doseMatch += 1;
+        if (e?.inStock) cur.inStock += 1;
       } else {
-        map.set(l.brand, (map.get(l.brand) ?? 0) + 1);
+        cur.doseMatch += 1;
+        cur.inStock += 1;
       }
+      map.set(l.brand, cur);
     }
     return map;
   }, [lenses, eligibilityByLens, hasDoseToOrder]);
@@ -315,7 +338,7 @@ export default function CustomerOrderPage() {
   const canSubmit =
     !!selectedLens &&
     !!selectedElig &&
-    selectedElig.eligible &&
+    selectedElig.inStock &&
     !!storeId &&
     hasDoseToOrder &&
     !submitting;
@@ -491,6 +514,11 @@ export default function CustomerOrderPage() {
                     <div className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-gray-700">
                       <span>
                         좌 (L): {formatVariantLabel(selectedElig.leftVariant)} × {leftQty}박스
+                        {selectedElig.leftVariant.available <= 0 && (
+                          <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                            재고 없음
+                          </span>
+                        )}
                       </span>
                       <span className="font-semibold">
                         {formatKRW(selectedElig.leftVariant.price * leftQty)}
@@ -501,10 +529,20 @@ export default function CustomerOrderPage() {
                     <div className="flex items-center justify-between rounded-lg bg-white px-3 py-2 text-gray-700">
                       <span>
                         우 (R): {formatVariantLabel(selectedElig.rightVariant)} × {rightQty}박스
+                        {selectedElig.rightVariant.available <= 0 && (
+                          <span className="ml-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-medium text-amber-700">
+                            재고 없음
+                          </span>
+                        )}
                       </span>
                       <span className="font-semibold">
                         {formatKRW(selectedElig.rightVariant.price * rightQty)}
                       </span>
+                    </div>
+                  )}
+                  {!selectedElig.inStock && (
+                    <div className="rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800">
+                      이 제품은 도수가 맞지만 재고가 입고 대기 중입니다 — 주문 불가.
                     </div>
                   )}
                 </div>
@@ -519,7 +557,7 @@ export default function CustomerOrderPage() {
                     브랜드 선택
                     {hasDoseToOrder && (
                       <span className="ml-1 font-normal text-[10px] text-gray-400">
-                        (괄호 = 내 도수 가능 제품 수)
+                        (괄호: 재고 가능 / 도수 가능)
                       </span>
                     )}
                   </label>
@@ -545,12 +583,12 @@ export default function CustomerOrderPage() {
                   >
                     전체{' '}
                     <span className={brand === '' ? 'text-white/70' : 'text-gray-400'}>
-                      ({eligibleCount})
+                      ({hasDoseToOrder ? `${inStockCount}/${doseMatchCount}` : doseMatchCount})
                     </span>
                   </button>
                   {brands.map((b) => {
-                    const count = eligibleCountByBrand.get(b) ?? 0;
-                    const dim = hasDoseToOrder && count === 0;
+                    const c = countsByBrand.get(b) ?? { doseMatch: 0, inStock: 0 };
+                    const dim = hasDoseToOrder && c.doseMatch === 0;
                     return (
                       <button
                         key={b}
@@ -574,7 +612,7 @@ export default function CustomerOrderPage() {
                                 : 'text-brand-600'
                           }
                         >
-                          ({count})
+                          ({hasDoseToOrder ? `${c.inStock}/${c.doseMatch}` : c.doseMatch})
                         </span>
                       </button>
                     );
@@ -590,16 +628,20 @@ export default function CustomerOrderPage() {
                   <strong className="text-brand-700">{brand}</strong>
                   {hasDoseToOrder ? (
                     <>
-                      {' '}브랜드 내 도수 가능 제품{' '}
+                      {' '}브랜드: 도수 가능{' '}
                       <strong className="text-brand-700">
-                        {eligibleCountByBrand.get(brand) ?? 0}종
+                        {countsByBrand.get(brand)?.doseMatch ?? 0}종
+                      </strong>{' '}
+                      · 즉시 주문{' '}
+                      <strong className="text-emerald-700">
+                        {countsByBrand.get(brand)?.inStock ?? 0}종
                       </strong>
                     </>
                   ) : (
                     <>
                       {' '}브랜드 전체 제품{' '}
                       <strong className="text-brand-700">
-                        {eligibleCountByBrand.get(brand) ?? 0}종
+                        {countsByBrand.get(brand)?.doseMatch ?? 0}종
                       </strong>
                     </>
                   )}
@@ -657,10 +699,22 @@ export default function CustomerOrderPage() {
               <div className="text-[11px] text-gray-500">
                 {filteredLenses.length} / {lenses.length}종 표시
                 {hasDoseToOrder && (
-                  <span className="ml-1 text-brand-700">
-                    · 내 도수 가능: {eligibleCount}종
+                  <span className="ml-1">
+                    · 도수 가능{' '}
+                    <span className="text-brand-700">{doseMatchCount}종</span>
+                    {' · '}
+                    즉시 주문{' '}
+                    <span className="text-emerald-700">{inStockCount}종</span>
                   </span>
                 )}
+              </div>
+            )}
+
+            {/* 재고 없음 안내 — 도수 매칭은 있는데 재고가 0종일 때 */}
+            {hasDoseToOrder && doseMatchCount > 0 && inStockCount === 0 && (
+              <div className="rounded-xl border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+                <strong>도수에 맞는 제품 {doseMatchCount}종</strong>이 있지만 모두 재고 입고 대기
+                중입니다. 운영자에게 입고 예정을 문의해 주세요.
               </div>
             )}
 
@@ -668,7 +722,9 @@ export default function CustomerOrderPage() {
             <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
               {filteredLenses.map((l) => {
                 const elig = eligibilityByLens.get(l.lensId);
-                const isEligible = elig?.eligible ?? !hasDoseToOrder;
+                const doseOK = elig?.doseMatch ?? !hasDoseToOrder;
+                const stockOK = elig?.inStock ?? !hasDoseToOrder;
+                const clickable = doseOK; // 재고 없어도 카드 선택은 가능 (사유 표시)
                 const selected = selectedLensId === l.lensId;
                 const imageSrc = l.imageUrl ?? `/api/lens-image/${l.productCode}`;
                 return (
@@ -676,21 +732,21 @@ export default function CustomerOrderPage() {
                     key={l.lensId}
                     type="button"
                     onClick={() => {
-                      if (isEligible) setSelectedLensId(l.lensId);
+                      if (clickable) setSelectedLensId(l.lensId);
                     }}
-                    disabled={!isEligible}
-                    aria-disabled={!isEligible}
+                    disabled={!clickable}
+                    aria-disabled={!clickable}
                     className={`group overflow-hidden rounded-2xl border text-left transition ${
                       selected
                         ? 'border-brand-600 ring-2 ring-brand-600'
-                        : isEligible
+                        : clickable
                           ? 'border-gray-200 hover:border-brand-300'
                           : 'border-gray-200 cursor-not-allowed'
                     }`}
                   >
                     <div
                       className={`relative aspect-[3/4] w-full overflow-hidden bg-gray-100 ${
-                        !isEligible ? 'opacity-60 grayscale' : ''
+                        !doseOK ? 'opacity-60 grayscale' : !stockOK ? 'opacity-80' : ''
                       }`}
                     >
                       {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -701,12 +757,12 @@ export default function CustomerOrderPage() {
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
                       />
                       <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/55 via-black/0 to-transparent" />
-                      {l.isNew && !selected && isEligible && (
+                      {l.isNew && !selected && doseOK && (
                         <span className="absolute left-2 top-2 rounded-full bg-pink-500 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white shadow">
                           NEW
                         </span>
                       )}
-                      {l.colorHex && isEligible && (
+                      {l.colorHex && doseOK && (
                         <div className="absolute bottom-10 right-2 flex items-center gap-1 rounded-full bg-white/90 px-1.5 py-0.5 shadow backdrop-blur">
                           <span
                             className="h-3 w-3 rounded-full border border-gray-200"
@@ -726,9 +782,14 @@ export default function CustomerOrderPage() {
                           ✓
                         </span>
                       )}
-                      {!isEligible && elig && elig.reasons.length > 0 && (
+                      {!doseOK && elig && elig.reasons.length > 0 && (
                         <div className="absolute inset-x-0 top-0 bg-red-600/95 px-2 py-1 text-center text-[10px] font-medium text-white">
                           {elig.reasons.join(' · ')}
+                        </div>
+                      )}
+                      {doseOK && !stockOK && (
+                        <div className="absolute inset-x-0 top-0 bg-amber-500/95 px-2 py-1 text-center text-[10px] font-medium text-white">
+                          재고 없음 (도수 매칭 ✓)
                         </div>
                       )}
                     </div>
@@ -753,7 +814,9 @@ export default function CustomerOrderPage() {
                   <p className="text-4xl">🔍</p>
                   <p className="mt-3 text-sm font-medium text-gray-600">
                     {showOnlyEligible && hasDoseToOrder
-                      ? '내 도수로 주문 가능한 제품이 없습니다'
+                      ? doseMatchCount === 0
+                        ? '내 도수로 매칭되는 제품이 없습니다'
+                        : `내 도수 가능 ${doseMatchCount}종 중 해당 필터에 해당하는 제품이 없습니다`
                       : '조건에 맞는 제품이 없습니다'}
                   </p>
                   <div className="mt-3 flex justify-center gap-2">
@@ -1051,7 +1114,8 @@ function formatSign(v: string | null): string {
   return (n >= 0 ? '+' : '') + n.toFixed(2);
 }
 
-/** 저장된 도수가 제품 variants 에 존재하는지 매칭.
+/** 저장된 도수가 제품 variants 에 존재하는지 매칭 (재고 무관).
+ *  재고 확인은 호출 측에서 별도 처리 — 재고 없음 vs 도수 미지원을 구분해서 보여주기 위함.
  *  규칙 ('변형이 보정할 수 있는 것' 기준):
  *   - SPH: 엄격 일치 (필수)
  *   - 구면 변형 (vCyl=0): 누구나 착용 가능 — 고객 CYL/AXIS 무관 (난시는 미보정될 뿐)
@@ -1060,25 +1124,33 @@ function formatSign(v: string | null): string {
  *   - 비-다초점 변형 (vAdd=0): 누구나 — 다초점 필요한 고객도 거리 시력 보정만 받음
  *   - 다초점 변형 (vAdd≠0): 고객 ADD 와 정확 일치 필요
  *     (다초점은 비-노안 고객에게 거리 시력 저하 → 거부)
- *   - 재고 0 인 variant 는 매칭 제외 */
+ *  여러 매칭 후보 중에서는 (1) 정확 매칭 우선, (2) 재고 많은 순으로 선택. */
 function matchVariant(variants: LensVariant[], dose: EyeData): LensVariant | null {
   const targetSph = Number(dose.sphere);
   const targetCyl = normCorrection(dose.cylinder);
   const targetAdd = normCorrection(dose.addPower);
-  return (
-    variants.find((v) => {
-      if (v.available <= 0) return false;
-      if (Number(v.sphere) !== targetSph) return false;
-      const vCyl = normCorrection(v.cylinder);
-      if (vCyl !== 0) {
-        if (vCyl !== targetCyl) return false;
-        if ((v.axis ?? null) !== (dose.axis ?? null)) return false;
-      }
-      const vAdd = normCorrection(v.addPower);
-      if (vAdd !== 0 && vAdd !== targetAdd) return false;
-      return true;
-    }) ?? null
-  );
+  let best: LensVariant | null = null;
+  let bestScore = -1;
+  for (const v of variants) {
+    if (Number(v.sphere) !== targetSph) continue;
+    const vCyl = normCorrection(v.cylinder);
+    if (vCyl !== 0) {
+      if (vCyl !== targetCyl) continue;
+      if ((v.axis ?? null) !== (dose.axis ?? null)) continue;
+    }
+    const vAdd = normCorrection(v.addPower);
+    if (vAdd !== 0 && vAdd !== targetAdd) continue;
+    // 점수: 정확 매칭 가산 + 재고 있음 가산
+    let score = 0;
+    if (vCyl === targetCyl) score += 2;
+    if (vAdd === targetAdd) score += 2;
+    if (v.available > 0) score += 10; // 재고 있는 variant 우선
+    if (score > bestScore) {
+      best = v;
+      bestScore = score;
+    }
+  }
+  return best;
 }
 
 /** "0", "0.00", "", null → 0. 그 외엔 Number(). 보정값(CYL/ADD) 비교용. */
