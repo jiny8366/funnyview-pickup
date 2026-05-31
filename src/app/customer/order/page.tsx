@@ -1051,29 +1051,31 @@ function formatSign(v: string | null): string {
   return (n >= 0 ? '+' : '') + n.toFixed(2);
 }
 
-/** 저장된 도수가 제품 variants 에 존재하는지 매칭 (SPH/CYL/AXIS/ADD).
- *  규칙:
+/** 저장된 도수가 제품 variants 에 존재하는지 매칭.
+ *  규칙 ('변형이 보정할 수 있는 것' 기준):
  *   - SPH: 엄격 일치 (필수)
- *   - CYL: 0 과 null 동치 (난시 보정 없음). 그 외엔 엄격 일치
- *   - AXIS: CYL 이 의미 있을 때만 비교 (CYL=0/null 이면 무관)
- *   - ADD: 0 과 null 동치 (다초점 보정 없음). 그 외엔 엄격 일치
+ *   - 구면 변형 (vCyl=0): 누구나 착용 가능 — 고객 CYL/AXIS 무관 (난시는 미보정될 뿐)
+ *   - 토릭 변형 (vCyl≠0): 고객의 CYL + AXIS 와 정확히 일치해야 함
+ *     (토릭은 비-난시 고객에게 오히려 난시 추가 → 거부)
+ *   - 비-다초점 변형 (vAdd=0): 누구나 — 다초점 필요한 고객도 거리 시력 보정만 받음
+ *   - 다초점 변형 (vAdd≠0): 고객 ADD 와 정확 일치 필요
+ *     (다초점은 비-노안 고객에게 거리 시력 저하 → 거부)
  *   - 재고 0 인 variant 는 매칭 제외 */
 function matchVariant(variants: LensVariant[], dose: EyeData): LensVariant | null {
   const targetSph = Number(dose.sphere);
   const targetCyl = normCorrection(dose.cylinder);
   const targetAdd = normCorrection(dose.addPower);
-  const targetAxis = targetCyl === 0 ? null : dose.axis;
   return (
     variants.find((v) => {
       if (v.available <= 0) return false;
       if (Number(v.sphere) !== targetSph) return false;
       const vCyl = normCorrection(v.cylinder);
-      if (vCyl !== targetCyl) return false;
-      if (targetCyl !== 0) {
-        if ((v.axis ?? null) !== (targetAxis ?? null)) return false;
+      if (vCyl !== 0) {
+        if (vCyl !== targetCyl) return false;
+        if ((v.axis ?? null) !== (dose.axis ?? null)) return false;
       }
       const vAdd = normCorrection(v.addPower);
-      if (vAdd !== targetAdd) return false;
+      if (vAdd !== 0 && vAdd !== targetAdd) return false;
       return true;
     }) ?? null
   );
