@@ -17,7 +17,7 @@
     "db:import-jinys": "tsx scripts/import-jinys-stores.ts",
     "db:import-catalog": "tsx scripts/import-jinys-catalog.ts",
     "db:cleanup-seed": "tsx scripts/cleanup-seed-products.ts",
-    "vercel:build": "drizzle-kit migrate && tsx scripts/import-jinys-on-build.ts && next build"
+    "vercel:build": "bash scripts/vercel-build.sh"
   },
   "dependencies": {
     "@vercel/blob": "^2.4.0",
