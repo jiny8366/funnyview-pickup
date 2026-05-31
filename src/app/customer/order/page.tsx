@@ -278,6 +278,21 @@ export default function CustomerOrderPage() {
     [lenses, eligibilityByLens, hasDoseToOrder],
   );
 
+  /** 브랜드별 내 도수 가능 제품 수 — 브랜드 선택 시 카운트 노출. */
+  const eligibleCountByBrand = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const l of lenses) {
+      if (hasDoseToOrder) {
+        if (eligibilityByLens.get(l.lensId)?.eligible) {
+          map.set(l.brand, (map.get(l.brand) ?? 0) + 1);
+        }
+      } else {
+        map.set(l.brand, (map.get(l.brand) ?? 0) + 1);
+      }
+    }
+    return map;
+  }, [lenses, eligibilityByLens, hasDoseToOrder]);
+
   const hasFilter = Boolean(brand || typeKey !== 'all' || query.trim());
 
   const total = useMemo(() => {
@@ -487,7 +502,103 @@ export default function CustomerOrderPage() {
               </div>
             )}
 
-            {/* 검색바 */}
+            {/* 브랜드 선택 — 1차 필터 (도수 다음 단계) */}
+            {brands.length > 0 && (
+              <div className="space-y-1.5">
+                <div className="flex items-baseline justify-between">
+                  <label className="text-[11px] font-semibold text-gray-700">
+                    브랜드 선택
+                    {hasDoseToOrder && (
+                      <span className="ml-1 font-normal text-[10px] text-gray-400">
+                        (괄호 = 내 도수 가능 제품 수)
+                      </span>
+                    )}
+                  </label>
+                  {brand && (
+                    <button
+                      type="button"
+                      onClick={() => setBrand('')}
+                      className="text-[10px] text-gray-400 hover:text-gray-700"
+                    >
+                      ✕ 전체 브랜드
+                    </button>
+                  )}
+                </div>
+                <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
+                  <button
+                    type="button"
+                    onClick={() => setBrand('')}
+                    className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+                      brand === ''
+                        ? 'border-gray-900 bg-gray-900 text-white'
+                        : 'border-gray-200 bg-white text-gray-600 hover:border-gray-400'
+                    }`}
+                  >
+                    전체{' '}
+                    <span className={brand === '' ? 'text-white/70' : 'text-gray-400'}>
+                      ({eligibleCount})
+                    </span>
+                  </button>
+                  {brands.map((b) => {
+                    const count = eligibleCountByBrand.get(b) ?? 0;
+                    const dim = hasDoseToOrder && count === 0;
+                    return (
+                      <button
+                        key={b}
+                        type="button"
+                        onClick={() => setBrand(brand === b ? '' : b)}
+                        className={`shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-medium transition ${
+                          brand === b
+                            ? 'border-gray-900 bg-gray-900 text-white'
+                            : dim
+                              ? 'border-gray-200 bg-gray-50 text-gray-400'
+                              : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+                        }`}
+                      >
+                        {b}{' '}
+                        <span
+                          className={
+                            brand === b
+                              ? 'text-white/70'
+                              : dim
+                                ? 'text-gray-300'
+                                : 'text-brand-600'
+                          }
+                        >
+                          ({count})
+                        </span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
+            {/* 선택된 브랜드 — 도수 매칭 결과 헤더 */}
+            {brand && (
+              <div className="rounded-xl border border-brand-200 bg-brand-50 px-3 py-2.5">
+                <p className="text-xs text-gray-700">
+                  <strong className="text-brand-700">{brand}</strong>
+                  {hasDoseToOrder ? (
+                    <>
+                      {' '}브랜드 내 도수 가능 제품{' '}
+                      <strong className="text-brand-700">
+                        {eligibleCountByBrand.get(brand) ?? 0}종
+                      </strong>
+                    </>
+                  ) : (
+                    <>
+                      {' '}브랜드 전체 제품{' '}
+                      <strong className="text-brand-700">
+                        {eligibleCountByBrand.get(brand) ?? 0}종
+                      </strong>
+                    </>
+                  )}
+                </p>
+              </div>
+            )}
+
+            {/* 보조 필터 — 검색 / 타입 */}
             <div className="relative">
               <svg
                 width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"
@@ -500,7 +611,7 @@ export default function CustomerOrderPage() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="제품명, 브랜드로 검색"
+                placeholder="제품명으로 검색"
                 className="w-full rounded-xl border border-gray-200 bg-white py-2.5 pl-10 pr-9 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none"
               />
               {query && (
@@ -515,7 +626,6 @@ export default function CustomerOrderPage() {
               )}
             </div>
 
-            {/* 타입 필터 */}
             <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
               {TYPE_TABS.map((t) => (
                 <button
@@ -532,37 +642,6 @@ export default function CustomerOrderPage() {
                 </button>
               ))}
             </div>
-
-            {/* 브랜드 필터 */}
-            {brands.length > 1 && (
-              <div className="flex gap-1.5 overflow-x-auto scrollbar-hide -mx-1 px-1">
-                <button
-                  type="button"
-                  onClick={() => setBrand('')}
-                  className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium transition ${
-                    brand === ''
-                      ? 'border-gray-900 bg-gray-900 text-white'
-                      : 'border-gray-200 text-gray-500 hover:border-gray-400'
-                  }`}
-                >
-                  전체
-                </button>
-                {brands.map((b) => (
-                  <button
-                    key={b}
-                    type="button"
-                    onClick={() => setBrand(brand === b ? '' : b)}
-                    className={`shrink-0 rounded-full border px-3 py-1 text-[11px] font-medium transition ${
-                      brand === b
-                        ? 'border-gray-900 bg-gray-900 text-white'
-                        : 'border-gray-200 text-gray-500 hover:border-gray-400'
-                    }`}
-                  >
-                    {b}
-                  </button>
-                ))}
-              </div>
-            )}
 
             {/* 카운트 */}
             {lenses.length > 0 && (
