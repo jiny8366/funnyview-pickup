@@ -93,6 +93,39 @@ export function glassesToContactSphericalEquivalent(p: EyePower): EyePower {
   };
 }
 
+/**
+ * 굴절력 벡터 (Thibos power vector) — 구면/원주/축을 직교 3성분으로 분해.
+ *   M   = 구면등가(SE) = S + C/2
+ *   J0  = (C/2)·cos(2θ)   — 직난시(0°/90°) 성분
+ *   J45 = (C/2)·sin(2θ)   — 사난시(45°/135°) 성분
+ * 두 도수의 임상적 차이는 이 벡터의 유클리드 거리(디옵터)로 측정한다.
+ * 토릭 매칭에서 "가장 가까운 축 적용 + 차이를 구면등가/원주로 보정"이 이 거리 최소화로 자연히 이뤄진다.
+ */
+export interface PowerVector {
+  M: number;
+  J0: number;
+  J45: number;
+}
+
+export function powerVector(
+  sphere: number,
+  cylinder: number | null,
+  axisDeg: number | null,
+): PowerVector {
+  const c = cylinder ?? 0;
+  const rad2 = ((axisDeg ?? 0) * Math.PI) / 90; // 2θ (라디안)
+  return {
+    M: sphere + c / 2,
+    J0: (c / 2) * Math.cos(rad2),
+    J45: (c / 2) * Math.sin(rad2),
+  };
+}
+
+/** 두 도수(굴절력 벡터)의 차이(디옵터). 작을수록 임상적으로 가까운 도수. */
+export function dioptricDistance(a: PowerVector, b: PowerVector): number {
+  return Math.hypot(a.M - b.M, a.J0 - b.J0, a.J45 - b.J45);
+}
+
 /** 도수 숫자를 처방 표기 문자열로 (+0.00 / −3.75) — 화면 표시용(− 기호). */
 export function formatDiopter(v: number | null | undefined): string {
   if (v === null || v === undefined) return '—';
