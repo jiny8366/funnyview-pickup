@@ -6,6 +6,7 @@ import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { TERMS } from '@/lib/terms';
 
 interface FormState {
+  memberType: 'online' | 'offline';
   email: string;
   username: string;
   password: string;
@@ -32,6 +33,7 @@ interface FormState {
 }
 
 const EMPTY: FormState = {
+  memberType: 'online',
   email: '',
   username: '',
   password: '',
@@ -118,7 +120,7 @@ export default function RegisterPage() {
           postalCode: f.postalCode || null,
           addressLine1: f.addressLine1 || null,
           addressLine2: f.addressLine2 || null,
-          memberType: 'online', // 퍼니뷰 예약시스템 가입 = 온라인고객
+          memberType: f.memberType, // 개인 온라인회원(online) / 개인 오프라인회원(offline)
           referredByCode: f.referredByCode || null,
           refundBank:
             f.refundHolder || f.refundBank || f.refundAccount
@@ -167,10 +169,28 @@ export default function RegisterPage() {
         {/* 회원 구분 */}
         <Section>
           <Row label="회원구분" required>
-            <label className="inline-flex items-center gap-2 text-sm">
-              <input type="radio" checked readOnly className="h-4 w-4" />
-              개인회원
-            </label>
+            <div className="flex flex-wrap gap-4">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="memberType"
+                  checked={f.memberType === 'online'}
+                  onChange={() => update('memberType', 'online')}
+                  className="h-4 w-4"
+                />
+                개인 온라인회원
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="memberType"
+                  checked={f.memberType === 'offline'}
+                  onChange={() => update('memberType', 'offline')}
+                  className="h-4 w-4"
+                />
+                개인 오프라인회원
+              </label>
+            </div>
           </Row>
           <Row label="회원인증" required>
             <div className="space-y-2">
