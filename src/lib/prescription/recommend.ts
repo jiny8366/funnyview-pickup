@@ -45,7 +45,8 @@ const SILICONE_HINT = /토탈|오아시스|울트라|에어옵틱스|에어|프�
 const MOIST_HINT = /워터|모이스트|아쿠아|바이오트루|하이드라|수분|컴포트|데일리스/i;
 
 function round2(v: number): string {
-  return (v < 0 ? '-' : v > 0 ? '' : '') + v.toFixed(2);
+  // toFixed 가 음수 부호를 이미 포함 → 별도 부호 접두 금지(과거 "--3.00" 이중부호로 추천 0개 버그).
+  return v.toFixed(2);
 }
 
 /**
