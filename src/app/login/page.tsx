@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useState } from 'react';
+import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import { TestAccountsBox } from '@/components/auth/test-accounts-box';
@@ -129,19 +129,40 @@ function CustomerLoginInner() {
   );
 }
 
+const SOCIAL_ICON_ORDER = ['kakao', 'naver', 'google'];
+const SOCIAL_ICON_META: Record<string, { bg: string; node: React.ReactNode; label: string }> = {
+  kakao: { bg: 'bg-[#FEE500]', node: <span className="text-lg">💬</span>, label: '카카오' },
+  naver: { bg: 'bg-[#03C75A]', node: <span className="text-lg font-bold text-white">N</span>, label: '네이버' },
+  google: {
+    bg: 'bg-white border border-gray-300',
+    node: <span className="text-lg font-bold text-gray-700">G</span>,
+    label: '구글',
+  },
+};
+
 function SocialIconButtons({ returnTo }: { returnTo?: string }) {
   const query = returnTo ? `?returnTo=${encodeURIComponent(returnTo)}` : '';
+  const [providers, setProviders] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch('/api/auth/oauth/providers')
+      .then((r) => r.json())
+      .then((d) => setProviders(Array.isArray(d?.providers) ? d.providers : []))
+      .catch(() => setProviders([]));
+  }, []);
+
+  if (providers.length === 0) return null;
+
   return (
     <div className="mt-10 flex items-center justify-center gap-4">
-      <SocialIcon href={`/api/auth/oauth/naver/start${query}`} bg="bg-[#03C75A]" label="네이버">
-        <span className="text-lg font-bold text-white">N</span>
-      </SocialIcon>
-      <SocialIcon href={`/api/auth/oauth/kakao/start${query}`} bg="bg-[#FEE500]" label="카카오">
-        <span className="text-lg">💬</span>
-      </SocialIcon>
-      <SocialIcon href={`/api/auth/oauth/google/start${query}`} bg="bg-black" label="Apple/Google">
-        <span className="text-lg text-white"></span>
-      </SocialIcon>
+      {SOCIAL_ICON_ORDER.filter((p) => providers.includes(p)).map((p) => {
+        const m = SOCIAL_ICON_META[p];
+        return (
+          <SocialIcon key={p} href={`/api/auth/oauth/${p}/start${query}`} bg={m.bg} label={m.label}>
+            {m.node}
+          </SocialIcon>
+        );
+      })}
     </div>
   );
 }
