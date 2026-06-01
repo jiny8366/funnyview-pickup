@@ -1,11 +1,12 @@
 'use client';
 
 import { useRouter } from 'next/navigation';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { TERMS } from '@/lib/terms';
 
 interface FormState {
+  memberType: 'online' | 'offline';
   email: string;
   username: string;
   password: string;
@@ -32,6 +33,7 @@ interface FormState {
 }
 
 const EMPTY: FormState = {
+  memberType: 'online',
   email: '',
   username: '',
   password: '',
@@ -61,11 +63,27 @@ const LANDLINE_PREFIXES = ['02', '031', '032', '033', '041', '042', '043', '044'
 const MOBILE_PREFIXES = ['010', '011', '016', '017', '018', '019'];
 const BANKS = ['KB국민', '신한', '우리', '하나', 'NH농협', 'IBK기업', 'SC제일', '카카오뱅크', '토스뱅크', '케이뱅크', '새마을금고', '신협', '우체국', '한국씨티'];
 
+// 소셜 provider 표시 메타 (활성화는 서버 env 의 CLIENT_ID 유무로 결정 → /api/auth/oauth/providers)
+const SOCIAL_META: Record<string, { bg: string; textColor: string; prefix: string; label: string }> = {
+  kakao: { bg: 'bg-[#FEE500]', textColor: 'text-black', prefix: '💬', label: '카카오로 시작하기' },
+  naver: { bg: 'bg-[#03C75A]', textColor: 'text-white', prefix: 'N', label: '네이버로 시작하기' },
+  google: { bg: 'bg-white border border-gray-300', textColor: 'text-gray-700', prefix: 'G', label: '구글로 시작하기' },
+};
+const SOCIAL_ORDER = ['kakao', 'naver', 'google'];
+
 export default function RegisterPage() {
   const router = useRouter();
   const [f, setF] = useState<FormState>(EMPTY);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [socialProviders, setSocialProviders] = useState<string[]>([]);
+
+  useEffect(() => {
+    fetch('/api/auth/oauth/providers')
+      .then((r) => r.json())
+      .then((d) => setSocialProviders(Array.isArray(d?.providers) ? d.providers : []))
+      .catch(() => setSocialProviders([]));
+  }, []);
 
   function update<K extends keyof FormState>(k: K, v: FormState[K]) {
     setF((p) => ({ ...p, [k]: v }));
@@ -118,7 +136,7 @@ export default function RegisterPage() {
           postalCode: f.postalCode || null,
           addressLine1: f.addressLine1 || null,
           addressLine2: f.addressLine2 || null,
-          memberType: 'online', // 퍼니뷰 예약시스템 가입 = 온라인고객
+          memberType: f.memberType, // 개인 온라인회원(online) / 개인 오프라인회원(offline)
           referredByCode: f.referredByCode || null,
           refundBank:
             f.refundHolder || f.refundBank || f.refundAccount
@@ -156,21 +174,51 @@ export default function RegisterPage() {
 
       <h1 className="mt-6 text-center text-2xl font-bold text-gray-900">회원 가입</h1>
 
-      {/* 소셜 가로 3개 */}
-      <div className="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-3">
-        <SocialBar href="/api/auth/oauth/naver/start" bg="bg-[#03C75A]" textColor="text-white" prefix="N" label="네이버 로그인" />
-        <SocialBar href="/api/auth/oauth/kakao/start" bg="bg-[#FEE500]" textColor="text-black" prefix="💬" label="카카오로 시작하기" />
-        <SocialBar href="/api/auth/oauth/google/start" bg="bg-black" textColor="text-white" prefix="" label="Apple로 로그인" />
-      </div>
+      {/* 소셜 간편가입 — 서버에 자격증명이 설정된 provider 만 노출 */}
+      {socialProviders.length > 0 && (
+        <div className="mt-8 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {SOCIAL_ORDER.filter((p) => socialProviders.includes(p)).map((p) => {
+            const m = SOCIAL_META[p];
+            return (
+              <SocialBar
+                key={p}
+                href={`/api/auth/oauth/${p}/start`}
+                bg={m.bg}
+                textColor={m.textColor}
+                prefix={m.prefix}
+                label={m.label}
+              />
+            );
+          })}
+        </div>
+      )}
 
       <form onSubmit={onSubmit} className="mt-8 space-y-8">
         {/* 회원 구분 */}
         <Section>
           <Row label="회원구분" required>
-            <label className="inline-flex items-center gap-2 text-sm">
-              <input type="radio" checked readOnly className="h-4 w-4" />
-              개인회원
-            </label>
+            <div className="flex flex-wrap gap-4">
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="memberType"
+                  checked={f.memberType === 'online'}
+                  onChange={() => update('memberType', 'online')}
+                  className="h-4 w-4"
+                />
+                개인 온라인회원
+              </label>
+              <label className="inline-flex items-center gap-2 text-sm">
+                <input
+                  type="radio"
+                  name="memberType"
+                  checked={f.memberType === 'offline'}
+                  onChange={() => update('memberType', 'offline')}
+                  className="h-4 w-4"
+                />
+                개인 오프라인회원
+              </label>
+            </div>
           </Row>
           <Row label="회원인증" required>
             <div className="space-y-2">
