@@ -13,6 +13,7 @@ export async function GET(req: Request) {
   const url = new URL(req.url);
   const brand = url.searchParams.get('brand');
 
+  try {
   const rows = await db
     .select({
       lensId: lenses.id,
@@ -110,4 +111,8 @@ export async function GET(req: Request) {
   }
 
   return NextResponse.json({ lenses: Array.from(grouped.values()) });
+  } catch (err) {
+    console.error('[api/lenses] DB 조회 실패 — 빈 목록으로 degrade:', err);
+    return NextResponse.json({ lenses: [], degraded: true });
+  }
 }
