@@ -41,17 +41,14 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
   return (
     <Link href={linkHref} className="group block focus:outline-none">
       {/* ── Image block ── */}
-      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl bg-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-0.5">
+      <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-0.5">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageSrc}
           alt={product.name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.04]"
+          className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-[1.03]"
           loading="lazy"
         />
-
-        {/* Dark gradient for text */}
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
 
         {/* Heart */}
         <button
@@ -81,19 +78,17 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
 
         {/* Color swatch */}
         <ColorSwatch hex={product.colorHex} imageUrl={product.colorPreviewUrl} name={product.colorName} />
+      </div>
 
-        {/* Text on gradient */}
-        <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 text-white">
-          <p className="truncate text-[10px] font-medium opacity-60">{product.brand}</p>
-          <h3 className="line-clamp-2 text-sm font-semibold leading-tight">{product.name}</h3>
-          {product.colorName && (
-            <p className="mt-0.5 text-[10px] opacity-75">{product.colorName}</p>
-          )}
-        </div>
+      {/* ── Text below image ── */}
+      <div className="mt-2 px-0.5">
+        <p className="truncate text-[11px] font-medium text-gray-400">{product.brand}</p>
+        <h3 className="line-clamp-2 text-sm font-semibold leading-tight text-gray-900">{product.name}</h3>
+        {product.colorName && <p className="mt-0.5 text-[11px] text-gray-400">{product.colorName}</p>}
       </div>
 
       {/* ── Price strip ── */}
-      <div className="mt-2.5 flex items-baseline justify-between px-0.5">
+      <div className="mt-1 flex items-baseline justify-between px-0.5">
         <span className="text-xs text-gray-400">{cycle}</span>
         <div className="flex items-baseline gap-2">
           {product.variantCount && product.variantCount > 1 && (

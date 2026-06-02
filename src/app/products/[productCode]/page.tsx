@@ -221,12 +221,12 @@ export default function ProductDetailPage() {
         <div className="grid gap-6 md:grid-cols-2 md:gap-12">
           {/* ── Image ── */}
           <div className="md:sticky md:top-20 md:self-start">
-            <div className="relative aspect-square overflow-hidden rounded-3xl bg-gray-100">
+            <div className="relative aspect-square overflow-hidden rounded-3xl bg-white ring-1 ring-gray-100">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={imageSrc!}
                 alt={product.name}
-                className="h-full w-full object-cover"
+                className="h-full w-full object-contain p-4"
               />
               {product.isNew && (
                 <span className="absolute left-4 top-4 rounded-full bg-pink-500 px-3 py-1 text-xs font-bold text-white shadow">
