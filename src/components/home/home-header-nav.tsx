@@ -106,12 +106,12 @@ export function HomeHeaderNav() {
         onClick={() => setOpen(true)}
         aria-label="메뉴 열기"
         aria-expanded={open}
-        className="grid h-9 w-9 place-items-center rounded-lg text-gray-700 hover:bg-gray-100"
+        className="grid h-9 w-9 place-items-center rounded-lg text-gray-700 transition hover:bg-gray-100 active:scale-90"
       >
         <span className="space-y-[5px]">
-          <span className="block h-0.5 w-5 bg-current" />
-          <span className="block h-0.5 w-5 bg-current" />
-          <span className="block h-0.5 w-5 bg-current" />
+          <span className="block h-0.5 w-5 rounded-full bg-current" />
+          <span className="block h-0.5 w-5 rounded-full bg-current" />
+          <span className="block h-0.5 w-5 rounded-full bg-current" />
         </span>
       </button>
       <HomeMenuDrawer
