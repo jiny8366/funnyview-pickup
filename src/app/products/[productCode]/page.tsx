@@ -347,7 +347,7 @@ export default function ProductDetailPage() {
                     if (v.addPower) parts.push(`ADD ${v.addPower}`);
                     return (
                       <option key={v.variantId} value={v.variantId}>
-                        {parts.join(' · ')} {v.available <= 0 ? '· 품절' : `· 재고 ${v.available}`}
+                        {parts.join(' · ')}{v.available <= 0 ? ' · 품절' : ''}
                         {v.price !== product.price ? ` · ${v.price.toLocaleString()}원` : ''}
                       </option>
                     );
