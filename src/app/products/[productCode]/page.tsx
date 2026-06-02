@@ -99,9 +99,7 @@ export default function ProductDetailPage() {
       .then((j: { product: Product } | null) => {
         if (j?.product) {
           setProduct(j.product);
-          // 첫 variant 자동 선택
-          const first = j.product.variants.find((v) => v.available > 0) ?? j.product.variants[0];
-          if (first) setVariantId(first.variantId);
+          // 기본 도수 자동선택 안 함 — 사용자가 직접 SPH→CYL→AXIS 선택
         }
       })
       .catch(() => setNotFound(true))

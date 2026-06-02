@@ -14,8 +14,9 @@ interface Variant {
 const SELECT_CLASS =
   'w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 focus:border-gray-900 focus:outline-none disabled:bg-gray-50 disabled:text-gray-400';
 
-function uniqSortNum(vals: string[]): string[] {
-  return [...new Set(vals)].sort((a, b) => Number(a) - Number(b));
+function uniqSort(vals: string[], dir: 'asc' | 'desc' = 'asc'): string[] {
+  const sorted = [...new Set(vals)].sort((a, b) => Number(a) - Number(b));
+  return dir === 'desc' ? sorted.reverse() : sorted;
 }
 
 /**
@@ -54,20 +55,22 @@ export function VariantSelector({
     }
   }, [variantId, variants]);
 
-  const sphOptions = useMemo(() => uniqSortNum(variants.map((v) => v.sphere)), [variants]);
+  // 구면도수: 0.00 기준 위로 원시(+), 아래로 근시(−) → 내림차순(+ 위 / − 아래)
+  const sphOptions = useMemo(() => uniqSort(variants.map((v) => v.sphere), 'desc'), [variants]);
+  // 난시도수: 낮은 난시(−0.75)부터 → 내림차순(절댓값 작은 것 먼저)
   const cylOptions = useMemo(
-    () => uniqSortNum(variants.filter((v) => v.sphere === sph && v.cylinder != null).map((v) => v.cylinder as string)),
+    () => uniqSort(variants.filter((v) => v.sphere === sph && v.cylinder != null).map((v) => v.cylinder as string), 'desc'),
     [variants, sph],
   );
   const axisOptions = useMemo(
     () =>
-      uniqSortNum(
+      uniqSort(
         variants.filter((v) => v.sphere === sph && v.cylinder === cyl && v.axis != null).map((v) => String(v.axis)),
       ),
     [variants, sph, cyl],
   );
   const addOptions = useMemo(
-    () => uniqSortNum(variants.filter((v) => v.sphere === sph && v.addPower != null).map((v) => v.addPower as string)),
+    () => uniqSort(variants.filter((v) => v.sphere === sph && v.addPower != null).map((v) => v.addPower as string)),
     [variants, sph],
   );
 
@@ -87,99 +90,86 @@ export function VariantSelector({
 
   return (
     <div className="space-y-2.5">
-      <Field label="구면도수 (SPH)">
-        <select className={SELECT_CLASS} value={sph} onChange={(e) => {
+      <select
+        className={SELECT_CLASS}
+        value={sph}
+        onChange={(e) => {
           const s = e.target.value;
           setSph(s);
           setCyl('');
           setAxis('');
           setAdd('');
           resolve(s, '', '', '');
-        }}>
-          <option value="" disabled>
-            구면도수를 선택하세요
-          </option>
-          {sphOptions.map((o) => (
-            <option key={o} value={o}>{o}</option>
-          ))}
-        </select>
-      </Field>
+        }}
+      >
+        <option value="" disabled>
+          구면도수 (SPH)
+        </option>
+        {sphOptions.map((o) => (
+          <option key={o} value={o}>{o}</option>
+        ))}
+      </select>
 
       {isToric && (
         <>
-          <Field label="난시도수 (CYL)">
-            <select
-              className={SELECT_CLASS}
-              value={cyl}
-              disabled={!sph}
-              onChange={(e) => {
-                const c = e.target.value;
-                setCyl(c);
-                setAxis('');
-                resolve(sph, c, '', add);
-              }}
-            >
-              <option value="" disabled>
-                {sph ? '난시도수를 선택하세요' : '구면도수를 먼저 선택하세요'}
-              </option>
-              {cylOptions.map((o) => (
-                <option key={o} value={o}>{o}</option>
-              ))}
-            </select>
-          </Field>
+          <select
+            className={SELECT_CLASS}
+            value={cyl}
+            disabled={!sph}
+            onChange={(e) => {
+              const c = e.target.value;
+              setCyl(c);
+              setAxis('');
+              resolve(sph, c, '', add);
+            }}
+          >
+            <option value="" disabled>
+              난시도수 (CYL)
+            </option>
+            {cylOptions.map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </select>
 
-          <Field label="난시축 (AXIS)">
-            <select
-              className={SELECT_CLASS}
-              value={axis}
-              disabled={!cyl}
-              onChange={(e) => {
-                const a = e.target.value;
-                setAxis(a);
-                resolve(sph, cyl, a, add);
-              }}
-            >
-              <option value="" disabled>
-                {cyl ? '난시축을 선택하세요' : '난시도수를 먼저 선택하세요'}
-              </option>
-              {axisOptions.map((o) => (
-                <option key={o} value={o}>{o}</option>
-              ))}
-            </select>
-          </Field>
+          <select
+            className={SELECT_CLASS}
+            value={axis}
+            disabled={!cyl}
+            onChange={(e) => {
+              const a = e.target.value;
+              setAxis(a);
+              resolve(sph, cyl, a, add);
+            }}
+          >
+            <option value="" disabled>
+              난시축 (AXIS)
+            </option>
+            {axisOptions.map((o) => (
+              <option key={o} value={o}>{o}</option>
+            ))}
+          </select>
         </>
       )}
 
       {isMulti && (
-        <Field label="가입도 (ADD)">
-          <select
-            className={SELECT_CLASS}
-            value={add}
-            disabled={!sph}
-            onChange={(e) => {
-              const d = e.target.value;
-              setAdd(d);
-              resolve(sph, cyl, axis, d);
-            }}
-          >
-            <option value="" disabled>
-              {sph ? '가입도를 선택하세요' : '구면도수를 먼저 선택하세요'}
-            </option>
-            {addOptions.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
-          </select>
-        </Field>
+        <select
+          className={SELECT_CLASS}
+          value={add}
+          disabled={!sph}
+          onChange={(e) => {
+            const d = e.target.value;
+            setAdd(d);
+            resolve(sph, cyl, axis, d);
+          }}
+        >
+          <option value="" disabled>
+            가입도 (ADD)
+          </option>
+          {addOptions.map((o) => (
+            <option key={o} value={o}>{o}</option>
+          ))}
+        </select>
       )}
-    </div>
-  );
-}
-
-function Field({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div>
-      <p className="mb-1 text-[11px] font-semibold text-gray-500">{label}</p>
-      {children}
     </div>
   );
 }
