@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { MyPowerSelector } from '@/components/prescription/my-power-selector';
+import { VariantSelector } from '@/components/product/variant-selector';
 import { ShopHeaderNav } from '@/components/shop/shop-header-nav';
 import { addItem } from '@/lib/cart/store';
 
@@ -331,28 +332,14 @@ export default function ProductDetailPage() {
                   onSelect={setVariantId}
                 />
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
-                  도수 선택 (SPH{product.lensType === 'toric' ? ' / CYL / AXIS' : ''}
-                  {product.lensType === 'multifocal' ? ' / ADD' : ''})
+                  도수 선택
                 </p>
-                <select
-                  value={variantId ?? ''}
-                  onChange={(e) => setVariantId(e.target.value || null)}
-                  className="w-full appearance-none rounded-xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-900 focus:border-gray-900 focus:outline-none"
-                >
-                  <option value="" disabled>도수를 선택하세요</option>
-                  {product.variants.map((v) => {
-                    const parts = [`SPH ${v.sphere}`];
-                    if (v.cylinder) parts.push(`CYL ${v.cylinder}`);
-                    if (v.axis !== null) parts.push(`AXIS ${v.axis}`);
-                    if (v.addPower) parts.push(`ADD ${v.addPower}`);
-                    return (
-                      <option key={v.variantId} value={v.variantId}>
-                        {parts.join(' · ')}{v.available <= 0 ? ' · 품절' : ''}
-                        {v.price !== product.price ? ` · ${v.price.toLocaleString()}원` : ''}
-                      </option>
-                    );
-                  })}
-                </select>
+                <VariantSelector
+                  variants={product.variants}
+                  lensType={product.lensType}
+                  variantId={variantId}
+                  onChange={setVariantId}
+                />
               </div>
             )}
 
