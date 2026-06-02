@@ -2,7 +2,23 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
+import {
+  Aperture,
+  Eye,
+  Layers,
+  LogIn,
+  MapPin,
+  Package,
+  Palette,
+  ShoppingBag,
+  Sun,
+  UserPlus,
+  UserRound,
+} from 'lucide-react';
 import { HomeMenuDrawer, type DrawerSection } from '@/components/home/home-menu-drawer';
+
+// Apple SF Symbols 느낌 — 얇은 스트로크 라인 아이콘
+const ICON = { size: 18, strokeWidth: 1.75 } as const;
 
 interface MeUser {
   id: string;
@@ -13,28 +29,28 @@ interface MeUser {
 
 // 카테고리 — /products?type= (products 페이지가 type 파라미터를 읽어 필터)
 const CATEGORY_ITEMS = [
-  { href: '/products', label: '전체 렌즈' },
-  { href: '/products?type=1day', label: '원데이' },
-  { href: '/products?type=toric', label: '난시용' },
-  { href: '/products?type=multifocal', label: '다초점' },
-  { href: '/products?type=color', label: '컬러렌즈' },
+  { href: '/products', label: '전체 렌즈', icon: <Eye {...ICON} /> },
+  { href: '/products?type=1day', label: '원데이', icon: <Sun {...ICON} /> },
+  { href: '/products?type=toric', label: '난시용', icon: <Aperture {...ICON} /> },
+  { href: '/products?type=multifocal', label: '다초점', icon: <Layers {...ICON} /> },
+  { href: '/products?type=color', label: '컬러렌즈', icon: <Palette {...ICON} /> },
 ];
 
-// 브랜드 — /products?brand= (DB brand 값과 일치하는 한글 라벨)
+// 브랜드 — /products?brand= (DB brand 값 한글 라벨 + 영문 보조)
 const BRAND_ITEMS = [
-  { href: '/products?brand=아큐브', label: '아큐브' },
-  { href: '/products?brand=바슈롬', label: '바슈롬' },
-  { href: '/products?brand=알콘', label: '알콘' },
-  { href: '/products?brand=클라렌', label: '클라렌' },
-  { href: '/products?brand=쿠퍼비전', label: '쿠퍼비전' },
-  { href: '/products?brand=클라렌O2O2', label: '클라렌 O2O2' },
+  { href: '/products?brand=아큐브', label: '아큐브', sub: 'ACUVUE' },
+  { href: '/products?brand=바슈롬', label: '바슈롬', sub: 'BAUSCH+LOMB' },
+  { href: '/products?brand=알콘', label: '알콘', sub: 'ALCON' },
+  { href: '/products?brand=클라렌', label: '클라렌', sub: 'CLALEN' },
+  { href: '/products?brand=쿠퍼비전', label: '쿠퍼비전', sub: 'COOPERVISION' },
+  { href: '/products?brand=클라렌O2O2', label: '클라렌 O2O2', sub: 'O2O2' },
 ];
 
 function buildSections(user: MeUser | null): DrawerSection[] {
   const base: DrawerSection[] = [
     { title: '카테고리', items: CATEGORY_ITEMS },
     { title: '브랜드', items: BRAND_ITEMS },
-    { title: '픽업', items: [{ href: '/stores', label: '매장 찾기' }] },
+    { title: '픽업', items: [{ href: '/stores', label: '매장 찾기', icon: <MapPin {...ICON} /> }] },
   ];
 
   if (!user) {
@@ -43,8 +59,8 @@ function buildSections(user: MeUser | null): DrawerSection[] {
       {
         title: '계정',
         items: [
-          { href: '/login', label: '로그인' },
-          { href: '/register', label: '회원가입' },
+          { href: '/login', label: '로그인', icon: <LogIn {...ICON} /> },
+          { href: '/register', label: '회원가입', icon: <UserPlus {...ICON} /> },
         ],
       },
     ];
@@ -55,9 +71,9 @@ function buildSections(user: MeUser | null): DrawerSection[] {
     {
       title: '내 계정',
       items: [
-        { href: '/customer', label: '마이페이지' },
-        { href: '/customer/order', label: '주문하기' },
-        { href: '/customer/orders', label: '내 주문' },
+        { href: '/customer', label: '마이페이지', icon: <UserRound {...ICON} /> },
+        { href: '/customer/order', label: '주문하기', icon: <ShoppingBag {...ICON} /> },
+        { href: '/customer/orders', label: '내 주문', icon: <Package {...ICON} /> },
       ],
     },
   ];
