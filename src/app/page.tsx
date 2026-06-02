@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import { HomeHeaderNav } from '@/components/home/home-header-nav';
 import { ProductCarousel } from '@/components/home/product-carousel';
+import { ReviewSection } from '@/components/home/review-section';
 import { SectionRenderer } from '@/components/home/section-renderer';
 import { TrendingKeywords } from '@/components/home/trending-keywords';
 import { StaffPortalSwitcher } from '@/components/layout/staff-portal-switcher';
@@ -92,6 +93,7 @@ export default async function Home() {
         <Categories />
         <TrendingKeywords />
         <PickupProcess />
+        <ReviewSection />
         <BottomCta />
       </div>
 
