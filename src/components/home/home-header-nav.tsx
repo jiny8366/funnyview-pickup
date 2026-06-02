@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
-import { HeaderMenu, type MenuSection } from '@/components/layout/header-menu';
+import { HomeMenuDrawer, type DrawerSection } from '@/components/home/home-menu-drawer';
 
 interface MeUser {
   id: string;
@@ -30,8 +30,8 @@ const BRAND_ITEMS = [
   { href: '/products?brand=클라렌O2O2', label: '클라렌 O2O2' },
 ];
 
-function buildSections(user: MeUser | null): MenuSection[] {
-  const base: MenuSection[] = [
+function buildSections(user: MeUser | null): DrawerSection[] {
+  const base: DrawerSection[] = [
     { title: '카테고리', items: CATEGORY_ITEMS },
     { title: '브랜드', items: BRAND_ITEMS },
     { title: '픽업', items: [{ href: '/stores', label: '매장 찾기' }] },
@@ -66,6 +66,7 @@ function buildSections(user: MeUser | null): MenuSection[] {
 export function HomeHeaderNav() {
   const [user, setUser] = useState<MeUser | null>(null);
   const [loaded, setLoaded] = useState(false);
+  const [open, setOpen] = useState(false);
 
   useEffect(() => {
     fetch('/api/auth/me')
@@ -99,14 +100,27 @@ export function HomeHeaderNav() {
   );
 
   return (
-    <HeaderMenu
-      sections={sections}
-      user={loaded && user ? { label: userLabel ?? '', sub: user.username ?? undefined } : undefined}
-      showNotifications={false}
-      showPushToggle={false}
-      showLogout={Boolean(user)}
-      loggedOutFooter={loggedOutFooter}
-      accent="brand"
-    />
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        aria-label="메뉴 열기"
+        aria-expanded={open}
+        className="grid h-9 w-9 place-items-center rounded-lg text-gray-700 transition hover:bg-gray-100 active:scale-90"
+      >
+        <span className="space-y-[5px]">
+          <span className="block h-0.5 w-5 rounded-full bg-current" />
+          <span className="block h-0.5 w-5 rounded-full bg-current" />
+          <span className="block h-0.5 w-5 rounded-full bg-current" />
+        </span>
+      </button>
+      <HomeMenuDrawer
+        open={open}
+        onClose={() => setOpen(false)}
+        sections={sections}
+        user={loaded && user ? { label: userLabel ?? '', sub: user.username ?? undefined } : undefined}
+        loggedOutFooter={!user ? loggedOutFooter : undefined}
+      />
+    </>
   );
 }

@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { HomeHeaderNav } from '@/components/home/home-header-nav';
+import { ProductCarousel } from '@/components/home/product-carousel';
+import { ReviewSection } from '@/components/home/review-section';
 import { SectionRenderer } from '@/components/home/section-renderer';
+import { TrendingKeywords } from '@/components/home/trending-keywords';
 import { StaffPortalSwitcher } from '@/components/layout/staff-portal-switcher';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { loadActiveSections } from '@/lib/home/load-sections';
@@ -86,8 +89,11 @@ export default async function Home() {
       <div className="mx-auto max-w-5xl space-y-10 px-4 py-6 md:space-y-16 md:px-6 md:py-10">
         <Hero />
         <BrandShowcase />
+        <ProductCarousel title="베스트셀러" subtitle="지금 많이 찾는 렌즈" />
         <Categories />
+        <TrendingKeywords />
         <PickupProcess />
+        <ReviewSection />
         <BottomCta />
       </div>
 
