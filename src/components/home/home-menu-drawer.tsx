@@ -1,7 +1,8 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface DrawerSection {
   title?: string;
@@ -29,6 +30,11 @@ export function HomeMenuDrawer({
   user?: { label: string; sub?: string };
   loggedOutFooter?: React.ReactNode;
 }) {
+  // 포털 — 헤더의 backdrop-blur(containing block)를 벗어나 body 에 렌더해야
+  // fixed inset-0 가 뷰포트 전체로 잡혀 드로어가 잘리지 않는다.
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   useEffect(() => {
     if (!open) return;
     const onKey = (e: KeyboardEvent) => {
@@ -46,7 +52,9 @@ export function HomeMenuDrawer({
   // 항목별 스태거 지연 계산용 누적 인덱스
   let itemIndex = 0;
 
-  return (
+  if (!mounted) return null;
+
+  return createPortal(
     <div
       className={`fixed inset-0 z-[60] ${open ? '' : 'pointer-events-none'}`}
       aria-hidden={!open}
@@ -133,6 +141,7 @@ export function HomeMenuDrawer({
           <div className="border-t border-gray-100 px-6 py-4">{loggedOutFooter}</div>
         )}
       </aside>
-    </div>
+    </div>,
+    document.body,
   );
 }
