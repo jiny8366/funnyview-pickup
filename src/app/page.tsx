@@ -147,8 +147,7 @@ const BRANDS: { ko: string; en: string; accent: string; tagline: string }[] = [
   { ko: '알콘', en: 'ALCON', accent: '#0072ce', tagline: '오래가는 촉촉함의 프리미엄' },
   { ko: '쿠퍼비전', en: 'COOPERVISION', accent: '#0a9aa6', tagline: '편안한 실리콘 하이드로겔' },
   { ko: '바슈롬', en: 'BAUSCH + LOMB', accent: '#d52b1e', tagline: '선명한 컬러, 깊은 발색' },
-  { ko: '클라렌', en: 'CLALEN', accent: '#6b4ea0', tagline: '자연스러운 데일리 컬러' },
-  { ko: '클라렌 O2O2', en: 'O2O2', accent: '#1389c4', tagline: '산소 가득, 건강한 착용' },
+  { ko: '클라렌', en: 'CLALEN', accent: '#6b4ea0', tagline: '자연스러운 데일리 컬러 · O2O2' },
 ];
 
 function BrandShowcase() {

@@ -43,7 +43,6 @@ const BRAND_ITEMS = [
   { href: '/products?brand=알콘', label: '알콘', sub: 'ALCON' },
   { href: '/products?brand=클라렌', label: '클라렌', sub: 'CLALEN' },
   { href: '/products?brand=쿠퍼비전', label: '쿠퍼비전', sub: 'COOPERVISION' },
-  { href: '/products?brand=클라렌O2O2', label: '클라렌 O2O2', sub: 'O2O2' },
 ];
 
 function buildSections(user: MeUser | null): DrawerSection[] {
