@@ -108,28 +108,47 @@ export default async function Home() {
 /* ───────────────────────── Hero ───────────────────────── */
 function Hero() {
   return (
-    <section className="relative overflow-hidden rounded-3xl bg-gray-900 px-7 py-14 text-white md:px-12 md:py-24">
+    <section className="relative overflow-hidden rounded-[2rem] bg-gradient-to-br from-brand-600 via-brand-700 to-indigo-900 px-7 py-16 text-white md:px-14 md:py-28">
+      {/* 컬러 메시 블롭 */}
+      <div className="pointer-events-none absolute -left-24 -top-24 h-80 w-80 rounded-full bg-cyan-400/30 blur-3xl" />
+      <div className="pointer-events-none absolute right-0 top-1/4 h-72 w-72 rounded-full bg-fuchsia-500/25 blur-3xl" />
+      <div className="pointer-events-none absolute -bottom-24 left-1/3 h-80 w-80 rounded-full bg-sky-300/20 blur-3xl" />
+
+      {/* 글래스 렌즈 비주얼 (데스크탑) */}
+      <div className="pointer-events-none absolute -right-10 top-1/2 hidden h-[26rem] w-[26rem] -translate-y-1/2 md:block">
+        <div className="absolute inset-0 rounded-full border border-white/15" />
+        <div className="absolute inset-10 rounded-full border border-white/15" />
+        <div className="absolute inset-20 rounded-full border border-white/10" />
+        <div className="absolute inset-28 rounded-full bg-white/10 shadow-2xl backdrop-blur-2xl" />
+      </div>
+
       <div className="relative z-10 max-w-xl">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">
-          Premium Contact Lens · Pickup Service
-        </p>
-        <h1 className="mt-3 text-[2.1rem] font-black leading-[1.12] tracking-tight md:text-6xl">
-          정품 렌즈를<br />가까운 매장에서 픽업
+        <span className="inline-flex items-center gap-2 rounded-full bg-white/15 px-3.5 py-1.5 text-[11px] font-semibold tracking-wide backdrop-blur">
+          <span className="h-1.5 w-1.5 rounded-full bg-cyan-300" />
+          가까운 안경원 픽업 서비스
+        </span>
+        <h1 className="mt-5 text-[2.5rem] font-black leading-[1.05] tracking-tight md:text-7xl">
+          나의 일상 렌즈,
+          <br />
+          <span className="bg-gradient-to-r from-white via-cyan-100 to-sky-200 bg-clip-text text-transparent">
+            안경원에서 픽업
+          </span>
         </h1>
-        <p className="mt-4 text-sm leading-relaxed text-white/70 md:text-base">
-          아큐브 · 알콘 · 쿠퍼비전 · 바슈롬 등 국내외 제조사 정품을<br className="hidden md:block" />
-          온라인으로 주문하고, 가까운 안경원에서 안경사 상담 후 받으세요.
+        <p className="mt-5 text-sm leading-relaxed text-white/80 md:text-lg">
+          아큐브 · 알콘 · 쿠퍼비전 · 바슈롬 정품을 온라인으로 주문하고,
+          <br className="hidden md:block" />
+          가까운 안경원에서 안경사 상담 후 받으세요.
         </p>
         <div className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/products"
-            className="rounded-full bg-white px-6 py-3 text-sm font-semibold text-gray-900 transition hover:bg-gray-100"
+            className="rounded-full bg-white px-6 py-3.5 text-sm font-bold text-brand-700 shadow-lg shadow-black/10 transition hover:scale-[1.03] hover:bg-gray-50"
           >
             렌즈 둘러보기 →
           </Link>
           <Link
             href="/stores"
-            className="rounded-full border border-white/30 px-6 py-3 text-sm font-semibold text-white transition hover:bg-white/10"
+            className="rounded-full border border-white/40 px-6 py-3.5 text-sm font-semibold text-white backdrop-blur transition hover:bg-white/10"
           >
             가까운 매장 찾기
           </Link>
@@ -151,8 +170,6 @@ function Hero() {
           ))}
         </div>
       </div>
-      <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-brand-600/30 blur-2xl" />
-      <div className="pointer-events-none absolute -bottom-24 right-16 h-96 w-96 rounded-full bg-brand-500/10 blur-3xl" />
     </section>
   );
 }
