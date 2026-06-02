@@ -82,6 +82,12 @@ const args = process.argv.slice(2);
 const DRY_RUN = args.includes('--dry-run');
 const brandArg = args.find((a) => !a.startsWith('--'));
 
+// 브랜드 별칭 — 동일 브랜드로 취급할 표기 통합 (재import 해도 병합 유지)
+const BRAND_ALIAS: Record<string, string> = {
+  '클라렌O2O2': '클라렌',
+};
+const normalizeBrand = (b: string) => BRAND_ALIAS[b] ?? b;
+
 async function ensureBrand(b: FixtureBrand): Promise<string> {
   if (DRY_RUN) return '__dry-run__';
   const found = await db
@@ -128,7 +134,7 @@ async function upsertLens(l: FixtureLens): Promise<string> {
 
   const values = {
     productCode: l.productCode,
-    brand: l.brand,
+    brand: normalizeBrand(l.brand),
     name: l.displayName,
     lensType: l.lensType,
     replacementCycle: l.replacementCycle,
