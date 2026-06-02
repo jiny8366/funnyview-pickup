@@ -183,6 +183,13 @@
       "when": 1779900900000,
       "tag": "0025_seed_lens_prices",
       "breakpoints": true
+    },
+    {
+      "idx": 26,
+      "version": "7",
+      "when": 1780421219389,
+      "tag": "0026_product_image_paths",
+      "breakpoints": true
     }
   ]
 }
