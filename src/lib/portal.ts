@@ -75,6 +75,8 @@ const PORTAL_ALLOWED: Record<Portal, string[]> = {
     '/my',
     '/stores', // 매장찾기 공개 페이지
     '/products', // 쇼핑 페이지 (필터/검색/추천)
+    '/terms', // 이용약관 (공개)
+    '/privacy', // 개인정보처리방침 (공개)
     '/cart', // 장바구니
     '/api/auth',
     '/api/orders',

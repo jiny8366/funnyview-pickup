@@ -98,9 +98,7 @@ export default async function Home() {
         <BottomCta />
       </div>
 
-      <footer className="border-t border-gray-200 py-8 text-center text-xs text-gray-400">
-        Funnyview Pickup · 콘택트렌즈 픽업서비스
-      </footer>
+      <Footer />
     </main>
   );
 }
@@ -286,6 +284,92 @@ function BottomCta() {
         렌즈 쇼핑 시작 →
       </Link>
     </section>
+  );
+}
+
+/* ─────────────────────── 푸터 (사업자정보) ─────────────────────── */
+// ⚠️ 법정 표기 정보 — 실제 값으로 교체 필요(전자상거래법 의무 표기). JINY 제공 시 갱신.
+const COMPANY_INFO = {
+  name: '(주)퍼니뷰',
+  ceo: '준비 중',
+  bizNo: '준비 중', // 사업자등록번호
+  mailOrder: '준비 중', // 통신판매업 신고번호
+  privacyOfficer: '준비 중', // 개인정보보호책임자
+  address: '준비 중',
+  tel: '준비 중',
+  email: 'help@funnyview.co.kr',
+  hours: '평일 10:00–17:00 · 점심 12:00–13:00 · 주말·공휴일 휴무',
+};
+
+function Footer() {
+  const cols = [
+    {
+      title: '쇼핑',
+      links: [
+        { label: '렌즈 둘러보기', href: '/products' },
+        { label: '매장 찾기', href: '/stores' },
+        { label: '주문하기', href: '/customer/order' },
+      ],
+    },
+    {
+      title: '고객',
+      links: [
+        { label: '로그인', href: '/login' },
+        { label: '회원가입', href: '/register' },
+        { label: '내 주문', href: '/customer/orders' },
+      ],
+    },
+    {
+      title: '약관',
+      links: [
+        { label: '이용약관', href: '/terms' },
+        { label: '개인정보처리방침', href: '/privacy' },
+      ],
+    },
+  ];
+
+  return (
+    <footer className="mt-12 border-t border-gray-200 bg-gray-50">
+      <div className="mx-auto max-w-5xl px-4 py-10 md:px-6">
+        <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
+          <div>
+            <p className="text-base font-black tracking-tight text-gray-900">Funnyview Pickup</p>
+            <p className="mt-2 max-w-xs text-xs leading-relaxed text-gray-500">
+              정품 콘택트렌즈를 온라인으로 주문하고, 가까운 안경원에서 안경사 상담 후 받는 픽업 서비스.
+            </p>
+          </div>
+          <div className="grid grid-cols-3 gap-8 text-xs md:gap-12">
+            {cols.map((col) => (
+              <div key={col.title}>
+                <p className="font-bold text-gray-900">{col.title}</p>
+                <ul className="mt-3 space-y-2">
+                  {col.links.map((l) => (
+                    <li key={l.href}>
+                      <Link href={l.href} className="text-gray-500 transition hover:text-brand-600">
+                        {l.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="mt-8 border-t border-gray-200 pt-6 text-[11px] leading-relaxed text-gray-400">
+          <p className="font-semibold text-gray-600">{COMPANY_INFO.name}</p>
+          <p className="mt-1.5">
+            대표 {COMPANY_INFO.ceo} · 사업자등록번호 {COMPANY_INFO.bizNo} · 통신판매업신고 {COMPANY_INFO.mailOrder}
+          </p>
+          <p className="mt-0.5">주소 {COMPANY_INFO.address}</p>
+          <p className="mt-0.5">
+            고객센터 {COMPANY_INFO.tel} · {COMPANY_INFO.email} · {COMPANY_INFO.hours}
+          </p>
+          <p className="mt-0.5">개인정보보호책임자 {COMPANY_INFO.privacyOfficer}</p>
+          <p className="mt-4 text-gray-400">© 2026 {COMPANY_INFO.name}. All rights reserved.</p>
+        </div>
+      </div>
+    </footer>
   );
 }
 
