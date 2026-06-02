@@ -652,10 +652,10 @@ function ProductTable({
           {rows.map((it) => (
             <tr key={it.id} className="border-b border-gray-100 last:border-0 hover:bg-gray-50">
               <td className="px-2 py-2">
-                <div className="h-10 w-10 overflow-hidden rounded-lg bg-gray-100">
+                <div className="h-10 w-10 overflow-hidden rounded-lg bg-white ring-1 ring-gray-100">
                   {it.imageUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
-                    <img src={it.imageUrl} alt="" className="h-full w-full object-cover" />
+                    <img src={it.imageUrl.startsWith('/') ? `https://funnyview-pickup.vercel.app${it.imageUrl}` : it.imageUrl} alt="" className="h-full w-full object-contain" />
                   ) : (
                     <div className="grid h-full place-items-center text-gray-300">
                       <IconBox size={16} />
@@ -741,10 +741,10 @@ function ProductCard({ item, brandEn }: { item: LensRow; brandEn: string }) {
       href={`/admin/products/${item.id}`}
       className="group flex flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white transition hover:border-brand-200 hover:shadow-md"
     >
-      <div className="relative aspect-[4/3] w-full bg-gray-50">
+      <div className="relative aspect-[4/3] w-full bg-white">
         {item.imageUrl ? (
           // eslint-disable-next-line @next/next/no-img-element
-          <img src={item.imageUrl} alt={item.name} className="h-full w-full object-cover" />
+          <img src={item.imageUrl.startsWith('/') ? `https://funnyview-pickup.vercel.app${item.imageUrl}` : item.imageUrl} alt={item.name} className="h-full w-full object-contain p-1" />
         ) : (
           <div className="grid h-full place-items-center text-gray-300">
             <IconBox size={36} />
