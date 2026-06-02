@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
+import { MyPowerSelector } from '@/components/prescription/my-power-selector';
 import { ShopHeaderNav } from '@/components/shop/shop-header-nav';
 import { addItem } from '@/lib/cart/store';
 
@@ -324,6 +325,11 @@ export default function ProductDetailPage() {
             {/* Variant */}
             {hasVariants && (
               <div className="mt-5">
+                <MyPowerSelector
+                  variants={product.variants}
+                  eyeSide={eyeSide}
+                  onSelect={setVariantId}
+                />
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500">
                   도수 선택 (SPH{product.lensType === 'toric' ? ' / CYL / AXIS' : ''}
                   {product.lensType === 'multifocal' ? ' / ADD' : ''})
