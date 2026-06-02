@@ -24,6 +24,7 @@ export async function GET() {
         replacementCycle: lenses.replacementCycle,
         piecesPerBox: lenses.piecesPerBox,
         price: lenses.price,
+        recommendedRetailPrice: lenses.recommendedRetailPrice,
         imageUrl: lenses.imageUrl,
         colorName: lenses.colorName,
         colorHex: lenses.colorHex,

@@ -15,6 +15,7 @@ export interface ProductCardData {
   replacementCycle: string;
   diameter?: string | number | null;
   price: number;
+  recommendedRetailPrice?: number | null;
   isNew?: boolean;
   variantCount?: number;
 }
@@ -33,6 +34,9 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
   const cycle = CYCLE_LABEL[product.replacementCycle] ?? product.replacementCycle;
   const linkHref = href ?? `/products/${product.productCode}`;
   const imageSrc = product.imageUrl ?? `/api/lens-image/${product.productCode}`;
+  const rrp = product.recommendedRetailPrice ?? 0;
+  const onSale = rrp > product.price && product.price > 0;
+  const salePct = onSale ? Math.round(((rrp - product.price) / rrp) * 100) : 0;
 
   return (
     <Link href={linkHref} className="group block focus:outline-none">
@@ -97,11 +101,17 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
               +{product.variantCount}컬러
             </span>
           )}
-          <span className="text-sm font-bold text-gray-900">
-            {product.price === 0
-              ? <span className="text-xs font-normal text-gray-400">가격문의</span>
-              : `${product.price.toLocaleString()}원`}
-          </span>
+          {product.price === 0 ? (
+            <span className="text-xs font-normal text-gray-400">가격문의</span>
+          ) : (
+            <span className="flex items-baseline gap-1.5">
+              {onSale && <span className="text-sm font-extrabold text-pink-500">{salePct}%</span>}
+              <span className="text-sm font-bold text-gray-900">{product.price.toLocaleString()}원</span>
+              {onSale && (
+                <span className="text-[11px] font-normal text-gray-400 line-through">{rrp.toLocaleString()}원</span>
+              )}
+            </span>
+          )}
         </div>
       </div>
     </Link>

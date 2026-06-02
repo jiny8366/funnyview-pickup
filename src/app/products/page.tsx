@@ -14,6 +14,7 @@ interface LensItem {
   replacementCycle: string;
   piecesPerBox: number;
   price: number;
+  recommendedRetailPrice: number | null;
   imageUrl: string | null;
   colorName: string | null;
   colorHex: string | null;
@@ -485,7 +486,23 @@ function FeaturedHero({ lens }: { lens: LensItem }) {
           <div className="mt-2 flex items-baseline justify-between border-t border-white/15 pt-4">
             <span className="text-xs text-white/50">픽업 매장 가격</span>
             <span className="text-2xl font-bold">
-              {lens.price === 0 ? <span className="text-base text-white/60">가격문의</span> : `${lens.price.toLocaleString()}원`}
+              {lens.price === 0 ? (
+                <span className="text-base text-white/60">가격문의</span>
+              ) : (
+                <span className="inline-flex items-baseline gap-2">
+                  {lens.recommendedRetailPrice != null && lens.recommendedRetailPrice > lens.price && (
+                    <span className="text-pink-400">
+                      {Math.round(((lens.recommendedRetailPrice - lens.price) / lens.recommendedRetailPrice) * 100)}%
+                    </span>
+                  )}
+                  <span>{lens.price.toLocaleString()}원</span>
+                  {lens.recommendedRetailPrice != null && lens.recommendedRetailPrice > lens.price && (
+                    <span className="text-sm font-normal text-white/40 line-through">
+                      {lens.recommendedRetailPrice.toLocaleString()}원
+                    </span>
+                  )}
+                </span>
+              )}
             </span>
           </div>
           <span className="mt-2 inline-flex items-center gap-1 text-sm font-semibold text-white group-hover:gap-2 transition-all">
@@ -575,7 +592,23 @@ function ShopCard({ lens, compact }: { lens: LensItem; compact?: boolean }) {
       <div className="flex items-center justify-between px-3 py-2.5">
         <span className="text-[11px] text-gray-400">{cycleLabel}</span>
         <span className={`font-bold text-gray-900 ${compact ? 'text-xs' : 'text-sm'}`}>
-          {lens.price === 0 ? <span className="text-gray-400 font-normal">가격문의</span> : `${lens.price.toLocaleString()}원`}
+          {lens.price === 0 ? (
+            <span className="text-gray-400 font-normal">가격문의</span>
+          ) : (
+            <span className="inline-flex items-baseline gap-1.5">
+              {lens.recommendedRetailPrice != null && lens.recommendedRetailPrice > lens.price && (
+                <span className="font-extrabold text-pink-500">
+                  {Math.round(((lens.recommendedRetailPrice - lens.price) / lens.recommendedRetailPrice) * 100)}%
+                </span>
+              )}
+              <span>{lens.price.toLocaleString()}원</span>
+              {lens.recommendedRetailPrice != null && lens.recommendedRetailPrice > lens.price && (
+                <span className="text-[10px] font-normal text-gray-400 line-through">
+                  {lens.recommendedRetailPrice.toLocaleString()}원
+                </span>
+              )}
+            </span>
+          )}
         </span>
       </div>
     </Link>
