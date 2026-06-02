@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { HomeHeaderNav } from '@/components/home/home-header-nav';
 import { SectionRenderer } from '@/components/home/section-renderer';
 import { StaffPortalSwitcher } from '@/components/layout/staff-portal-switcher';
 import { getCurrentUser } from '@/lib/auth/current-user';
@@ -66,8 +67,9 @@ export default async function Home() {
                 </Link>
               </>
             )}
-            <span className="ml-1 h-6 w-px bg-gray-200" aria-hidden />
             <StaffPortalSwitcher />
+            <span className="ml-1 h-6 w-px bg-gray-200" aria-hidden />
+            <HomeHeaderNav />
           </nav>
         </div>
       </header>

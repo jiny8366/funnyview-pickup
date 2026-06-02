@@ -100,7 +100,7 @@ function ProductsInner() {
   const params = useSearchParams();
   const [all, setAll] = useState<LensItem[]>([]);
   const [loading, setLoading] = useState(true);
-  const [brand, setBrand] = useState('');
+  const [brand, setBrand] = useState(() => params.get('brand') ?? '');
   const [type, setType] = useState<TypeKey>(
     (params.get('type') as TypeKey | null) ?? 'all',
   );
