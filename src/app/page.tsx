@@ -1,3 +1,4 @@
+import { Aperture, Layers, Palette, Sun } from 'lucide-react';
 import Link from 'next/link';
 import { HomeHeaderNav } from '@/components/home/home-header-nav';
 import { ProductCarousel } from '@/components/home/product-carousel';
@@ -88,9 +89,9 @@ export default async function Home() {
 
       <div className="mx-auto max-w-5xl space-y-10 px-4 py-6 md:space-y-16 md:px-6 md:py-10">
         <Hero />
-        <BrandShowcase />
-        <ProductCarousel title="베스트셀러" subtitle="지금 많이 찾는 렌즈" />
         <Categories />
+        <ProductCarousel title="베스트셀러" subtitle="지금 많이 찾는 렌즈" />
+        <BrandShowcase />
         <TrendingKeywords />
         <PickupProcess />
         <ReviewSection />
@@ -132,6 +133,22 @@ function Hero() {
           >
             가까운 매장 찾기
           </Link>
+        </div>
+        <div className="mt-6 flex flex-wrap gap-2">
+          {[
+            { label: '원데이', href: '/products?type=1day' },
+            { label: '난시용', href: '/products?type=toric' },
+            { label: '다초점', href: '/products?type=multifocal' },
+            { label: '컬러렌즈', href: '/products?type=color' },
+          ].map((c) => (
+            <Link
+              key={c.label}
+              href={c.href}
+              className="rounded-full bg-white/10 px-3.5 py-1.5 text-xs font-medium text-white/90 backdrop-blur transition hover:bg-white/20"
+            >
+              {c.label}
+            </Link>
+          ))}
         </div>
       </div>
       <div className="pointer-events-none absolute -right-20 -top-20 h-72 w-72 rounded-full bg-brand-600/30 blur-2xl" />
@@ -187,10 +204,10 @@ function BrandShowcase() {
 /* ─────────────────────── 카테고리 ─────────────────────── */
 function Categories() {
   const cats = [
-    { label: '컬러렌즈', sub: '아름다운 눈빛', emoji: '✦', href: '/products?type=color', dark: true },
-    { label: '원데이', sub: '편리한 일회용', emoji: '○', href: '/products?type=1day' },
-    { label: '난시용', sub: '토릭렌즈', emoji: '◎', href: '/products?type=toric' },
-    { label: '다초점', sub: '노안 교정', emoji: '⊕', href: '/products?type=multifocal' },
+    { label: '컬러렌즈', sub: '아름다운 눈빛', icon: <Palette size={28} strokeWidth={1.5} />, href: '/products?type=color', dark: true },
+    { label: '원데이', sub: '편리한 일회용', icon: <Sun size={28} strokeWidth={1.5} />, href: '/products?type=1day' },
+    { label: '난시용', sub: '토릭렌즈', icon: <Aperture size={28} strokeWidth={1.5} />, href: '/products?type=toric' },
+    { label: '다초점', sub: '노안 교정', icon: <Layers size={28} strokeWidth={1.5} />, href: '/products?type=multifocal' },
   ];
   return (
     <section>
@@ -200,11 +217,11 @@ function Categories() {
           <Link
             key={c.label}
             href={c.href}
-            className={`group flex flex-col rounded-2xl px-5 py-6 transition hover:opacity-90 ${
+            className={`group flex flex-col rounded-2xl px-5 py-6 transition hover:-translate-y-0.5 hover:shadow-md ${
               c.dark ? 'bg-gray-900 text-white' : 'bg-gray-50 text-gray-900'
             }`}
           >
-            <span className="text-2xl">{c.emoji}</span>
+            <span className={c.dark ? 'text-white' : 'text-brand-600'}>{c.icon}</span>
             <span className="mt-4 text-lg font-bold">{c.label}</span>
             <span className={`mt-0.5 text-xs ${c.dark ? 'text-white/60' : 'text-gray-400'}`}>{c.sub}</span>
           </Link>
