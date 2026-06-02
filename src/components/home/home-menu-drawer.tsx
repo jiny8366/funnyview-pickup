@@ -6,7 +6,7 @@ import { createPortal } from 'react-dom';
 
 export interface DrawerSection {
   title?: string;
-  items: { href: string; label: string }[];
+  items: { href: string; label: string; sub?: string; icon?: React.ReactNode }[];
 }
 
 // Apple 시그니처 이징 — 부드럽게 빠지는 감속 곡선
@@ -122,14 +122,20 @@ export function HomeMenuDrawer({
                     key={it.href + it.label}
                     href={it.href}
                     onClick={onClose}
-                    className="block rounded-xl px-3 py-3 text-[15px] font-medium text-gray-800 hover:bg-gray-100 hover:text-brand-700"
+                    className="flex items-center gap-3 rounded-xl px-3 py-3 text-[15px] font-medium text-gray-800 hover:bg-gray-100 hover:text-brand-700"
                     style={{
                       opacity: open ? 1 : 0,
                       transform: open ? 'translateX(0)' : 'translateX(12px)',
                       transition: `opacity 420ms ${EASE} ${delay}ms, transform 420ms ${EASE} ${delay}ms, background-color 150ms ease, color 150ms ease`,
                     }}
                   >
-                    {it.label}
+                    {it.icon && <span className="shrink-0 text-gray-400">{it.icon}</span>}
+                    <span className="flex-1 truncate">{it.label}</span>
+                    {it.sub && (
+                      <span className="shrink-0 text-[11px] font-semibold tracking-wide text-gray-400">
+                        {it.sub}
+                      </span>
+                    )}
                   </Link>
                 );
               })}
