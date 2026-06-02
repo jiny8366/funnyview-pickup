@@ -524,18 +524,16 @@ function ShopCard({ lens, compact }: { lens: LensItem; compact?: boolean }) {
   return (
     <Link
       href={`/products/${lens.productCode}`}
-      className="group block overflow-hidden rounded-2xl bg-gray-50 transition-all hover:shadow-xl hover:-translate-y-0.5"
+      className="group block overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 transition-all hover:shadow-xl hover:-translate-y-0.5"
     >
-      <div className={`relative overflow-hidden bg-gray-100 ${compact ? 'aspect-square' : 'aspect-[3/4]'}`}>
+      <div className="relative aspect-square overflow-hidden bg-white">
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
           src={imageSrc}
           alt={lens.name}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.05]"
+          className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-[1.04]"
           loading="lazy"
         />
-
-        <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/65 via-black/5 to-transparent" />
 
         <button
           type="button"
@@ -578,18 +576,19 @@ function ShopCard({ lens, compact }: { lens: LensItem; compact?: boolean }) {
           </div>
         )}
 
-        <div className="absolute bottom-0 left-0 right-0 px-3 pb-3 text-white">
-          <p className="truncate text-[10px] font-medium opacity-60">{lens.brand}</p>
-          <h3 className={`font-semibold leading-tight line-clamp-2 ${compact ? 'text-xs' : 'text-sm'}`}>
-            {lens.name}
-          </h3>
-          {lens.colorName && !compact && (
-            <p className="mt-0.5 text-[10px] opacity-75">{lens.colorName}</p>
-          )}
-        </div>
       </div>
 
-      <div className="flex items-center justify-between px-3 py-2.5">
+      <div className="px-3 pt-2.5">
+        <p className="truncate text-[10px] font-medium text-gray-400">{lens.brand}</p>
+        <h3 className={`font-semibold leading-tight line-clamp-2 text-gray-900 ${compact ? 'text-xs' : 'text-sm'}`}>
+          {lens.name}
+        </h3>
+        {lens.colorName && !compact && (
+          <p className="mt-0.5 text-[10px] text-gray-400">{lens.colorName}</p>
+        )}
+      </div>
+
+      <div className="flex items-center justify-between px-3 pb-2.5 pt-1.5">
         <span className="text-[11px] text-gray-400">{cycleLabel}</span>
         <span className={`font-bold text-gray-900 ${compact ? 'text-xs' : 'text-sm'}`}>
           {lens.price === 0 ? (
