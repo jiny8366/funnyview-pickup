@@ -106,7 +106,7 @@ export function VariantSelector({
           구면도수 (SPH)
         </option>
         {sphOptions.map((o) => (
-          <option key={o} value={o}>{o}</option>
+          <option key={o} value={o}>{Number(o) > 0 ? `+${o}` : o}</option>
         ))}
       </select>
 
