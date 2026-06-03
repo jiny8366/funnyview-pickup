@@ -6,7 +6,6 @@ import { Breadcrumb } from '@/components/layout/breadcrumb';
 import { TERMS } from '@/lib/terms';
 
 interface FormState {
-  memberType: 'online' | 'offline';
   email: string;
   username: string;
   password: string;
@@ -33,7 +32,6 @@ interface FormState {
 }
 
 const EMPTY: FormState = {
-  memberType: 'online',
   email: '',
   username: '',
   password: '',
@@ -136,7 +134,7 @@ export default function RegisterPage() {
           postalCode: f.postalCode || null,
           addressLine1: f.addressLine1 || null,
           addressLine2: f.addressLine2 || null,
-          memberType: f.memberType, // 개인 온라인회원(online) / 개인 오프라인회원(offline)
+          memberType: 'online', // 개인 온라인 회원 고정 (온/오프라인 구분은 향후 오프라인 CRM 도입 시)
           referredByCode: f.referredByCode || null,
           refundBank:
             f.refundHolder || f.refundBank || f.refundAccount
@@ -197,28 +195,9 @@ export default function RegisterPage() {
         {/* 회원 구분 */}
         <Section>
           <Row label="회원구분" required>
-            <div className="flex flex-wrap gap-4">
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="memberType"
-                  checked={f.memberType === 'online'}
-                  onChange={() => update('memberType', 'online')}
-                  className="h-4 w-4"
-                />
-                개인 온라인회원
-              </label>
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input
-                  type="radio"
-                  name="memberType"
-                  checked={f.memberType === 'offline'}
-                  onChange={() => update('memberType', 'offline')}
-                  className="h-4 w-4"
-                />
-                개인 오프라인회원
-              </label>
-            </div>
+            <span className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700">
+              개인 온라인 회원
+            </span>
           </Row>
           <Row label="회원인증" required>
             <div className="space-y-2">
