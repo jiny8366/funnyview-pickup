@@ -5,6 +5,7 @@ import { lenses } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { createPriceEntryAndSyncCache } from '@/lib/lens-pricing-entries';
 import { validatePricing } from '@/lib/pricing';
+import { numericStr } from '@/lib/utils/numeric';
 
 export const dynamic = 'force-dynamic';
 
@@ -79,7 +80,8 @@ export async function PATCH(
       } else if (k === 'oxygenDkt') {
         allowed[k] = v == null || v === '' ? null : Number(v);
       } else if (['baseCurve', 'diameter', 'waterContent', 'sphereMin', 'sphereMax'].includes(k)) {
-        allowed[k] = v == null || v === '' ? null : String(v);
+        // numeric 컬럼 — '54%','8.6mm' 등에서 숫자만 추출(잘못된 값으로 인한 500 방지)
+        allowed[k] = numericStr(v);
       } else {
         allowed[k] = v;
       }

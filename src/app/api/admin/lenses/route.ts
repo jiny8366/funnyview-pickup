@@ -5,6 +5,7 @@ import { lenses } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { createPriceEntryAndSyncCache } from '@/lib/lens-pricing-entries';
 import { validatePricing } from '@/lib/pricing';
+import { numericStr } from '@/lib/utils/numeric';
 
 export const dynamic = 'force-dynamic';
 
@@ -113,9 +114,9 @@ export async function POST(req: Request) {
       // createPriceEntryAndSyncCache 에서 처리 — 시작일 ≤ now 일 때만 캐시 갱신
       imageUrl: imageUrl || null,
       description: description ?? null,
-      baseCurve: baseCurve != null && baseCurve !== '' ? String(baseCurve) : null,
-      diameter: diameter != null && diameter !== '' ? String(diameter) : null,
-      waterContent: waterContent != null && waterContent !== '' ? String(waterContent) : null,
+      baseCurve: numericStr(baseCurve),
+      diameter: numericStr(diameter),
+      waterContent: numericStr(waterContent),
       material: material ?? null,
       oxygenDkt: oxygenDkt != null && oxygenDkt !== '' ? Number(oxygenDkt) : null,
       uvProtection: Boolean(uvProtection),
