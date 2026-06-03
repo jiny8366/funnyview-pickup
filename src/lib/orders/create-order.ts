@@ -1,4 +1,4 @@
-import { and, eq, gte, sql } from 'drizzle-orm';
+import { and, eq, gte, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import {
   inventory,
@@ -68,7 +68,7 @@ export async function createOrder(input: CreateOrderInput) {
     })
     .from(lensVariants)
     .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
-    .where(sql`${lensVariants.id} = ANY(${variantIds})`);
+    .where(inArray(lensVariants.id, variantIds));
 
   const variantById = new Map(variantRows.map((r) => [r.variantId, r]));
   for (const line of input.lines) {
