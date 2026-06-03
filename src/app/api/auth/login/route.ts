@@ -5,6 +5,7 @@ import { db } from '@/db/client';
 import { users } from '@/db/schema';
 import { verifyPassword } from '@/lib/auth/password';
 import { setSessionCookie } from '@/lib/auth/session';
+import { withDbRetry } from '@/lib/db/retry';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,23 +24,25 @@ export async function POST(req: Request) {
   }
   const { phone: identifier, password, expectedRole } = parsed.data;
 
-  // username 또는 phone 매칭
-  const rows = await db
-    .select({
-      id: users.id,
-      role: users.role,
-      storeId: users.storeId,
-      passwordHash: users.passwordHash,
-      isActive: users.isActive,
-    })
-    .from(users)
-    .where(
-      and(
-        or(eq(users.phone, identifier), eq(users.username, identifier)),
-        isNull(users.deletedAt),
-      ),
-    )
-    .limit(1);
+  // username 또는 phone 매칭 (일시적 연결 블립 시 짧게 재시도)
+  const rows = await withDbRetry(() =>
+    db
+      .select({
+        id: users.id,
+        role: users.role,
+        storeId: users.storeId,
+        passwordHash: users.passwordHash,
+        isActive: users.isActive,
+      })
+      .from(users)
+      .where(
+        and(
+          or(eq(users.phone, identifier), eq(users.username, identifier)),
+          isNull(users.deletedAt),
+        ),
+      )
+      .limit(1),
+  );
 
   const user = rows[0];
   if (!user || !user.passwordHash) {
@@ -64,10 +67,12 @@ export async function POST(req: Request) {
     storeId: user.storeId,
   });
 
-  await db
-    .update(users)
-    .set({ lastLoginAt: new Date() })
-    .where(eq(users.id, user.id));
+  // 로그인 기록 — 비치명적(실패해도 로그인은 성공 처리)
+  try {
+    await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, user.id));
+  } catch (err) {
+    console.error('[api/auth/login] lastLoginAt 갱신 실패(무시):', err);
+  }
 
   return NextResponse.json({
     ok: true,
