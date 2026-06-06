@@ -72,11 +72,11 @@ export function toEmbedUrl(raw: string): string {
  */
 export function videoEmbedSrc(
   raw: string | null | undefined,
-  opts: { loop?: boolean; autoplay?: boolean; mute?: boolean } = {},
+  opts: { loop?: boolean; autoplay?: boolean; mute?: boolean; controls?: boolean } = {},
 ): string | null {
   if (!raw) return null;
   const url = raw.trim();
-  const { loop = true, autoplay = true, mute = true } = opts;
+  const { loop = true, autoplay = true, mute = true, controls = false } = opts;
 
   const yt = url.match(
     /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/,
@@ -90,6 +90,12 @@ export function videoEmbedSrc(
       p.set('loop', '1');
       p.set('playlist', id); // loop 동작에 필수(같은 영상 반복)
     }
+    if (!controls) {
+      p.set('controls', '0'); // 컨트롤바 숨김
+      p.set('disablekb', '1'); // 키보드 컨트롤 비활성
+      p.set('modestbranding', '1'); // 로고 최소화
+      p.set('iv_load_policy', '3'); // 주석(annotation) 숨김
+    }
     p.set('playsinline', '1');
     p.set('rel', '0');
     return `https://www.youtube.com/embed/${id}?${p.toString()}`;
@@ -98,9 +104,15 @@ export function videoEmbedSrc(
   const vm = url.match(/vimeo\.com\/(\d+)/);
   if (vm) {
     const p = new URLSearchParams();
-    if (autoplay) p.set('autoplay', '1');
-    if (mute) p.set('muted', '1');
-    if (loop) p.set('loop', '1');
+    // Vimeo 는 background 모드가 컨트롤·UI 전부 숨기고 자동재생·무음·반복까지 처리
+    if (!controls && autoplay && mute && loop) {
+      p.set('background', '1');
+    } else {
+      if (autoplay) p.set('autoplay', '1');
+      if (mute) p.set('muted', '1');
+      if (loop) p.set('loop', '1');
+      if (!controls) p.set('controls', '0');
+    }
     return `https://player.vimeo.com/video/${vm[1]}?${p.toString()}`;
   }
 
