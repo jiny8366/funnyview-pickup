@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useRef, useState } from 'react';
 import { ProductSection } from '@/components/product/product-section';
+import { videoEmbedSrc } from '@/lib/content/blocks';
 import { formatKRW } from '@/lib/utils/format';
 
 interface BaseSection {
@@ -371,12 +372,25 @@ function BrandStoryRender({ section }: { section: Section }) {
   const layout = c.layout ?? 'image-right';
   const flexDir =
     layout === 'image-left' ? 'md:flex-row' : layout === 'image-right' ? 'md:flex-row-reverse' : 'flex-col';
+  const storyVideo = videoEmbedSrc(c.imageUrl); // imageUrl 에 YouTube/Vimeo 링크면 반복재생 임베드
   return (
     <section ref={ref} className={`flex flex-col gap-4 rounded-3xl bg-gray-50 p-6 md:items-center md:gap-6 md:p-8 ${flexDir}`}>
       {c.imageUrl && (
         <div className="md:flex-1">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img src={c.imageUrl} alt={c.brand ?? ''} className="aspect-video w-full rounded-2xl object-cover" />
+          {storyVideo ? (
+            <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black">
+              <iframe
+                src={storyVideo}
+                title={c.brand ?? '브랜드 영상'}
+                className="h-full w-full"
+                allow="autoplay; encrypted-media; picture-in-picture"
+                allowFullScreen
+              />
+            </div>
+          ) : (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={c.imageUrl} alt={c.brand ?? ''} className="aspect-video w-full rounded-2xl object-cover" />
+          )}
         </div>
       )}
       <div className="md:flex-1">
