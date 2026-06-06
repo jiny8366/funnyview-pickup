@@ -24,7 +24,6 @@ interface FormState {
   refundHolder: string;
   refundBank: string;
   refundAccount: string;
-  phoneVerified: boolean;
   agreeService: boolean;
   agreePrivacy: boolean;
   agreeSms: boolean;
@@ -50,7 +49,6 @@ const EMPTY: FormState = {
   refundHolder: '',
   refundBank: '',
   refundAccount: '',
-  phoneVerified: false,
   agreeService: false,
   agreePrivacy: false,
   agreeSms: false,
@@ -87,16 +85,6 @@ export default function RegisterPage() {
     setF((p) => ({ ...p, [k]: v }));
   }
 
-  function verifyPhone() {
-    // 본 구현은 데모 — 실제 PASS / NICE 본인인증 연동은 별도 작업
-    if (!f.phoneMid || !f.phoneLast) {
-      alert('휴대전화 번호를 먼저 입력해주세요');
-      return;
-    }
-    update('phoneVerified', true);
-    alert('휴대폰 인증 완료 (데모 모드 — 실제 PASS 연동은 추후)');
-  }
-
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
@@ -104,8 +92,8 @@ export default function RegisterPage() {
       setError('필수 약관에 동의해주세요');
       return;
     }
-    if (!f.phoneVerified) {
-      setError('휴대폰 인증을 진행해주세요');
+    if (!f.phoneMid || !f.phoneLast) {
+      setError('휴대전화 번호를 입력해주세요');
       return;
     }
     if (f.password !== f.passwordConfirm) {
@@ -198,24 +186,6 @@ export default function RegisterPage() {
             <span className="inline-flex items-center rounded-md bg-gray-100 px-3 py-1.5 text-sm font-medium text-gray-700">
               개인 온라인 회원
             </span>
-          </Row>
-          <Row label="회원인증" required>
-            <div className="space-y-2">
-              <label className="inline-flex items-center gap-2 text-sm">
-                <input type="radio" checked readOnly className="h-4 w-4" />
-                휴대폰인증
-              </label>
-              <div>
-                <button
-                  type="button"
-                  onClick={verifyPhone}
-                  className={`inline-flex h-9 items-center gap-1.5 rounded border px-3 text-sm ${f.phoneVerified ? 'border-emerald-500 bg-emerald-50 text-emerald-700' : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'}`}
-                >
-                  📱 {f.phoneVerified ? '휴대폰 인증 완료' : '휴대폰인증'}
-                </button>
-              </div>
-              <p className="text-xs text-gray-500">본인 명의의 휴대폰으로 본인인증을 진행합니다.</p>
-            </div>
           </Row>
         </Section>
 
