@@ -378,13 +378,14 @@ function BrandStoryRender({ section }: { section: Section }) {
       {c.imageUrl && (
         <div className="md:flex-1">
           {storyVideo ? (
-            <div className="aspect-video w-full overflow-hidden rounded-2xl bg-black">
+            // 배경영상 기법: iframe 을 살짝 확대해 YouTube 상단 제목바·하단 크롬을 프레임 밖으로
+            // 크롭하고, pointer-events-none 로 호버 시 컨트롤이 다시 뜨는 것을 막는다.
+            <div className="relative aspect-video w-full overflow-hidden rounded-2xl bg-black">
               <iframe
                 src={storyVideo}
                 title={c.brand ?? '브랜드 영상'}
-                className="h-full w-full"
+                className="pointer-events-none absolute inset-0 h-full w-full scale-[1.35]"
                 allow="autoplay; encrypted-media; picture-in-picture"
-                allowFullScreen
               />
             </div>
           ) : (

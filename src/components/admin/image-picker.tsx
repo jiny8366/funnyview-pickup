@@ -97,13 +97,12 @@ export function ImagePicker({
       {error && <p className="text-xs text-red-600">{errorLabel(error)}</p>}
       {value && videoPreview && (
         <div className="space-y-1">
-          <div className="aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-black">
+          <div className="relative aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-black">
             <iframe
               src={videoPreview}
               title="영상 미리보기"
-              className="h-full w-full"
+              className="pointer-events-none absolute inset-0 h-full w-full scale-[1.35]"
               allow="autoplay; encrypted-media; picture-in-picture"
-              allowFullScreen
             />
           </div>
           <p className="text-xs text-gray-500">🎬 영상 링크 — 홈에서 반복재생됩니다</p>
