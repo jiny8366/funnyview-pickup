@@ -236,12 +236,17 @@ export default function CustomerOrderPage() {
       }
       const j = await res.json();
       const groups = (j.prescriptions ?? []) as PrescriptionGroup[];
-      const latestContact = groups.find((g) => g.kind === 'contact');
-      if (latestContact) {
+      // 좌·우 도수를 다른 시점에 따로 저장하면 서로 다른 그룹이 된다.
+      // 최신 그룹 1개만 보면 한쪽 눈이 비어 주문 대상이 한쪽으로 강제되므로,
+      // 좌·우 각각 가장 최근 값을 독립적으로 취한다. (groups 는 recordedAt 내림차순)
+      const contactGroups = groups.filter((g) => g.kind === 'contact');
+      const latestLeft = contactGroups.find((g) => g.left)?.left ?? null;
+      const latestRight = contactGroups.find((g) => g.right)?.right ?? null;
+      if (latestLeft || latestRight) {
         setSavedDose({
-          left: latestContact.left,
-          right: latestContact.right,
-          recordedAt: latestContact.recordedAt,
+          left: latestLeft,
+          right: latestRight,
+          recordedAt: contactGroups[0]?.recordedAt ?? null,
         });
       }
     } catch {
