@@ -18,7 +18,8 @@ export default function CustomerLoginPage() {
 function CustomerLoginInner() {
   const router = useRouter();
   const search = useSearchParams();
-  const next = search.get('next') ?? '/customer';
+  // 로그인 후 기본 이동 = 홈(쇼핑). 보호페이지에서 온 경우 next 유지.
+  const next = search.get('next') ?? '/';
 
   const [id, setId] = useState('');
   const [pw, setPw] = useState('');
