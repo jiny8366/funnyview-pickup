@@ -34,6 +34,7 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
   const cycle = CYCLE_LABEL[product.replacementCycle] ?? product.replacementCycle;
   const linkHref = href ?? `/products/${product.productCode}`;
   const imageSrc = product.imageUrl ?? `/api/lens-image/${product.productCode}`;
+  const hasModel = !!product.colorPreviewUrl; // 착용샷(모델컷) = colorPreviewUrl
   const rrp = product.recommendedRetailPrice ?? 0;
   const onSale = rrp > product.price && product.price > 0;
   const salePct = onSale ? Math.round(((rrp - product.price) / rrp) * 100) : 0;
@@ -42,13 +43,22 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
     <Link href={linkHref} className="group block focus:outline-none">
       {/* ── Image block ── */}
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-0.5">
+        {/* 모델컷(착용샷)이 있으면 메인으로 꽉 채우고(비율 일정), 없으면 제품박스(여백 contain) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={imageSrc}
+          src={hasModel ? product.colorPreviewUrl! : imageSrc}
           alt={product.name}
-          className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-[1.03]"
+          className={`h-full w-full transition-transform duration-500 group-hover:scale-[1.03] ${hasModel ? 'object-cover' : 'object-contain p-2'}`}
           loading="lazy"
         />
+
+        {/* 모델컷일 때 제품박스를 좌하단에 작게 동시노출 */}
+        {hasModel && (
+          <div className="absolute bottom-2.5 left-2.5 h-14 w-14 overflow-hidden rounded-lg border-2 border-white bg-white shadow-md">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageSrc} alt="" className="h-full w-full object-contain p-0.5" />
+          </div>
+        )}
 
         {/* Heart */}
         <button
@@ -76,8 +86,8 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
           </span>
         )}
 
-        {/* Color swatch */}
-        <ColorSwatch hex={product.colorHex} imageUrl={product.colorPreviewUrl} name={product.colorName} />
+        {/* Color swatch — 모델컷이 메인일 땐 색 스와치(hex)만 보조 표시 */}
+        <ColorSwatch hex={product.colorHex} imageUrl={hasModel ? null : product.colorPreviewUrl} name={product.colorName} />
       </div>
 
       {/* ── Text below image ── */}

@@ -520,6 +520,7 @@ function ShopCard({ lens, compact }: { lens: LensItem; compact?: boolean }) {
   const cycleLabel = CYCLE_LABEL[lens.replacementCycle] ?? lens.replacementCycle;
   const colored = isColored(lens);
   const imageSrc = lens.imageUrl ?? `/api/lens-image/${lens.productCode}`;
+  const hasModel = !!lens.colorPreviewUrl; // 착용샷(모델컷)
 
   return (
     <Link
@@ -527,13 +528,21 @@ function ShopCard({ lens, compact }: { lens: LensItem; compact?: boolean }) {
       className="group block overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 transition-all hover:shadow-xl hover:-translate-y-0.5"
     >
       <div className="relative aspect-square overflow-hidden bg-white">
+        {/* 모델컷 있으면 메인 꽉 채움(비율 일정), 없으면 제품박스(여백 contain) */}
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={imageSrc}
+          src={hasModel ? lens.colorPreviewUrl! : imageSrc}
           alt={lens.name}
-          className="h-full w-full object-contain p-2 transition-transform duration-500 group-hover:scale-[1.04]"
+          className={`h-full w-full transition-transform duration-500 group-hover:scale-[1.04] ${hasModel ? 'object-cover' : 'object-contain p-2'}`}
           loading="lazy"
         />
+
+        {hasModel && (
+          <div className="absolute bottom-2.5 left-2.5 h-14 w-14 overflow-hidden rounded-lg border-2 border-white bg-white shadow-md">
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img src={imageSrc} alt="" className="h-full w-full object-contain p-0.5" />
+          </div>
+        )}
 
         <button
           type="button"
@@ -558,7 +567,7 @@ function ShopCard({ lens, compact }: { lens: LensItem; compact?: boolean }) {
 
         {colored && (lens.colorHex || lens.colorPreviewUrl) && (
           <div className="absolute bottom-10 right-2.5">
-            {lens.colorPreviewUrl ? (
+            {!hasModel && lens.colorPreviewUrl ? (
               // eslint-disable-next-line @next/next/no-img-element
               <img
                 src={lens.colorPreviewUrl}
