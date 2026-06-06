@@ -49,6 +49,12 @@ export function ImagePicker({
   const thumbStyle = isSquare
     ? { width: thumbnailSize, height: thumbnailSize }
     : undefined;
+  // 관리자 호스트는 /products/* 등 고객 정적경로를 로그인으로 리다이렉트(307)하므로,
+  // 상대경로 이미지는 고객 호스트 절대 URL 로 변환해 미리보기한다.
+  const display =
+    value && value.startsWith('/')
+      ? `https://funnyview-pickup.vercel.app${value}`
+      : value;
 
   return (
     <div className="space-y-2">
@@ -98,14 +104,14 @@ export function ImagePicker({
         >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src={value}
+            src={display}
             alt=""
             className={isSquare ? 'h-full w-full object-cover' : 'h-32 w-full object-cover'}
           />
         </button>
       )}
       {enableZoom && zoomOpen && value && (
-        <ZoomModal src={value} onClose={() => setZoomOpen(false)} />
+        <ZoomModal src={display} onClose={() => setZoomOpen(false)} />
       )}
     </div>
   );
