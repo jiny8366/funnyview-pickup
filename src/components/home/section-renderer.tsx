@@ -146,21 +146,32 @@ function HeroSection({ section }: { section: Section }) {
     align?: 'left' | 'center';
   };
   const align = c.align ?? 'left';
+  // 영상 우선순위: videoUrl(YouTube/Vimeo) → imageUrl(YouTube/Vimeo) → 직접 영상파일 → 이미지
+  const heroVideo = videoEmbedSrc(c.videoUrl) ?? videoEmbedSrc(c.imageUrl);
+  const fileVideo = c.videoUrl && !videoEmbedSrc(c.videoUrl) ? c.videoUrl : null;
+  const bgImage = c.imageUrl && !videoEmbedSrc(c.imageUrl) ? c.imageUrl : null;
   return (
     <section
       ref={ref}
       className="relative overflow-hidden rounded-3xl"
       style={{ backgroundColor: c.bgColor ?? '#2563eb', color: c.textColor ?? '#fff' }}
     >
-      {c.imageUrl && (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={c.imageUrl} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
-      )}
-      {c.videoUrl && (
+      {heroVideo ? (
+        // 배경영상: 16:9 iframe 을 박스에 cover 시키고(min-w/h-full), 호버 컨트롤 차단
+        <iframe
+          src={heroVideo}
+          title=""
+          className="pointer-events-none absolute left-1/2 top-1/2 aspect-video h-auto min-h-full w-auto min-w-full -translate-x-1/2 -translate-y-1/2 opacity-80"
+          allow="autoplay; encrypted-media; picture-in-picture"
+        />
+      ) : fileVideo ? (
         <video autoPlay muted loop playsInline className="absolute inset-0 h-full w-full object-cover opacity-80">
-          <source src={c.videoUrl} />
+          <source src={fileVideo} />
         </video>
-      )}
+      ) : bgImage ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img src={bgImage} alt="" className="absolute inset-0 h-full w-full object-cover opacity-70" />
+      ) : null}
       <div className={`relative px-6 py-16 md:px-12 md:py-24 ${align === 'center' ? 'text-center' : ''}`}>
         <h2 className="text-3xl font-bold leading-tight md:text-5xl">{c.headline}</h2>
         {c.subline && <p className="mt-3 text-base opacity-90 md:text-lg">{c.subline}</p>}

@@ -178,7 +178,7 @@ function HeroEditor({ config, onChange }: SectionEditorProps) {
           folder="home-hero"
         />
       </Field>
-      <Field label="비디오 URL (선택)">
+      <Field label="비디오 URL (선택)" hint="YouTube·Vimeo 링크 또는 mp4 파일 URL — 배경 영상으로 재생됩니다">
         <TextField value={c.videoUrl ?? ''} onChange={(v) => patch('videoUrl', v)} />
       </Field>
       <div className="grid grid-cols-2 gap-3">
