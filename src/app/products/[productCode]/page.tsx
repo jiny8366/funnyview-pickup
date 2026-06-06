@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { MyPowerSelector } from '@/components/prescription/my-power-selector';
 import { VariantSelector } from '@/components/product/variant-selector';
+import { ProductContent } from '@/components/product/product-content';
 import { ShopHeaderNav } from '@/components/shop/shop-header-nav';
 import { addItem } from '@/lib/cart/store';
 
@@ -52,6 +53,7 @@ interface Product {
   material: string | null;
   manufacturer: string | null;
   mfdsPermitNo: string | null;
+  description: string | null;
   variants: Variant[];
   siblings: Sibling[];
 }
@@ -407,6 +409,9 @@ export default function ProductDetailPage() {
                 </>
               )}
             </div>
+
+            {/* 상세 콘텐츠 (제조사 제공 내용) */}
+            <ProductContent description={product.description} />
 
             {/* Spec table */}
             <div className="mt-10 border-t border-gray-100 pt-6">

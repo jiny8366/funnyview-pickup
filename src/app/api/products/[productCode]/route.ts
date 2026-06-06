@@ -35,6 +35,7 @@ export async function GET(
       material: lenses.material,
       manufacturer: lenses.manufacturer,
       mfdsPermitNo: lenses.mfdsPermitNo,
+      description: lenses.description,
       variantId: lensVariants.id,
       sku: lensVariants.sku,
       sphere: lensVariants.sphere,
@@ -109,6 +110,7 @@ export async function GET(
     material: head.material,
     manufacturer: head.manufacturer,
     mfdsPermitNo: head.mfdsPermitNo,
+    description: head.description,
     variants: rows
       .filter((r) => r.variantId && r.variantIsActive)
       .map((r) => ({
