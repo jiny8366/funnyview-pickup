@@ -3,6 +3,7 @@
 import { useRouter } from 'next/navigation';
 import { useEffect, useMemo, useState } from 'react';
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { AddressSearchButton } from '@/components/ui/address-search';
 import { TERMS } from '@/lib/terms';
 
 interface FormState {
@@ -143,14 +144,6 @@ export default function RegisterPage() {
     }
   }
 
-  function searchAddress() {
-    // Daum 주소검색 (Postcode) 연동은 별도 작업. 임시 alert.
-    const postal = prompt('우편번호 (테스트용 — 추후 Daum 주소검색 연동)');
-    const addr = prompt('기본 주소');
-    if (postal) update('postalCode', postal);
-    if (addr) update('addressLine1', addr);
-  }
-
   return (
     <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-6 md:py-12">
       <Breadcrumb items={[{ href: '/', label: '홈' }, { label: '회원 가입' }]} />
@@ -248,13 +241,13 @@ export default function RegisterPage() {
                     className="cafe-input-sm w-32"
                     readOnly
                   />
-                  <button
-                    type="button"
-                    onClick={searchAddress}
-                    className="h-9 rounded border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200"
-                  >
-                    주소검색
-                  </button>
+                  <AddressSearchButton
+                    onComplete={({ zonecode, address }) => {
+                      update('postalCode', zonecode);
+                      update('addressLine1', address);
+                    }}
+                    className="h-9 shrink-0 rounded border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                  />
                 </div>
                 <input
                   type="text"
