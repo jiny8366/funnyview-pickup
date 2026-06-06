@@ -65,3 +65,44 @@ export function toEmbedUrl(raw: string): string {
   if (vm) return `https://player.vimeo.com/video/${vm[1]}`;
   return url;
 }
+
+/**
+ * 이미지 필드에 들어온 값이 YouTube/Vimeo 영상이면 임베드 src 반환, 아니면 null.
+ * 기본: 자동재생·음소거(자동재생 정책)·반복재생.
+ */
+export function videoEmbedSrc(
+  raw: string | null | undefined,
+  opts: { loop?: boolean; autoplay?: boolean; mute?: boolean } = {},
+): string | null {
+  if (!raw) return null;
+  const url = raw.trim();
+  const { loop = true, autoplay = true, mute = true } = opts;
+
+  const yt = url.match(
+    /(?:youtube\.com\/(?:watch\?v=|embed\/|shorts\/)|youtu\.be\/)([\w-]{11})/,
+  );
+  if (yt) {
+    const id = yt[1];
+    const p = new URLSearchParams();
+    if (autoplay) p.set('autoplay', '1');
+    if (mute) p.set('mute', '1');
+    if (loop) {
+      p.set('loop', '1');
+      p.set('playlist', id); // loop 동작에 필수(같은 영상 반복)
+    }
+    p.set('playsinline', '1');
+    p.set('rel', '0');
+    return `https://www.youtube.com/embed/${id}?${p.toString()}`;
+  }
+
+  const vm = url.match(/vimeo\.com\/(\d+)/);
+  if (vm) {
+    const p = new URLSearchParams();
+    if (autoplay) p.set('autoplay', '1');
+    if (mute) p.set('muted', '1');
+    if (loop) p.set('loop', '1');
+    return `https://player.vimeo.com/video/${vm[1]}?${p.toString()}`;
+  }
+
+  return null;
+}
