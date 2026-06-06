@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { videoEmbedSrc } from '@/lib/content/blocks';
 
 export function ImagePicker({
   value,
@@ -55,6 +56,8 @@ export function ImagePicker({
     value && value.startsWith('/')
       ? `https://funnyview-pickup.vercel.app${value}`
       : value;
+  // YouTube/Vimeo 링크를 넣으면 깨진 이미지 대신 영상 미리보기(반복재생)를 보여준다.
+  const videoPreview = videoEmbedSrc(value);
 
   return (
     <div className="space-y-2">
@@ -92,7 +95,21 @@ export function ImagePicker({
         onChange={onPick}
       />
       {error && <p className="text-xs text-red-600">{errorLabel(error)}</p>}
-      {value && (
+      {value && videoPreview && (
+        <div className="space-y-1">
+          <div className="aspect-video w-full overflow-hidden rounded-lg border border-gray-200 bg-black">
+            <iframe
+              src={videoPreview}
+              title="영상 미리보기"
+              className="h-full w-full"
+              allow="autoplay; encrypted-media; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+          <p className="text-xs text-gray-500">🎬 영상 링크 — 홈에서 반복재생됩니다</p>
+        </div>
+      )}
+      {value && !videoPreview && (
         <button
           type="button"
           onClick={() => enableZoom && setZoomOpen(true)}

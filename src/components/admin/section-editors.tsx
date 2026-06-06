@@ -919,7 +919,7 @@ function BrandStoryEditor({ config, onChange }: SectionEditorProps) {
       <Field label="본문">
         <TextArea value={c.body ?? ''} onChange={(v) => patch('body', v)} rows={3} />
       </Field>
-      <Field label="이미지">
+      <Field label="이미지 / 영상" hint="이미지 업로드·URL 또는 YouTube·Vimeo 링크 — 영상 링크면 홈에서 반복재생됩니다">
         <ImagePicker
           value={c.imageUrl ?? ''}
           onChange={(v) => patch('imageUrl', v)}
