@@ -62,7 +62,7 @@ function CustomerLoginInner() {
           autoComplete="username"
           value={id}
           onChange={(e) => setId(e.target.value)}
-          placeholder="아이디"
+          placeholder="이메일 또는 휴대폰번호"
           required
           autoFocus
           className="cafe-input"

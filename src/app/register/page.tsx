@@ -7,7 +7,6 @@ import { TERMS } from '@/lib/terms';
 
 interface FormState {
   email: string;
-  username: string;
   password: string;
   passwordConfirm: string;
   name: string;
@@ -32,7 +31,6 @@ interface FormState {
 
 const EMPTY: FormState = {
   email: '',
-  username: '',
   password: '',
   passwordConfirm: '',
   name: '',
@@ -113,7 +111,6 @@ export default function RegisterPage() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           email: f.email,
-          username: f.username,
           password: f.password,
           passwordConfirm: f.passwordConfirm,
           name: f.name,
@@ -206,18 +203,7 @@ export default function RegisterPage() {
                 required
                 className="cafe-input-sm max-w-sm"
               />
-            </Row>
-            <Row label="아이디" required>
-              <div className="space-y-1">
-                <input
-                  type="text"
-                  value={f.username}
-                  onChange={(e) => update('username', e.target.value.replace(/[^a-z0-9]/g, '').slice(0, 16))}
-                  required
-                  className="cafe-input-sm max-w-sm"
-                />
-                <p className="text-xs text-gray-500">(영문소문자/숫자, 4~16자)</p>
-              </div>
+              <p className="mt-1 text-xs text-gray-500">이 이메일이 로그인 아이디가 됩니다.</p>
             </Row>
             <Row label="비밀번호" required>
               <div className="space-y-1">

@@ -10,7 +10,7 @@ import { withDbRetry } from '@/lib/db/retry';
 export const dynamic = 'force-dynamic';
 
 const loginSchema = z.object({
-  phone: z.string().min(1), // 아이디 또는 휴대전화번호
+  phone: z.string().min(1), // 이메일 / 휴대전화번호 (기존 계정은 아이디도 허용)
   password: z.string().min(1),
   expectedRole: z
     .enum(['customer', 'warehouse_staff', 'store_staff', 'admin'])
@@ -24,7 +24,7 @@ export async function POST(req: Request) {
   }
   const { phone: identifier, password, expectedRole } = parsed.data;
 
-  // username 또는 phone 매칭 (일시적 연결 블립 시 짧게 재시도)
+  // 이메일 / phone / (기존)username 매칭 (일시적 연결 블립 시 짧게 재시도)
   const rows = await withDbRetry(() =>
     db
       .select({
@@ -37,7 +37,11 @@ export async function POST(req: Request) {
       .from(users)
       .where(
         and(
-          or(eq(users.phone, identifier), eq(users.username, identifier)),
+          or(
+            eq(users.email, identifier),
+            eq(users.phone, identifier),
+            eq(users.username, identifier),
+          ),
           isNull(users.deletedAt),
         ),
       )

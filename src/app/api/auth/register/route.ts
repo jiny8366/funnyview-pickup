@@ -18,9 +18,6 @@ function isStrongPassword(pw: string): boolean {
 
 const registerSchema = z.object({
   email: z.string().email('이메일 형식이 올바르지 않습니다'),
-  username: z
-    .string()
-    .regex(/^[a-z0-9]{4,16}$/, '영문 소문자/숫자 4-16자 입력해주세요'),
   password: z
     .string()
     .min(8)
@@ -61,17 +58,13 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'PASSWORD_MISMATCH' }, { status: 400 });
   }
 
-  // phone / username / email 중복 검사
+  // phone / email 중복 검사 (이메일이 로그인 ID)
   const existing = await db
-    .select({ id: users.id, phone: users.phone, username: users.username, email: users.email })
+    .select({ id: users.id, phone: users.phone, email: users.email })
     .from(users)
     .where(
       and(
-        or(
-          eq(users.phone, input.phone),
-          eq(users.username, input.username),
-          eq(users.email, input.email),
-        ),
+        or(eq(users.phone, input.phone), eq(users.email, input.email)),
         isNull(users.deletedAt),
       ),
     )
@@ -79,14 +72,11 @@ export async function POST(req: Request) {
 
   if (existing[0]) {
     const e = existing[0];
-    if (e.phone === input.phone) {
-      return NextResponse.json({ error: 'PHONE_TAKEN' }, { status: 409 });
-    }
-    if (e.username === input.username) {
-      return NextResponse.json({ error: 'USERNAME_TAKEN' }, { status: 409 });
-    }
     if (e.email === input.email) {
       return NextResponse.json({ error: 'EMAIL_TAKEN' }, { status: 409 });
+    }
+    if (e.phone === input.phone) {
+      return NextResponse.json({ error: 'PHONE_TAKEN' }, { status: 409 });
     }
   }
 
@@ -106,8 +96,7 @@ export async function POST(req: Request) {
     const [user] = await tx
       .insert(users)
       .values({
-        username: input.username,
-        email: input.email,
+        email: input.email, // 이메일이 로그인 ID (username 컬럼은 미사용)
         phone: input.phone,
         passwordHash,
         role: 'customer',
