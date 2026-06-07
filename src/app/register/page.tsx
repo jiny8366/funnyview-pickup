@@ -134,7 +134,11 @@ export default function RegisterPage() {
       });
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
-        setError(errorMessage(body.error));
+        if (body.error === 'INVALID_INPUT' && body.detail?.fieldErrors) {
+          setError(fieldErrorMessage(body.detail.fieldErrors));
+        } else {
+          setError(errorMessage(body.error));
+        }
         return;
       }
       router.replace('/');
@@ -595,6 +599,25 @@ function SocialBar({
       {label}
     </a>
   );
+}
+
+// zod fieldErrors → 어떤 필드가 왜 잘못됐는지 한글 안내 (수정 가능하도록)
+function fieldErrorMessage(fieldErrors: Record<string, string[] | undefined>): string {
+  const HINT: Record<string, string> = {
+    email: '이메일: 올바른 이메일 형식이어야 합니다',
+    password: '비밀번호: 8~16자, 영문 대소문자·숫자·특수문자 중 3가지 이상 조합',
+    passwordConfirm: '비밀번호 확인을 입력해주세요',
+    name: '이름: 2~30자로 입력해주세요',
+    phone: '휴대전화: 형식(예: 01012345678)을 확인해주세요',
+    postalCode: '우편번호를 확인해주세요',
+    addressLine1: '주소를 확인해주세요',
+  };
+  const bad = Object.entries(fieldErrors)
+    .filter(([, v]) => v && v.length)
+    .map(([k, v]) => HINT[k] ?? `${k}: ${v?.[0] ?? '확인 필요'}`);
+  return bad.length
+    ? `다음 항목을 확인해주세요 — ${bad.join(' / ')}`
+    : '입력값을 확인해주세요';
 }
 
 function errorMessage(code?: string): string {
