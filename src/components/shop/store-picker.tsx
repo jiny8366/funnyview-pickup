@@ -21,10 +21,37 @@ type LocationState =
   | { status: 'ready'; label: string }
   | { status: 'denied'; error: string };
 
+/** 표준 17 시·도 (선택 그리드 표시 순서 = 행정구역 통상 순서). */
+const SIDO_ORDER = [
+  '서울', '경기', '인천', '강원', '충북', '충남', '대전', '세종',
+  '전북', '전남', '광주', '경북', '경남', '대구', '울산', '부산', '제주',
+] as const;
+
+/** 주소 첫 토큰(시·도)을 표준 약칭으로 정규화. '경상남도'·'경남' → '경남' 처럼 표기 통일. */
+const SIDO_MAP: Record<string, string> = {
+  서울: '서울', 서울특별시: '서울',
+  부산: '부산', 부산광역시: '부산',
+  대구: '대구', 대구광역시: '대구',
+  인천: '인천', 인천광역시: '인천',
+  광주: '광주', 광주광역시: '광주',
+  대전: '대전', 대전광역시: '대전',
+  울산: '울산', 울산광역시: '울산',
+  세종: '세종', 세종시: '세종', 세종특별자치시: '세종',
+  경기: '경기', 경기도: '경기',
+  강원: '강원', 강원도: '강원', 강원특별자치도: '강원',
+  충북: '충북', 충청북도: '충북',
+  충남: '충남', 충청남도: '충남',
+  전북: '전북', 전라북도: '전북', 전북특별자치도: '전북',
+  전남: '전남', 전라남도: '전남',
+  경북: '경북', 경상북도: '경북',
+  경남: '경남', 경상남도: '경남',
+  제주: '제주', 제주도: '제주', 제주특별자치도: '제주',
+};
+
 function extractRegion(address: string | null): string | null {
   if (!address) return null;
   const first = address.trim().split(/\s+/)[0] || '';
-  return first.replace(/특별시|광역시|특별자치시|특별자치도|도$/, '').replace(/시$/, '');
+  return SIDO_MAP[first] ?? first;
 }
 
 /**
@@ -109,15 +136,26 @@ export function StorePicker({
     }
   }
 
-  const regions = useMemo(
-    () =>
-      items
-        ? Array.from(
-            new Set(items.map((s) => extractRegion(s.address)).filter((r): r is string => !!r)),
-          ).sort()
-        : [],
-    [items],
-  );
+  // 매장이 존재하는 시·도만, 표준 행정구역 순서로 정렬해 노출
+  const regions = useMemo(() => {
+    if (!items) return [] as string[];
+    const present = new Set(
+      items.map((s) => extractRegion(s.address)).filter((r): r is string => !!r),
+    );
+    const ordered = SIDO_ORDER.filter((r) => present.has(r));
+    const extras = [...present].filter((r) => !SIDO_ORDER.includes(r as (typeof SIDO_ORDER)[number]));
+    return [...ordered, ...extras];
+  }, [items]);
+
+  // 선택한 시·도의 매장 수 (그리드 배지)
+  const regionCounts = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const s of items ?? []) {
+      const r = extractRegion(s.address);
+      if (r) m.set(r, (m.get(r) ?? 0) + 1);
+    }
+    return m;
+  }, [items]);
 
   const filtered = useMemo(
     () =>
@@ -177,6 +215,36 @@ export function StorePicker({
         )}
       </div>
 
+      {/* 지역(시·도) 선택 — 메인 인터페이스 */}
+      {regions.length > 0 && (
+        <div className="rounded-xl border border-gray-200 bg-white p-3">
+          <div className="mb-2 flex items-center justify-between">
+            <span className="text-xs font-semibold text-gray-700">지역으로 찾기</span>
+            {region && (
+              <button
+                type="button"
+                onClick={() => setRegion('')}
+                className="text-[11px] text-gray-400 hover:text-gray-700"
+              >
+                전체 보기
+              </button>
+            )}
+          </div>
+          <div className="grid grid-cols-4 gap-1.5 sm:grid-cols-6">
+            <RegionCell active={!region} label="전체" count={total} onClick={() => setRegion('')} />
+            {regions.map((r) => (
+              <RegionCell
+                key={r}
+                active={region === r}
+                label={r}
+                count={regionCounts.get(r) ?? 0}
+                onClick={() => setRegion(region === r ? '' : r)}
+              />
+            ))}
+          </div>
+        </div>
+      )}
+
       {/* 검색 */}
       <input
         value={q}
@@ -184,16 +252,6 @@ export function StorePicker({
         placeholder="매장명 또는 주소 검색"
         className="w-full rounded-xl border border-gray-200 bg-white px-3 py-2.5 text-sm focus:border-gray-900 focus:outline-none"
       />
-
-      {/* 지역 필터 */}
-      {regions.length > 0 && (
-        <div className="flex flex-wrap gap-1.5">
-          <RegionChip active={!region} label="전체" onClick={() => setRegion('')} />
-          {regions.map((r) => (
-            <RegionChip key={r} active={region === r} label={r} onClick={() => setRegion(r)} />
-          ))}
-        </div>
-      )}
 
       {/* 목록 */}
       {!filtered ? (
@@ -246,26 +304,29 @@ export function StorePicker({
   );
 }
 
-function RegionChip({
+function RegionCell({
   active,
   label,
+  count,
   onClick,
 }: {
   active: boolean;
   label: string;
+  count: number;
   onClick: () => void;
 }) {
   return (
     <button
       type="button"
       onClick={onClick}
-      className={
+      className={`flex flex-col items-center justify-center gap-0.5 rounded-lg border px-1 py-2 transition ${
         active
-          ? 'rounded-full bg-gray-900 px-2.5 py-1 text-[11px] font-medium text-white'
-          : 'rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] text-gray-600 hover:bg-gray-50'
-      }
+          ? 'border-gray-900 bg-gray-900 text-white'
+          : 'border-gray-200 bg-white text-gray-700 hover:border-gray-400'
+      }`}
     >
-      {label}
+      <span className="text-xs font-medium">{label}</span>
+      <span className={`text-[10px] ${active ? 'text-white/70' : 'text-gray-400'}`}>{count}</span>
     </button>
   );
 }
