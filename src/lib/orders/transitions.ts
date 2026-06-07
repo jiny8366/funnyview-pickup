@@ -28,9 +28,9 @@ export class TransitionError extends Error {
 }
 
 const ALLOWED_FROM: Record<OrderStatus, OrderStatus[]> = {
-  // 매장결제 신규 주문(pending)도 스탭이 바로 접수(accepted) 가능. 온라인 선결제는 paid 경유.
-  pending: ['paid', 'accepted', 'cancelled'],
-  paid: ['accepted', 'cancelled'],
+  // '패킹 시작'으로 신규 주문(pending/paid)을 접수 단계 없이 바로 picking 으로 보낼 수 있음.
+  pending: ['paid', 'accepted', 'picking', 'cancelled'],
+  paid: ['accepted', 'picking', 'cancelled'],
   accepted: ['picking', 'cancelled'],
   picking: ['shipped', 'cancelled'],
   shipped: ['arrived'],

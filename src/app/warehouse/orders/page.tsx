@@ -91,9 +91,6 @@ function WarehouseOrdersInner() {
           주문 처리{statusFilter ? ` (${statusFilter})` : ''}
         </h1>
         <div className="-mx-1 flex gap-2 overflow-x-auto px-1 scrollbar-hide">
-          <Button variant="secondary" size="sm" onClick={() => batch('accept')} disabled={selected.size === 0}>
-            접수
-          </Button>
           <Button variant="secondary" size="sm" onClick={() => batch('pick')} disabled={selected.size === 0}>
             패킹 시작
           </Button>
