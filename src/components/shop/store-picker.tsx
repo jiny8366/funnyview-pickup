@@ -267,7 +267,7 @@ export function StorePicker({
           <p className="text-[11px] text-gray-400">
             총 {total}개 중 {filtered.length}개
           </p>
-          <ul className="max-h-72 space-y-2 overflow-y-auto pr-0.5">
+          <ul className="max-h-72 space-y-2 overflow-y-auto px-1.5 py-1.5">
             {filtered.map((s) => {
               const selected = value === s.id;
               return (
