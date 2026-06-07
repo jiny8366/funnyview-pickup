@@ -1,82 +1,20 @@
 import { Aperture, Layers, Palette, Sun } from 'lucide-react';
 import Link from 'next/link';
-import { HomeHeaderNav } from '@/components/home/home-header-nav';
 import { ProductCarousel } from '@/components/home/product-carousel';
 import { ReviewSection } from '@/components/home/review-section';
 import { SectionRenderer } from '@/components/home/section-renderer';
 import { TrendingKeywords } from '@/components/home/trending-keywords';
-import { StaffPortalSwitcher } from '@/components/layout/staff-portal-switcher';
-import { getCurrentUser } from '@/lib/auth/current-user';
+import { SiteHeader } from '@/components/layout/site-header';
 import { loadActiveSections } from '@/lib/home/load-sections';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const [sections, user] = await Promise.all([
-    loadActiveSections().catch(() => []),
-    getCurrentUser().catch(() => null),
-  ]);
-
-  const myPageHref =
-    user?.role === 'customer'
-      ? '/customer'
-      : user?.role === 'warehouse_staff'
-        ? '/warehouse'
-        : user?.role === 'store_staff'
-          ? '/store'
-          : '/admin/dashboard';
+  const sections = await loadActiveSections().catch(() => []);
 
   return (
     <main className="min-h-screen bg-white pb-safe">
-      <header
-        className="sticky top-0 z-20 border-b border-gray-200 bg-white/90 backdrop-blur"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
-      >
-        <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3 md:px-6">
-          <Link href="/" className="truncate text-base font-bold tracking-tight md:text-lg">
-            Funnyview Pickup
-          </Link>
-          <nav className="flex items-center gap-1.5 text-sm text-gray-600 md:gap-4">
-            <Link href="/products" className="hidden font-medium text-gray-900 hover:text-brand-600 transition-colors md:inline">
-              렌즈 쇼핑
-            </Link>
-            <Link href="/stores" className="hidden hover:text-gray-900 md:inline">
-              매장찾기
-            </Link>
-            {user?.role === 'customer' && (
-              <Link href="/customer/orders" className="hidden hover:text-gray-900 md:inline">
-                내 주문
-              </Link>
-            )}
-            {user ? (
-              <Link
-                href={myPageHref}
-                className="inline-flex min-h-touch items-center rounded-full bg-brand-600 px-3 py-1.5 text-[11px] font-medium text-white md:text-xs"
-              >
-                마이페이지
-              </Link>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  className="inline-flex min-h-touch items-center px-2 text-gray-500 hover:text-gray-900"
-                >
-                  로그인
-                </Link>
-                <Link
-                  href="/register"
-                  className="inline-flex min-h-touch items-center rounded-full bg-brand-600 px-3 py-1.5 text-[11px] font-medium text-white md:text-xs"
-                >
-                  가입
-                </Link>
-              </>
-            )}
-            <StaffPortalSwitcher />
-            <span className="ml-1 h-6 w-px bg-gray-200" aria-hidden />
-            <HomeHeaderNav />
-          </nav>
-        </div>
-      </header>
+      <SiteHeader />
 
       {/* 관리자 CMS 프로모션 섹션 (있을 때 최상단) */}
       {sections.length > 0 && (
