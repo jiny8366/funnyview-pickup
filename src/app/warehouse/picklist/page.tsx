@@ -95,14 +95,17 @@ export default function WarehousePicklistPage() {
       .then((j) => setOrders(j.orders ?? []));
   }, []);
 
-  async function generate() {
+  async function generate(thenPrint = false) {
     if (selected.size === 0) return;
     const res = await fetch('/api/warehouse/picklist', {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({ orderIds: Array.from(selected) }),
     });
-    if (res.ok) setPicklist(await res.json());
+    if (res.ok) {
+      setPicklist(await res.json());
+      if (thenPrint) setTimeout(() => window.print(), 500); // 렌더(바코드) 후 인쇄
+    }
   }
 
   function printPage() {
@@ -115,9 +118,14 @@ export default function WarehousePicklistPage() {
         <h1 className="text-2xl font-bold">픽리스트</h1>
         <div className="flex gap-2">
           {!picklist ? (
-            <Button onClick={generate} disabled={selected.size === 0} className="bg-emerald-600 hover:bg-emerald-700">
-              미리보기(PDF) ({selected.size})
-            </Button>
+            <>
+              <Button onClick={() => generate(false)} variant="secondary" disabled={selected.size === 0}>
+                👁 미리보기 ({selected.size})
+              </Button>
+              <Button onClick={() => generate(true)} disabled={selected.size === 0} className="bg-emerald-600 hover:bg-emerald-700">
+                🖨 인쇄 ({selected.size})
+              </Button>
+            </>
           ) : (
             <>
               <Button variant="secondary" onClick={() => setPicklist(null)}>
@@ -242,13 +250,19 @@ export default function WarehousePicklistPage() {
                   <div className="space-y-4">
                     {list.map((o) => (
                       <div key={o.id} className="break-inside-avoid rounded-2xl border border-gray-200 p-4">
+                  {/* 1) 전표번호 2) 고객명/가맹점명 3) 가맹점 정보 */}
                   <div className="border-b pb-2">
                     <div className="font-mono text-xs text-gray-500">{o.orderNumber}</div>
-                    <div className="text-base font-bold text-gray-900">
-                      👤 {o.customerName} <span className="text-gray-400">·</span> 📦 {o.storeName}
+                    <div className="mt-0.5 text-base font-bold text-gray-900">
+                      고객: {o.customerName} <span className="text-gray-400">/</span> {o.storeName}
+                    </div>
+                    <div className="mt-1 text-xs text-gray-600">
+                      🏪 {o.storeAddress ?? '주소 미등록'}
+                      {o.storePhone ? ` · ☎ ${o.storePhone}` : ''}
                     </div>
                   </div>
-                  <div className="mt-2 space-y-4">
+                  {/* 4) 제품 정보 — 바코드는 우측 세로 배열(스캔 방해 방지) */}
+                  <div className="mt-2 divide-y divide-gray-50">
                     {o.items.map((it) => {
                       const displayName = formatLensDisplayName(
                         {
@@ -262,25 +276,20 @@ export default function WarehousePicklistPage() {
                         { format: 'compact' },
                       );
                       return (
-                        <div key={it.id}>
-                          <div className="font-medium">
+                        <div key={it.id} className="flex items-start justify-between gap-4 py-2">
+                          <div className="flex-1 font-medium">
                             {displayName} <span className="text-gray-500">× {it.quantity}</span>
                           </div>
-                          <div className="mt-1 flex flex-wrap gap-3">
+                          <div className="flex shrink-0 flex-col items-end gap-1.5">
                             {it.barcode
                               ? Array.from({ length: it.quantity }).map((_, i) => (
-                                  <Barcode key={i} value={it.barcode!} />
+                                  <Barcode key={i} value={it.barcode!} height={26} />
                                 ))
-                              : <span className="text-xs text-red-500">⚠ 제품 바코드 미등록</span>}
+                              : <span className="text-xs text-red-500">⚠ 바코드 미등록</span>}
                           </div>
                         </div>
                       );
                     })}
-                  </div>
-                  <div className="mt-3 border-t pt-2 text-xs text-gray-600">
-                    🏪 픽업가맹점: <span className="font-medium text-gray-800">{o.storeName}</span>
-                    {o.storeAddress ? ` · ${o.storeAddress}` : ' · 주소 미등록'}
-                    {o.storePhone ? ` · ☎ ${o.storePhone}` : ''}
                   </div>
                       </div>
                     ))}
