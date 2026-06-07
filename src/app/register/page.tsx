@@ -70,6 +70,7 @@ export default function RegisterPage() {
   const router = useRouter();
   const [f, setF] = useState<FormState>(EMPTY);
   const [error, setError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [submitting, setSubmitting] = useState(false);
   const [socialProviders, setSocialProviders] = useState<string[]>([]);
 
@@ -82,11 +83,13 @@ export default function RegisterPage() {
 
   function update<K extends keyof FormState>(k: K, v: FormState[K]) {
     setF((p) => ({ ...p, [k]: v }));
+    setFieldErrors((p) => (p[k as string] ? { ...p, [k as string]: '' } : p)); // 수정 시 해당 경고 제거
   }
 
   async function onSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
+    setFieldErrors({});
     if (!f.agreeService || !f.agreePrivacy) {
       setError('필수 약관에 동의해주세요');
       return;
@@ -135,7 +138,12 @@ export default function RegisterPage() {
       const body = await res.json().catch(() => ({}));
       if (!res.ok) {
         if (body.error === 'INVALID_INPUT' && body.detail?.fieldErrors) {
-          setError(fieldErrorMessage(body.detail.fieldErrors));
+          const fe = toFieldErrors(body.detail.fieldErrors);
+          setFieldErrors(fe);
+          const labels = Object.keys(fe)
+            .map((k) => FIELD_LABEL[k] ?? k)
+            .join(', ');
+          setError(`입력값을 확인해주세요 — ${labels} (해당 항목 아래 안내 참고)`);
         } else {
           setError(errorMessage(body.error));
         }
@@ -201,6 +209,7 @@ export default function RegisterPage() {
                 className="cafe-input-sm max-w-sm"
               />
               <p className="mt-1 text-xs text-gray-500">이 이메일이 로그인 아이디가 됩니다.</p>
+              {fieldErrors.email && <p className="mt-1 text-xs text-red-600">⚠ {fieldErrors.email}</p>}
             </Row>
             <Row label="비밀번호" required>
               <div className="space-y-1">
@@ -214,6 +223,7 @@ export default function RegisterPage() {
                 <p className="text-xs text-gray-500">
                   (영문 대소문자/숫자/특수문자 중 3가지 이상 조합, 8자~16자)
                 </p>
+                {fieldErrors.password && <p className="text-xs text-red-600">⚠ {fieldErrors.password}</p>}
               </div>
             </Row>
             <Row label="비밀번호 확인" required>
@@ -224,6 +234,7 @@ export default function RegisterPage() {
                 required
                 className="cafe-input-sm max-w-sm"
               />
+              {fieldErrors.passwordConfirm && <p className="mt-1 text-xs text-red-600">⚠ {fieldErrors.passwordConfirm}</p>}
             </Row>
             <Row label="이름" required>
               <input
@@ -233,6 +244,7 @@ export default function RegisterPage() {
                 required
                 className="cafe-input-sm max-w-sm"
               />
+              {fieldErrors.name && <p className="mt-1 text-xs text-red-600">⚠ {fieldErrors.name}</p>}
             </Row>
             <Row label="주소">
               <div className="space-y-2">
@@ -291,6 +303,7 @@ export default function RegisterPage() {
                 onMid={(v) => update('phoneMid', v)}
                 onLast={(v) => update('phoneLast', v)}
               />
+              {fieldErrors.phone && <p className="mt-1 text-xs text-red-600">⚠ {fieldErrors.phone}</p>}
             </Row>
           </Section>
         </div>
@@ -601,23 +614,36 @@ function SocialBar({
   );
 }
 
-// zod fieldErrors → 어떤 필드가 왜 잘못됐는지 한글 안내 (수정 가능하도록)
-function fieldErrorMessage(fieldErrors: Record<string, string[] | undefined>): string {
-  const HINT: Record<string, string> = {
-    email: '이메일: 올바른 이메일 형식이어야 합니다',
-    password: '비밀번호: 8~16자, 영문 대소문자·숫자·특수문자 중 3가지 이상 조합',
-    passwordConfirm: '비밀번호 확인을 입력해주세요',
-    name: '이름: 2~30자로 입력해주세요',
-    phone: '휴대전화: 형식(예: 01012345678)을 확인해주세요',
-    postalCode: '우편번호를 확인해주세요',
-    addressLine1: '주소를 확인해주세요',
-  };
-  const bad = Object.entries(fieldErrors)
-    .filter(([, v]) => v && v.length)
-    .map(([k, v]) => HINT[k] ?? `${k}: ${v?.[0] ?? '확인 필요'}`);
-  return bad.length
-    ? `다음 항목을 확인해주세요 — ${bad.join(' / ')}`
-    : '입력값을 확인해주세요';
+// 필드별 한글 힌트 (인라인 경고 + 상단 요약 공용)
+const FIELD_HINT: Record<string, string> = {
+  email: '올바른 이메일 형식이어야 합니다',
+  password: '8~16자, 영문 대소문자·숫자·특수문자 중 3가지 이상 조합',
+  passwordConfirm: '비밀번호 확인을 입력해주세요',
+  name: '2~30자로 입력해주세요',
+  phone: '형식(예: 01012345678)을 확인해주세요',
+  postalCode: '우편번호를 확인해주세요',
+  addressLine1: '주소를 확인해주세요',
+};
+
+const FIELD_LABEL: Record<string, string> = {
+  email: '이메일',
+  password: '비밀번호',
+  passwordConfirm: '비밀번호 확인',
+  name: '이름',
+  phone: '휴대전화',
+  postalCode: '우편번호',
+  addressLine1: '주소',
+};
+
+// zod fieldErrors → {필드: 한글메시지} (인라인 표시용)
+function toFieldErrors(
+  fieldErrors: Record<string, string[] | undefined>,
+): Record<string, string> {
+  const out: Record<string, string> = {};
+  for (const [k, v] of Object.entries(fieldErrors)) {
+    if (v && v.length) out[k] = FIELD_HINT[k] ?? v[0];
+  }
+  return out;
 }
 
 function errorMessage(code?: string): string {
