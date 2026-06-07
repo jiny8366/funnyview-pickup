@@ -197,8 +197,7 @@ export default function WarehousePicklistPage() {
               <thead className="bg-gray-100 text-xs uppercase">
                 <tr>
                   <th className="px-3 py-2 text-center w-10 print:hidden">피킹</th>
-                  <th className="px-3 py-2 text-left">SKU</th>
-                  <th className="px-3 py-2 text-left">제품 (브랜드 / 제품명 / 주기 / 팩수)</th>
+                  <th className="px-3 py-2 text-left">제품 (브랜드 / 제품명)</th>
                   <th className="px-3 py-2 text-right">총 수량</th>
                 </tr>
               </thead>
@@ -208,7 +207,6 @@ export default function WarehousePicklistPage() {
                     <td className="px-3 py-2 text-center print:hidden">
                       <input type="checkbox" checked={pickedSkus.has(t.sku)} onChange={() => togglePicked(t.sku)} aria-label="피킹 완료" />
                     </td>
-                    <td className="px-3 py-2 font-mono text-xs">{t.sku}</td>
                     <td className="px-3 py-2">
                       <div>
                         {formatLensDisplayName(
@@ -219,22 +217,13 @@ export default function WarehousePicklistPage() {
                             piecesPerBox: t.piecesPerBox,
                             lensType: t.lensType,
                           },
-                          {
-                            sku: t.sku,
-                            sphere: '0',
-                            cylinder: null,
-                            axis: null,
-                            addPower: null,
-                          },
-                          { format: 'full' },
+                          { sku: t.sku, sphere: '0', cylinder: null, axis: null, addPower: null },
+                          { format: 'compact' },
                         ).replace(/ \/ SPH \+0\.00$/, '')}
                       </div>
                     </td>
                     <td className="px-3 py-2 text-right">
                       <div className="font-semibold">{t.quantity}팩</div>
-                      <div className="text-xs text-gray-500">
-                        ({(t.quantity * t.piecesPerBox).toLocaleString()}매)
-                      </div>
                     </td>
                   </tr>
                 ))}
@@ -270,7 +259,7 @@ export default function WarehousePicklistPage() {
                           lensType: it.lensType,
                         },
                         it,
-                        { format: 'full' },
+                        { format: 'compact' },
                       );
                       return (
                         <div key={it.id}>
