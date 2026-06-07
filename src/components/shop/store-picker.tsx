@@ -275,10 +275,10 @@ export function StorePicker({
                   <button
                     type="button"
                     onClick={() => onSelect(s.id, s)}
-                    className={`w-full rounded-xl border px-3 py-2.5 text-left transition ${
+                    className={`w-full rounded-xl border bg-white px-3 py-2.5 text-left transition-all duration-200 ${
                       selected
-                        ? 'border-gray-900 bg-gray-900/[0.03] ring-1 ring-gray-900'
-                        : 'border-gray-200 hover:border-gray-400'
+                        ? '-translate-y-0.5 border-transparent shadow-[0_10px_28px_-8px_rgba(0,0,0,0.25)] ring-1 ring-black/[0.06]'
+                        : 'border-gray-200 hover:-translate-y-px hover:border-gray-200 hover:shadow-[0_6px_18px_-8px_rgba(0,0,0,0.18)]'
                     }`}
                   >
                     <div className="flex items-start justify-between gap-2">
