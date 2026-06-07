@@ -68,15 +68,17 @@ export async function GET(req: Request) {
     };
   });
 
-  // 사용자 위치 있으면 거리순. 없으면 sortOrder 기본 정렬 유지.
+  // 정렬 기준: 사용자 위치 있으면 거리순, 없으면 가맹점명 가나다순(한국어 로케일).
+  const byName = (a: { name: string }, b: { name: string }) =>
+    a.name.localeCompare(b.name, 'ko-KR');
   const sorted = userPos
     ? [
         ...enriched
           .filter((s) => s.distanceKm != null)
           .sort((a, b) => (a.distanceKm ?? 0) - (b.distanceKm ?? 0)),
-        ...enriched.filter((s) => s.distanceKm == null),
+        ...enriched.filter((s) => s.distanceKm == null).sort(byName),
       ]
-    : enriched;
+    : [...enriched].sort(byName);
 
   return NextResponse.json({
     userPosition: userPos,

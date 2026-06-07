@@ -12,7 +12,7 @@ export async function GET() {
       .select()
       .from(stores)
       .where(eq(stores.isActive, true))
-      .orderBy(stores.sortOrder, stores.name);
+      .orderBy(stores.name); // 가맹점명 가나다순
 
     return NextResponse.json({
       stores: rows.map((s) => ({
