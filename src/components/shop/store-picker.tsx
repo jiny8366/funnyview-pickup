@@ -283,7 +283,11 @@ export function StorePicker({
                   >
                     <div className="flex items-start justify-between gap-2">
                       <div className="min-w-0">
-                        <p className="truncate text-sm font-semibold text-gray-900">{s.name}</p>
+                        {/* 가맹점명 앞에 '지니스 안경' 브랜드 — 좁은 화면에선 브랜드/가맹점명/주소로 줄바꿈 */}
+                        <p className="text-sm font-semibold text-gray-900">
+                          <span className="whitespace-nowrap">지니스 안경</span>{' '}
+                          <span className="whitespace-nowrap">{s.name}</span>
+                        </p>
                         <p className="truncate text-[11px] text-gray-500">{s.address}</p>
                       </div>
                       {selected && <span className="shrink-0 text-sm text-gray-900">✓</span>}
