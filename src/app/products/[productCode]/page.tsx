@@ -87,6 +87,22 @@ export default function ProductDetailPage() {
   const [variantId, setVariantId] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [toast, setToast] = useState<string | null>(null);
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+
+  // 로그인 상태 감지 — 비로그인 시 담기/주문 차단
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => setLoggedIn(r.ok))
+      .catch(() => setLoggedIn(false));
+  }, []);
+
+  function requireLogin(): boolean {
+    if (loggedIn === false) {
+      router.push(`/login?next=${encodeURIComponent('/products/' + productCode)}`);
+      return false;
+    }
+    return true;
+  }
 
   useEffect(() => {
     fetch(`/api/products/${encodeURIComponent(productCode)}`)
@@ -122,6 +138,7 @@ export default function ProductDetailPage() {
 
   function handleAddToCart() {
     if (!product || !selectedVariant) return;
+    if (!requireLogin()) return;
     addItem({
       variantId: selectedVariant.variantId,
       productCode: product.productCode,
@@ -145,6 +162,7 @@ export default function ProductDetailPage() {
 
   function handleBuyNow() {
     if (!product || !selectedVariant) return;
+    if (!requireLogin()) return;
     addItem({
       variantId: selectedVariant.variantId,
       productCode: product.productCode,

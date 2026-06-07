@@ -66,6 +66,7 @@ function buildSections(user: MeUser | null): MenuSection[] {
     title: '쇼핑',
     items: [
       { href: '/products',       label: '렌즈 둘러보기' },
+      { href: '/cart',           label: '장바구니' },
       { href: '/stores',         label: '매장 찾기' },
       { href: '/customer/order', label: '주문하기' },
     ],
