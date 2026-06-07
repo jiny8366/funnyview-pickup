@@ -7,7 +7,8 @@ import type { OrderStatus } from '@/types/order';
 
 export const dynamic = 'force-dynamic';
 
-const ACTIVE_STATUSES: OrderStatus[] = ['paid', 'accepted', 'picking'];
+// 신규(pending=매장결제 미접수, paid=온라인 선결제) + 처리중(accepted/picking)
+const ACTIVE_STATUSES: OrderStatus[] = ['pending', 'paid', 'accepted', 'picking'];
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();

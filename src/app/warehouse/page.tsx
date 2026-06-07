@@ -4,7 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 interface Summary {
-  paid: number;
+  newOrders: number;
   accepted: number;
   picking: number;
   shipped: number;
@@ -16,15 +16,16 @@ export default function WarehouseDashboardPage() {
 
   useEffect(() => {
     async function load() {
-      const [paidR, acceptedR, pickingR, shippedR, lowR] = await Promise.all([
-        fetch('/api/warehouse/orders?status=paid').then((r) => r.json()),
+      const [newR, acceptedR, pickingR, shippedR, lowR] = await Promise.all([
+        // 신규 = 매장결제 미접수(pending) + 온라인 선결제(paid). 둘 다 스탭 접수 대기.
+        fetch('/api/warehouse/orders?status=pending,paid').then((r) => r.json()),
         fetch('/api/warehouse/orders?status=accepted').then((r) => r.json()),
         fetch('/api/warehouse/orders?status=picking').then((r) => r.json()),
         fetch('/api/warehouse/orders?status=shipped').then((r) => r.json()),
         fetch('/api/warehouse/inventory?low=1').then((r) => r.json()),
       ]);
       setSummary({
-        paid: paidR.orders?.length ?? 0,
+        newOrders: newR.orders?.length ?? 0,
         accepted: acceptedR.orders?.length ?? 0,
         picking: pickingR.orders?.length ?? 0,
         shipped: shippedR.orders?.length ?? 0,
@@ -46,7 +47,7 @@ export default function WarehouseDashboardPage() {
       </section>
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
-        <DashCard label="신규(결제완료)" value={summary?.paid} href="/warehouse/orders?status=paid" accent="text-blue-700" />
+        <DashCard label="신규 주문" value={summary?.newOrders} href="/warehouse/orders?status=pending,paid" accent="text-blue-700" />
         <DashCard label="접수" value={summary?.accepted} href="/warehouse/orders?status=accepted" accent="text-cyan-700" />
         <DashCard label="패킹 중" value={summary?.picking} href="/warehouse/picklist" accent="text-indigo-700" />
         <DashCard label="출고" value={summary?.shipped} href="/warehouse/shipments" accent="text-emerald-700" />

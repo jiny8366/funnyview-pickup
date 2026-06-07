@@ -6,7 +6,7 @@ import { orderItems, orders, stores } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { createOrder, OrderCreationError } from '@/lib/orders/create-order';
 import { ensureCustomerForUser, findCustomerIdForUser } from '@/lib/orders/ensure-customer';
-import { markConfirmed, markPaid } from '@/lib/orders/transitions';
+import { markPaid } from '@/lib/orders/transitions';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,12 +60,11 @@ export async function POST(req: Request) {
       lines: parsed.data.lines,
     });
 
-    // 주문 확정 → 픽업서비스 파이프라인 진입(신규로 노출).
-    // 온라인 선결제면 markPaid(isPaid=1), 매장결제면 markConfirmed(isPaid=0).
+    // 매장결제(현장수령) 모델: 신규 주문은 'pending'(신규·미결제)으로 두고 픽업업체 스탭이
+    // 접수→픽리스트→배송 처리, 결제완료는 픽업 시점(가맹점)에서 completed 로 처리한다.
+    // 온라인 선결제(payOnline)인 경우에만 결제완료(paid)로 진입.
     if (parsed.data.payOnline) {
       await markPaid(order.id, user.id);
-    } else {
-      await markConfirmed(order.id, user.id);
     }
 
     return NextResponse.json({
