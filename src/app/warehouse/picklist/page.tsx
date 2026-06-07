@@ -63,10 +63,33 @@ interface PicklistData {
   skuTotals: SkuTotal[];
 }
 
+// 픽업매장별 그룹핑 (가나다순) — 대량 분류/발송 효율
+function groupByStore<T extends { storeName: string }>(list: T[]): [string, T[]][] {
+  const map = new Map<string, T[]>();
+  for (const o of list) {
+    const arr = map.get(o.storeName) ?? [];
+    arr.push(o);
+    map.set(o.storeName, arr);
+  }
+  return Array.from(map.entries()).sort((a, b) => a[0].localeCompare(b[0], 'ko-KR'));
+}
+
 export default function WarehousePicklistPage() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [picklist, setPicklist] = useState<PicklistData | null>(null);
+  const [pickedSkus, setPickedSkus] = useState<Set<string>>(new Set()); // 피킹 완료 체크
+  const allSelected = orders.length > 0 && selected.size === orders.length;
+  function toggleAll() {
+    setSelected(allSelected ? new Set() : new Set(orders.map((o) => o.id)));
+  }
+  function togglePicked(sku: string) {
+    setPickedSkus((p) => {
+      const n = new Set(p);
+      n.has(sku) ? n.delete(sku) : n.add(sku);
+      return n;
+    });
+  }
 
   useEffect(() => {
     fetch('/api/warehouse/orders?status=accepted,picking')
@@ -118,7 +141,9 @@ export default function WarehousePicklistPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="px-3 py-2 text-left w-8"></th>
+                  <th className="px-3 py-2 text-left w-8">
+                    <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="전체선택" />
+                  </th>
                   <th className="px-3 py-2 text-left">주문번호</th>
                   <th className="px-3 py-2 text-left">고객</th>
                   <th className="px-3 py-2 text-left">픽업가맹점</th>
@@ -166,10 +191,13 @@ export default function WarehousePicklistPage() {
           </header>
 
           <section>
-            <h3 className="mb-2 text-sm font-semibold">SKU 합산 (피킹)</h3>
+            <h3 className="mb-2 text-sm font-semibold">
+              SKU 합산 (피킹) · 완료 {pickedSkus.size}/{picklist.skuTotals.length}
+            </h3>
             <table className="w-full text-sm">
               <thead className="bg-gray-100 text-xs uppercase">
                 <tr>
+                  <th className="px-3 py-2 text-center w-10 print:hidden">피킹</th>
                   <th className="px-3 py-2 text-left">SKU</th>
                   <th className="px-3 py-2 text-left">제품 (브랜드 / 제품명 / 주기 / 팩수)</th>
                   <th className="px-3 py-2 text-right">총 수량</th>
@@ -177,7 +205,10 @@ export default function WarehousePicklistPage() {
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {picklist.skuTotals.map((t) => (
-                  <tr key={t.sku}>
+                  <tr key={t.sku} className={pickedSkus.has(t.sku) ? 'bg-emerald-50 text-gray-400 line-through' : ''}>
+                    <td className="px-3 py-2 text-center print:hidden">
+                      <input type="checkbox" checked={pickedSkus.has(t.sku)} onChange={() => togglePicked(t.sku)} aria-label="피킹 완료" />
+                    </td>
                     <td className="px-3 py-2 font-mono text-xs">{t.sku}</td>
                     <td className="px-3 py-2">
                       <div>
@@ -213,10 +244,16 @@ export default function WarehousePicklistPage() {
           </section>
 
           <section>
-            <h3 className="mb-2 text-sm font-semibold">주문별 상세 (팩킹)</h3>
-            <div className="space-y-4">
-              {picklist.orders.map((o) => (
-                <div key={o.id} className="break-inside-avoid rounded-2xl border border-gray-200 p-4">
+            <h3 className="mb-2 text-sm font-semibold">주문별 상세 (팩킹) · 매장별</h3>
+            <div className="space-y-6">
+              {groupByStore(picklist.orders).map(([store, list]) => (
+                <div key={store} className="break-inside-avoid">
+                  <div className="mb-2 rounded-lg bg-gray-100 px-3 py-1.5 text-sm font-semibold text-gray-800">
+                    📦 {store} · {list.length}건
+                  </div>
+                  <div className="space-y-4">
+                    {list.map((o) => (
+                      <div key={o.id} className="break-inside-avoid rounded-2xl border border-gray-200 p-4">
                   <div className="border-b pb-2">
                     <div className="font-mono text-xs text-gray-500">{o.orderNumber}</div>
                     <div className="text-base font-bold text-gray-900">👤 {o.customerName} · {o.customerPhone}</div>
@@ -251,6 +288,9 @@ export default function WarehousePicklistPage() {
                       );
                     })}
                   </ul>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               ))}
             </div>
