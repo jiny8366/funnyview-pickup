@@ -5,20 +5,24 @@
 const TRANSIENT_CODES = new Set([
   'CONNECTION_CLOSED',
   'CONNECTION_DESTROYED',
+  'CONNECTION_ENDED',
   'CONNECT_TIMEOUT',
   'ECONNRESET',
   'ECONNREFUSED',
   'ETIMEDOUT',
+  'EMAXCONNSESSION', // 풀러 세션 한도 초과 (Supabase pooler)
   '57P01', // admin_shutdown
   '57P03', // cannot_connect_now
   '08006', // connection_failure
   '08003', // connection_does_not_exist
+  '53300', // too_many_connections
+  '53400', // configuration_limit_exceeded
 ]);
 
 function isTransient(err: unknown): boolean {
   const e = err as { code?: string; message?: string } | undefined;
   if (e?.code && TRANSIENT_CODES.has(e.code)) return true;
-  return /connection (closed|terminated|reset)|connect timeout|ECONNRESET|cannot connect/i.test(
+  return /connection (closed|terminated|reset|ended)|connect timeout|ECONNRESET|cannot connect|max clients reached|too many (clients|connections)/i.test(
     String(e?.message ?? ''),
   );
 }
