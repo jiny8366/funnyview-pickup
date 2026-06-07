@@ -97,9 +97,14 @@ export default function WarehousePicklistPage() {
             픽리스트 생성 ({selected.size})
           </Button>
           {picklist && (
-            <Button onClick={printPage} className="bg-emerald-600 hover:bg-emerald-700">
-              인쇄
-            </Button>
+            <>
+              <Button variant="secondary" onClick={() => setPicklist(null)}>
+                ← 목록으로
+              </Button>
+              <Button onClick={printPage} className="bg-emerald-600 hover:bg-emerald-700">
+                🖨 인쇄
+              </Button>
+            </>
           )}
         </div>
       </header>
@@ -212,11 +217,12 @@ export default function WarehousePicklistPage() {
             <div className="space-y-4">
               {picklist.orders.map((o) => (
                 <div key={o.id} className="break-inside-avoid rounded-2xl border border-gray-200 p-4">
-                  <div className="flex items-baseline justify-between border-b pb-2">
-                    <div>
-                      <div className="font-mono text-xs text-gray-500">{o.orderNumber}</div>
-                      <div className="font-semibold">{o.storeName}</div>
-                      <div className="text-xs text-gray-500">→ {o.customerName} ({o.customerPhone})</div>
+                  <div className="border-b pb-2">
+                    <div className="font-mono text-xs text-gray-500">{o.orderNumber}</div>
+                    <div className="text-base font-bold text-gray-900">👤 {o.customerName} · {o.customerPhone}</div>
+                    <div className="mt-0.5 text-xs text-gray-600">
+                      픽업매장: <span className="font-medium text-gray-800">{o.storeName}</span>
+                      {o.storeAddress ? ` · ${o.storeAddress}` : ''}
                     </div>
                   </div>
                   <ul className="mt-2 divide-y divide-gray-100 text-sm">
