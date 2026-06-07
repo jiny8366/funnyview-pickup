@@ -1,4 +1,5 @@
 import { Breadcrumb } from '@/components/layout/breadcrumb';
+import { SiteHeader } from '@/components/layout/site-header';
 import { StoresFinder } from './stores-finder';
 
 export const dynamic = 'force-dynamic';
@@ -10,7 +11,9 @@ export const metadata = {
 
 export default function PublicStoresPage() {
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-6 md:py-10">
+    <>
+      <SiteHeader />
+      <main className="mx-auto w-full max-w-5xl px-4 py-6 md:py-10">
       <Breadcrumb items={[{ href: '/', label: '홈' }, { label: '매장 찾기' }]} />
 
       <header className="mt-4">
@@ -30,6 +33,7 @@ export default function PublicStoresPage() {
           <li>· 매장 방문 시 안경사 상담 + 가이드 후 수령합니다.</li>
         </ul>
       </section>
-    </main>
+      </main>
+    </>
   );
 }
