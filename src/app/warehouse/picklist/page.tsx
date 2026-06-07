@@ -2,12 +2,9 @@
 
 import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
-import {
-  formatLensDisplayName,
-  formatLensSpec,
-  formatPackQuantity,
-} from '@/lib/lens/format';
+import { formatLensDisplayName } from '@/lib/lens/format';
 import { formatDateTime } from '@/lib/utils/format';
+import { Barcode } from '@/components/warehouse/barcode';
 
 interface OrderRow {
   id: string;
@@ -32,6 +29,7 @@ interface PickItem {
   axis: number | null;
   addPower: string | null;
   skuSnapshot: string;
+  barcode: string | null; // 제품 바코드(GTIN/UDI-DI)
   // lens 마스터 보강
   replacementCycle: string;
   piecesPerBox: number;
@@ -116,16 +114,17 @@ export default function WarehousePicklistPage() {
       <header className="flex items-center justify-between print:hidden">
         <h1 className="text-2xl font-bold">픽리스트</h1>
         <div className="flex gap-2">
-          <Button variant="secondary" onClick={generate} disabled={selected.size === 0}>
-            픽리스트 생성 ({selected.size})
-          </Button>
-          {picklist && (
+          {!picklist ? (
+            <Button onClick={generate} disabled={selected.size === 0} className="bg-emerald-600 hover:bg-emerald-700">
+              미리보기(PDF) ({selected.size})
+            </Button>
+          ) : (
             <>
               <Button variant="secondary" onClick={() => setPicklist(null)}>
                 ← 목록으로
               </Button>
               <Button onClick={printPage} className="bg-emerald-600 hover:bg-emerald-700">
-                🖨 인쇄
+                🖨 인쇄 / PDF 저장
               </Button>
             </>
           )}
@@ -256,13 +255,11 @@ export default function WarehousePicklistPage() {
                       <div key={o.id} className="break-inside-avoid rounded-2xl border border-gray-200 p-4">
                   <div className="border-b pb-2">
                     <div className="font-mono text-xs text-gray-500">{o.orderNumber}</div>
-                    <div className="text-base font-bold text-gray-900">👤 {o.customerName} · {o.customerPhone}</div>
-                    <div className="mt-0.5 text-xs text-gray-600">
-                      픽업매장: <span className="font-medium text-gray-800">{o.storeName}</span>
-                      {o.storeAddress ? ` · ${o.storeAddress}` : ''}
+                    <div className="text-base font-bold text-gray-900">
+                      👤 {o.customerName} <span className="text-gray-400">·</span> 📦 {o.storeName}
                     </div>
                   </div>
-                  <ul className="mt-2 divide-y divide-gray-100 text-sm">
+                  <div className="mt-2 space-y-4">
                     {o.items.map((it) => {
                       const displayName = formatLensDisplayName(
                         {
@@ -275,19 +272,27 @@ export default function WarehousePicklistPage() {
                         it,
                         { format: 'full' },
                       );
-                      const eyeLabel =
-                        it.eyeSide === 'left' ? 'OS (좌)' : it.eyeSide === 'right' ? 'OD (우)' : '양안';
                       return (
-                        <li key={it.id} className="py-2">
-                          <div className="font-medium">{displayName}</div>
-                          <div className="mt-0.5 text-xs text-gray-600">
-                            {eyeLabel} · {formatPackQuantity(it.quantity, it.piecesPerBox)}
+                        <div key={it.id}>
+                          <div className="font-medium">
+                            {displayName} <span className="text-gray-500">× {it.quantity}</span>
                           </div>
-                          <div className="text-[11px] font-mono text-gray-400">SKU {it.skuSnapshot}</div>
-                        </li>
+                          <div className="mt-1 flex flex-wrap gap-3">
+                            {it.barcode
+                              ? Array.from({ length: it.quantity }).map((_, i) => (
+                                  <Barcode key={i} value={it.barcode!} />
+                                ))
+                              : <span className="text-xs text-red-500">⚠ 제품 바코드 미등록</span>}
+                          </div>
+                        </div>
                       );
                     })}
-                  </ul>
+                  </div>
+                  <div className="mt-3 border-t pt-2 text-xs text-gray-600">
+                    🏪 픽업가맹점: <span className="font-medium text-gray-800">{o.storeName}</span>
+                    {o.storeAddress ? ` · ${o.storeAddress}` : ' · 주소 미등록'}
+                    {o.storePhone ? ` · ☎ ${o.storePhone}` : ''}
+                  </div>
                       </div>
                     ))}
                   </div>

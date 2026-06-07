@@ -67,6 +67,7 @@ export async function POST(req: Request) {
       axis: orderItems.axis,
       addPower: orderItems.addPower,
       skuSnapshot: orderItems.skuSnapshot,
+      barcode: lensVariants.udiDi, // 제품 바코드(GTIN/UDI-DI) — 팩리스트 스캔용
       // lens 마스터 보강 (표시명 일관성)
       lensType: lenses.lensType,
       replacementCycle: lenses.replacementCycle,
