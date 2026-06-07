@@ -8,9 +8,9 @@ if (!connectionString) {
   throw new Error('DATABASE_URL is not set');
 }
 
-// 서버리스 + Supabase pooler 환경: 인스턴스당 연결 수를 작게 유지해야 풀러 한도
-// (세션모드 ≈15) 초과로 인한 connection 실패를 막는다. 트랜잭션모드(:6543)에서도 동일.
-const poolMax = Number(process.env.DATABASE_POOL_MAX ?? 5);
+// 인스턴스당 동시 요청을 처리할 만큼은 확보해야 한다(너무 작으면 큐잉→타임아웃→500).
+// 풀러 한도 문제의 근본 해결은 DATABASE_URL 트랜잭션모드(:6543) 전환.
+const poolMax = Number(process.env.DATABASE_POOL_MAX ?? 20);
 
 declare global {
   // eslint-disable-next-line no-var

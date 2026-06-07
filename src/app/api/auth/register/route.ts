@@ -5,6 +5,7 @@ import { db } from '@/db/client';
 import { customers, users } from '@/db/schema';
 import { hashPassword } from '@/lib/auth/password';
 import { setSessionCookie } from '@/lib/auth/session';
+import { withDbRetry } from '@/lib/db/retry';
 
 export const dynamic = 'force-dynamic';
 
@@ -59,16 +60,18 @@ export async function POST(req: Request) {
   }
 
   // phone / email 중복 검사 (이메일이 로그인 ID)
-  const existing = await db
-    .select({ id: users.id, phone: users.phone, email: users.email })
-    .from(users)
-    .where(
-      and(
-        or(eq(users.phone, input.phone), eq(users.email, input.email)),
-        isNull(users.deletedAt),
-      ),
-    )
-    .limit(1);
+  const existing = await withDbRetry(() =>
+    db
+      .select({ id: users.id, phone: users.phone, email: users.email })
+      .from(users)
+      .where(
+        and(
+          or(eq(users.phone, input.phone), eq(users.email, input.email)),
+          isNull(users.deletedAt),
+        ),
+      )
+      .limit(1),
+  );
 
   if (existing[0]) {
     const e = existing[0];
@@ -92,7 +95,10 @@ export async function POST(req: Request) {
 
   const passwordHash = await hashPassword(input.password);
 
-  const created = await db.transaction(async (tx) => {
+  // 트랜잭션은 원자적(실패 시 롤백)이라 연결 블립에 한해 재시도 안전.
+  // 제약 위반(중복 등)은 비전이 오류라 withDbRetry 가 재시도하지 않고 즉시 throw.
+  const created = await withDbRetry(() =>
+    db.transaction(async (tx) => {
     const [user] = await tx
       .insert(users)
       .values({
@@ -122,7 +128,8 @@ export async function POST(req: Request) {
       .returning({ id: customers.id });
 
     return { userId: user.id, customerId: customer.id };
-  });
+    }),
+  );
 
   await setSessionCookie({ uid: created.userId, role: 'customer' });
 
