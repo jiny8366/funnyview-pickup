@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useState } from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/badge';
 import { formatDateTime, formatKRW } from '@/lib/utils/format';
@@ -29,6 +29,7 @@ export default function WarehouseOrdersPage() {
 }
 
 function WarehouseOrdersInner() {
+  const router = useRouter();
   const params = useSearchParams();
   const statusFilter = params.get('status');
   const [orders, setOrders] = useState<OrderRow[] | null>(null);
@@ -75,6 +76,11 @@ function WarehouseOrdersInner() {
       setError(`${failed.length}건 처리 실패`);
     }
     setSelected(new Set());
+    // 패킹 시작이 성공하면 픽리스트 화면으로 이동(거기서 픽킹·출고 진행).
+    if (action === 'pick' && failed.length === 0) {
+      router.push('/warehouse/picklist');
+      return;
+    }
     load();
   }
 
@@ -90,9 +96,6 @@ function WarehouseOrdersInner() {
           </Button>
           <Button variant="secondary" size="sm" onClick={() => batch('pick')} disabled={selected.size === 0}>
             패킹 시작
-          </Button>
-          <Button size="sm" onClick={() => batch('ship')} disabled={selected.size === 0} className="bg-emerald-600 hover:bg-emerald-700">
-            출고
           </Button>
           <Button variant="danger" size="sm" onClick={() => batch('cancel')} disabled={selected.size === 0}>
             취소
