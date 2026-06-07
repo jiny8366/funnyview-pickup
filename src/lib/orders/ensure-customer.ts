@@ -32,7 +32,8 @@ export async function ensureCustomerForUser(userId: string): Promise<string> {
     .where(eq(users.id, userId))
     .limit(1);
 
-  const name = u?.username || u?.email?.split('@')[0] || '고객';
+  // 실명 우선(username/email), 없으면 전화로 식별. 실고객은 가입 시 customers.name(실명)이 이미 있어 이 분기를 타지 않음.
+  const name = u?.username || u?.email?.split('@')[0] || (u?.phone ? `고객 ${u.phone}` : '고객');
   const phone = u?.phone || '';
 
   const [created] = await db

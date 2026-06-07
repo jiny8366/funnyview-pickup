@@ -112,6 +112,29 @@ export default function WarehousePicklistPage() {
     window.print();
   }
 
+  // 팩킹(배송): 선택/해당 주문을 출고(shipped) 단계로 넘김. accepted 면 picking 경유.
+  async function shipOrder(o: OrderRow) {
+    const url = `/api/warehouse/orders/${o.id}/transition`;
+    const post = (action: string) =>
+      fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action }) });
+    if (o.status === 'accepted') await post('pick');
+    const res = await post('ship');
+    if (res.ok) {
+      setOrders((prev) => prev.filter((x) => x.id !== o.id));
+      setSelected((prev) => {
+        const n = new Set(prev);
+        n.delete(o.id);
+        return n;
+      });
+    } else {
+      const j = await res.json().catch(() => ({}));
+      alert(`배송 전환 실패: ${j.message ?? res.status}`);
+    }
+  }
+  async function shipSelected() {
+    for (const o of orders.filter((x) => selected.has(x.id))) await shipOrder(o);
+  }
+
   return (
     <div className="space-y-6">
       <header className="flex items-center justify-between print:hidden">
@@ -148,13 +171,17 @@ export default function WarehousePicklistPage() {
             <table className="w-full text-sm">
               <thead className="bg-gray-50 text-xs uppercase text-gray-500">
                 <tr>
-                  <th className="px-3 py-2 text-left w-8">
-                    <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="전체선택" />
+                  <th className="px-3 py-2 text-left whitespace-nowrap">
+                    <label className="inline-flex items-center gap-1.5">
+                      <input type="checkbox" checked={allSelected} onChange={toggleAll} aria-label="전체선택" />
+                      피킹
+                    </label>
                   </th>
                   <th className="px-3 py-2 text-left">주문번호</th>
                   <th className="px-3 py-2 text-left">고객</th>
                   <th className="px-3 py-2 text-left">픽업가맹점</th>
                   <th className="px-3 py-2 text-right">아이템</th>
+                  <th className="px-3 py-2 text-right">팩킹(배송)</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
@@ -175,11 +202,16 @@ export default function WarehousePicklistPage() {
                     <td className="px-3 py-2">{o.customerName}</td>
                     <td className="px-3 py-2">{o.storeName}</td>
                     <td className="px-3 py-2 text-right">{o.itemCount}</td>
+                    <td className="px-3 py-2 text-right">
+                      <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => shipOrder(o)}>
+                        팩킹(배송) →
+                      </Button>
+                    </td>
                   </tr>
                 ))}
                 {orders.length === 0 && (
                   <tr>
-                    <td colSpan={5} className="px-3 py-8 text-center text-gray-400">
+                    <td colSpan={6} className="px-3 py-8 text-center text-gray-400">
                       대상 주문 없음
                     </td>
                   </tr>
