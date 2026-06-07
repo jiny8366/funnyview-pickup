@@ -6,7 +6,7 @@ import { orderItems, orders, stores } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { createOrder, OrderCreationError } from '@/lib/orders/create-order';
 import { ensureCustomerForUser, findCustomerIdForUser } from '@/lib/orders/ensure-customer';
-import { markPaid } from '@/lib/orders/transitions';
+import { markConfirmed, markPaid } from '@/lib/orders/transitions';
 
 export const dynamic = 'force-dynamic';
 
@@ -60,9 +60,12 @@ export async function POST(req: Request) {
       lines: parsed.data.lines,
     });
 
-    // mock: 온라인 선결제 처리
+    // 주문 확정 → 픽업서비스 파이프라인 진입(신규로 노출).
+    // 온라인 선결제면 markPaid(isPaid=1), 매장결제면 markConfirmed(isPaid=0).
     if (parsed.data.payOnline) {
       await markPaid(order.id, user.id);
+    } else {
+      await markConfirmed(order.id, user.id);
     }
 
     return NextResponse.json({

@@ -112,6 +112,15 @@ export async function markPaid(orderId: string, byUserId: string | null) {
   });
 }
 
+/**
+ * 매장결제(현장 수령 시 결제) 주문 확정.
+ * 온라인 선결제가 아니어도 주문을 픽업서비스 파이프라인에 '신규'로 진입시킨다.
+ * status 는 'paid'(=픽업서비스 노출)지만 isPaid 는 0(매장결제)로 유지 — 가맹점 화면이 '매장결제'로 표시.
+ */
+export async function markConfirmed(orderId: string, byUserId: string | null) {
+  await transition(orderId, 'paid', byUserId, {}, 'order_confirmed_pay_at_pickup');
+}
+
 export async function markAccepted(orderId: string, byUserId: string) {
   await transition(orderId, 'accepted', byUserId, { acceptedAt: new Date() });
 }
