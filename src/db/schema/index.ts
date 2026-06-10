@@ -16,6 +16,7 @@ export * from './inventory';
 export * from './orders';
 export * from './payments';
 export * from './business';
+export * from './urgent-purchases';
 export * from './notifications';
 export * from './oauth';
 export * from './home';
