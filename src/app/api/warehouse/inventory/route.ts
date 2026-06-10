@@ -15,6 +15,11 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
   const onlyLow = url.searchParams.get('low') === '1';
+  // 검색 조건 (재고 메뉴 검색우선 UX): q=제품명/SKU, brand, type(lensType)
+  const q = url.searchParams.get('q')?.trim();
+  const brand = url.searchParams.get('brand')?.trim();
+  const lensType = url.searchParams.get('type')?.trim();
+  const format = url.searchParams.get('format'); // 'csv' = 엑셀 다운로드
 
   // FIFO lot aggregates via correlated subqueries (confirmed lots only)
   const lotSubquery = db
@@ -58,12 +63,38 @@ export async function GET(req: Request) {
     .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
     .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
     .leftJoin(lotSubquery, eq(lotSubquery.variantId, lensVariants.id))
-    .where(
-      onlyLow
-        ? sql`(${inventory.quantityOnHand} - ${inventory.quantityReserved}) < GREATEST(${inventory.safetyStock}, ${inventory.reorderPoint})`
-        : sql`TRUE`,
-    )
+    .where(sql.join(
+      [
+        onlyLow
+          ? sql`(${inventory.quantityOnHand} - ${inventory.quantityReserved}) < GREATEST(${inventory.safetyStock}, ${inventory.reorderPoint})`
+          : sql`TRUE`,
+        q ? sql`(${lenses.name} ILIKE ${'%' + q + '%'} OR ${lensVariants.sku} ILIKE ${'%' + q + '%'})` : sql`TRUE`,
+        brand ? sql`${lenses.brand} = ${brand}` : sql`TRUE`,
+        lensType ? sql`${lenses.lensType} = ${lensType}` : sql`TRUE`,
+      ],
+      sql` AND `,
+    ))
     .orderBy(asc(lenses.brand), asc(lenses.name), asc(lensVariants.sphere));
+
+  // 엑셀(CSV) 다운로드 — UTF-8 BOM 으로 한글 엑셀 호환
+  if (format === 'csv') {
+    const header = ['브랜드', '제품명', 'SKU', 'SPH', 'CYL', 'AXIS', 'ADD', '보유', '예약', '가용', '안전재고', '로트수', '평균원가', '최초입고일'];
+    const lines = rows.map((r) =>
+      [
+        r.brand, r.lensName, r.sku, r.sphere, r.cylinder ?? '', r.axis ?? '', r.addPower ?? '',
+        r.onHand, r.reserved, r.available, r.safetyStock, r.lotCount, r.weightedAvgCost, r.oldestInboundDate ?? '',
+      ]
+        .map((v) => `"${String(v).replace(/"/g, '""')}"`)
+        .join(','),
+    );
+    const csv = '\uFEFF' + [header.join(','), ...lines].join('\r\n');
+    return new NextResponse(csv, {
+      headers: {
+        'content-type': 'text/csv; charset=utf-8',
+        'content-disposition': `attachment; filename="inventory-${new Date().toISOString().slice(0, 10)}.csv"`,
+      },
+    });
+  }
 
   return NextResponse.json({ inventory: rows });
 }
