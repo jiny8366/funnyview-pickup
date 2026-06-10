@@ -59,6 +59,13 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
         await markReady(ctx.params.id, user.id);
         break;
       case 'complete': {
+        // 미선결제(매장결제) 주문은 결제정보(수단·금액) 없이 완료 불가 — 결제 누락 방지
+        if (!ord[0].isPaid && !parsed.data.payment) {
+          return NextResponse.json(
+            { error: 'PAYMENT_REQUIRED', message: '매장 결제 정보(수단·금액)가 필요합니다.' },
+            { status: 400 },
+          );
+        }
         // 매장 결제 처리: payment 가 전달되면 record 생성
         if (parsed.data.payment) {
           await db.insert(payments).values({

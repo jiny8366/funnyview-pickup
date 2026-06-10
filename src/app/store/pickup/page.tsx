@@ -77,7 +77,7 @@ function StorePickupInner() {
           <li key={r.id} className="rounded-2xl border border-gray-200 bg-white p-3">
             <div className="flex items-center justify-between gap-2">
               <Link
-                href={`/customer/orders/${r.id}`}
+                href={`/store/pickup/${r.id}`}
                 className="font-mono text-xs text-gray-500 hover:underline"
               >
                 {r.orderNumber}
@@ -145,7 +145,7 @@ function StorePickupInner() {
             {rows?.map((r) => (
               <tr key={r.id}>
                 <td className="px-3 py-2 font-mono text-xs">
-                  <Link href={`/customer/orders/${r.id}`} className="hover:underline">{r.orderNumber}</Link>
+                  <Link href={`/store/pickup/${r.id}`} className="hover:underline">{r.orderNumber}</Link>
                 </td>
                 <td className="px-3 py-2"><StatusBadge status={r.status} /></td>
                 <td className="px-3 py-2">
