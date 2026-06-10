@@ -8,8 +8,9 @@ import type { OrderStatus } from '@/types/order';
 
 export const dynamic = 'force-dynamic';
 
-// 신규(pending=매장결제 미접수, paid=온라인 선결제) + 처리중(accepted/picking)
-const ACTIVE_STATUSES: OrderStatus[] = ['pending', 'paid', 'accepted', 'picking'];
+// 주문 처리 화면 = 신규/접수 대기분만. picking 은 '패킹 시작'으로 픽리스트 화면으로 이동하므로
+// 이 목록에서 제외(이미 picking 인 주문에 '패킹 시작'→picking 시 INVALID_TRANSITION 방지).
+const ACTIVE_STATUSES: OrderStatus[] = ['pending', 'paid', 'accepted'];
 
 export async function GET(req: Request) {
   const user = await getCurrentUser();
