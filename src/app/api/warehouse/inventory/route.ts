@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { asc, eq, sql } from 'drizzle-orm';
+import { asc, eq, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/client';
 import { inventory, inventoryLots, inventoryMovements, inboundShipments, lensVariants, lenses } from '@/db/schema';
@@ -14,11 +14,22 @@ export async function GET(req: Request) {
   }
 
   const url = new URL(req.url);
+
+  // 필터 칩 구성용 브랜드 목록 (다른 페이지와 동일한 칩 토글 UX)
+  if (url.searchParams.get('facets') === '1') {
+    const brandRows = await db
+      .selectDistinct({ brand: lenses.brand })
+      .from(lenses)
+      .where(sql`${lenses.deletedAt} IS NULL`)
+      .orderBy(asc(lenses.brand));
+    return NextResponse.json({ brands: brandRows.map((b) => b.brand) });
+  }
+
   const onlyLow = url.searchParams.get('low') === '1';
-  // 검색 조건 (재고 메뉴 검색우선 UX): q=제품명/SKU, brand, type(lensType)
+  // 검색 조건: q=제품명/SKU, brand/type 은 콤마구분 복수 선택(칩 토글) 지원
   const q = url.searchParams.get('q')?.trim();
-  const brand = url.searchParams.get('brand')?.trim();
-  const lensType = url.searchParams.get('type')?.trim();
+  const brandList = (url.searchParams.get('brand') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const typeList = (url.searchParams.get('type') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const format = url.searchParams.get('format'); // 'csv' = 엑셀 다운로드
 
   // FIFO lot aggregates via correlated subqueries (confirmed lots only)
@@ -69,8 +80,8 @@ export async function GET(req: Request) {
           ? sql`(${inventory.quantityOnHand} - ${inventory.quantityReserved}) < GREATEST(${inventory.safetyStock}, ${inventory.reorderPoint})`
           : sql`TRUE`,
         q ? sql`(${lenses.name} ILIKE ${'%' + q + '%'} OR ${lensVariants.sku} ILIKE ${'%' + q + '%'})` : sql`TRUE`,
-        brand ? sql`${lenses.brand} = ${brand}` : sql`TRUE`,
-        lensType ? sql`${lenses.lensType} = ${lensType}` : sql`TRUE`,
+        brandList.length > 0 ? inArray(lenses.brand, brandList) : sql`TRUE`,
+        typeList.length > 0 ? inArray(lenses.lensType, typeList as never) : sql`TRUE`,
       ],
       sql` AND `,
     ))

@@ -35,12 +35,35 @@ interface InvRow {
 }
 
 const TYPE_OPTIONS = [
-  { value: '', label: '전체 유형' },
   { value: 'spherical', label: '구면(투명)' },
   { value: 'toric', label: '난시(토릭)' },
   { value: 'multifocal', label: '다초점' },
   { value: 'color', label: '컬러' },
 ];
+
+/** 다른 페이지(제품 목록 등)와 동일한 필터 칩. */
+function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-2.5 py-1 text-xs transition ${
+        active ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2">
+      <div className="w-14 shrink-0 pt-1 text-xs font-medium text-gray-600">{label}</div>
+      <div className="flex flex-1 flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
 
 export default function WarehouseInventoryPage() {
   return (
@@ -56,8 +79,9 @@ function WarehouseInventoryInner() {
 
   // 검색우선 UX: 조건을 정하고 '조회'를 눌러야 로드 (44k행 자동로드 방지).
   const [q, setQ] = useState('');
-  const [brand, setBrand] = useState('');
-  const [type, setType] = useState('');
+  const [brands, setBrands] = useState<Set<string>>(new Set());
+  const [types, setTypes] = useState<Set<string>>(new Set());
+  const [allBrands, setAllBrands] = useState<string[]>([]);
   const [lowOnly, setLowOnly] = useState(lowDeepLink);
   const [rows, setRows] = useState<InvRow[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -70,14 +94,22 @@ function WarehouseInventoryInner() {
       const sp = new URLSearchParams();
       if (!forAll) {
         if (q.trim()) sp.set('q', q.trim());
-        if (brand.trim()) sp.set('brand', brand.trim());
-        if (type) sp.set('type', type);
+        if (brands.size > 0) sp.set('brand', [...brands].join(','));
+        if (types.size > 0) sp.set('type', [...types].join(','));
         if (lowOnly) sp.set('low', '1');
       }
       return sp;
     },
-    [q, brand, type, lowOnly],
+    [q, brands, types, lowOnly],
   );
+
+  // 브랜드 칩 목록 (다른 페이지와 동일한 칩 토글 UX)
+  useEffect(() => {
+    fetch('/api/warehouse/inventory?facets=1')
+      .then((r) => r.json())
+      .then((j) => setAllBrands(j.brands ?? []))
+      .catch(() => setAllBrands([]));
+  }, []);
 
   const load = useCallback(
     async (forAll = false) => {
@@ -133,25 +165,9 @@ function WarehouseInventoryInner() {
             value={q}
             onChange={(e) => setQ(e.target.value)}
             onKeyDown={(e) => e.key === 'Enter' && load()}
-            placeholder="제품명 또는 SKU"
-            className="h-9 w-56 rounded-lg border border-gray-200 px-3 text-sm"
+            placeholder="제품명 또는 SKU 검색"
+            className="h-9 w-64 rounded-lg border border-gray-200 px-3 text-sm"
           />
-          <input
-            value={brand}
-            onChange={(e) => setBrand(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && load()}
-            placeholder="브랜드 (예: 아큐브)"
-            className="h-9 w-36 rounded-lg border border-gray-200 px-3 text-sm"
-          />
-          <select
-            value={type}
-            onChange={(e) => setType(e.target.value)}
-            className="h-9 rounded-lg border border-gray-200 px-2 text-sm"
-          >
-            {TYPE_OPTIONS.map((o) => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
           <label className="inline-flex items-center gap-1.5 text-sm text-gray-700">
             <input type="checkbox" checked={lowOnly} onChange={(e) => setLowOnly(e.target.checked)} className="h-4 w-4" />
             저재고만
@@ -163,6 +179,40 @@ function WarehouseInventoryInner() {
             전체 보기
           </Button>
         </div>
+        {allBrands.length > 0 && (
+          <FilterRow label="브랜드">
+            {allBrands.map((b) => (
+              <Chip
+                key={b}
+                active={brands.has(b)}
+                onClick={() => {
+                  const s = new Set(brands);
+                  if (s.has(b)) s.delete(b);
+                  else s.add(b);
+                  setBrands(s);
+                }}
+              >
+                {b}
+              </Chip>
+            ))}
+          </FilterRow>
+        )}
+        <FilterRow label="렌즈 타입">
+          {TYPE_OPTIONS.map((t) => (
+            <Chip
+              key={t.value}
+              active={types.has(t.value)}
+              onClick={() => {
+                const s = new Set(types);
+                if (s.has(t.value)) s.delete(t.value);
+                else s.add(t.value);
+                setTypes(s);
+              }}
+            >
+              {t.label}
+            </Chip>
+          ))}
+        </FilterRow>
         {searched && rows && (
           <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-2">
             <span className="text-xs text-gray-500">{rows.length.toLocaleString()}개 도수(SKU)</span>
@@ -188,7 +238,7 @@ function WarehouseInventoryInner() {
         <h2 className="text-lg font-bold">재고 현황</h2>
         <p className="text-xs text-gray-500">
           Funnyview Pickup · 출력일 {new Date().toLocaleString('ko-KR')}
-          {q && ` · 검색어 "${q}"`}{brand && ` · 브랜드 ${brand}`}{lowOnly && ' · 저재고만'}
+          {q && ` · 검색어 "${q}"`}{brands.size > 0 && ` · 브랜드 ${[...brands].join('/')}`}{types.size > 0 && ` · 유형 ${types.size}종`}{lowOnly && ' · 저재고만'}
         </p>
       </div>
 
