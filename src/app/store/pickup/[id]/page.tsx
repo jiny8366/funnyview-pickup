@@ -8,6 +8,7 @@ import { StatusBadge } from '@/components/ui/badge';
 import { Card, CardBody } from '@/components/ui/card';
 import { IconArrowLeft, IconClose, IconSearch } from '@/components/ui/icons';
 import { PrescriptionManager } from '@/components/prescription/prescription-manager';
+import { NotificationHistory } from '@/components/orders/notification-history';
 import { parseBarcode } from '@/lib/barcode/parse';
 import { formatLensDisplayName, formatPackQuantity } from '@/lib/lens/format';
 import { formatDateTime, formatKRW } from '@/lib/utils/format';
@@ -240,6 +241,9 @@ export default function StorePickupDetailPage() {
           </div>
         </CardBody>
       </Card>
+
+      {/* 고객 알림 발송 이력 (클레임 대응 — 보드 #9) */}
+      <NotificationHistory orderId={params.id} />
 
       {/* 고객 시력정보 (도수 확인·기록) */}
       <PrescriptionManager
