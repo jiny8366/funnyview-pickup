@@ -99,6 +99,7 @@ const PORTAL_ALLOWED: Record<Portal, string[]> = {
     '/api/notifications', // 알림 벨 (다른 포털과 동일) — 누락 시 SSE/fetch 가 로그인 HTML 로 redirect 됨
     '/api/push',
     '/api/events',
+    '/api/orders', // 주문별 알림이력(/api/orders/[id]/notifications) 등 — 라우트별 역할검사 별도 존재 (보드 #9)
   ],
   staff: [
     '/warehouse',
@@ -108,6 +109,7 @@ const PORTAL_ALLOWED: Record<Portal, string[]> = {
     '/api/notifications',
     '/api/push',
     '/api/events',
+    '/api/orders', // 주문별 알림이력 — 라우트별 역할검사 별도 존재 (보드 #9)
   ],
   store: [
     '/store',
@@ -117,6 +119,7 @@ const PORTAL_ALLOWED: Record<Portal, string[]> = {
     '/api/notifications',
     '/api/push',
     '/api/events',
+    '/api/orders', // 주문별 알림이력 — store_staff 는 자기 매장 주문만 (라우트 검사)
   ],
 };
 
