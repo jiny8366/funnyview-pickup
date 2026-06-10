@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { RecommendModal } from '@/components/prescription/recommend-modal';
-import { formatDiopter, roundQuarter } from '@/lib/prescription/convert';
+import { formatDiopter, glassesToContactToric, roundQuarter } from '@/lib/prescription/convert';
 
 interface Variant {
   variantId: string;
@@ -97,12 +97,19 @@ export function MyPowerSelector({
         setMsg('저장된 도수가 없습니다. 마이페이지에서 시력정보를 입력해 주세요.');
         return;
       }
-      const p = list[0];
+      // 콘택트 처방을 우선 사용. 안경 처방뿐이면 정점보정·토릭 변환으로 콘택트 도수 환산
+      // (미변환 안경도수를 콘택트 variant 에 직접 매칭하면 안 됨 — 도수가 다름).
+      const source = list.find((x) => x.kind === 'contact') ?? list[0];
+      const fromGlasses = source.kind !== 'contact';
+      const dose = fromGlasses
+        ? glassesToContactToric({ sphere: source.sphere, cylinder: source.cylinder, axis: source.axis, addPower: source.addPower })
+        : { sphere: source.sphere, cylinder: source.cylinder, axis: source.axis, addPower: source.addPower };
+      const p: Presc = { eyeSide, kind: 'contact', sphere: dose.sphere, cylinder: dose.cylinder, axis: dose.axis, addPower: dose.addPower };
       setPresc(p);
       const match = findExact(variants, p.sphere, p.cylinder, p.axis);
       if (match) {
         onSelect(match.variantId);
-        setMsg(`내 도수로 선택했습니다 · ${doseLabel(p)}`);
+        setMsg(`${fromGlasses ? '안경도수를 콘택트로 변환해 ' : '내 도수로 '}선택했습니다 · ${doseLabel(p)}`);
       } else {
         setStep('warn');
       }
