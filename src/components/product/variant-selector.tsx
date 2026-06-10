@@ -74,6 +74,9 @@ export function VariantSelector({
     [variants, sph],
   );
 
+  // 해당 도수 조건에 재고(available>0) 있는 variant 가 하나라도 있나 — 품절 표기·disable 용
+  const hasStock = (pred: (v: Variant) => boolean) => variants.some((v) => pred(v) && v.available > 0);
+
   function resolve(s: string, c: string, a: string, d: string) {
     if (!s) {
       onChange(null);
@@ -105,9 +108,14 @@ export function VariantSelector({
         <option value="" disabled>
           구면도수 (SPH)
         </option>
-        {sphOptions.map((o) => (
-          <option key={o} value={o}>{Number(o) > 0 ? `+${o}` : o}</option>
-        ))}
+        {sphOptions.map((o) => {
+          const ok = hasStock((v) => v.sphere === o);
+          return (
+            <option key={o} value={o} disabled={!ok}>
+              {Number(o) > 0 ? `+${o}` : o}{ok ? '' : ' (품절)'}
+            </option>
+          );
+        })}
       </select>
 
       {isToric && (
@@ -126,9 +134,12 @@ export function VariantSelector({
             <option value="" disabled>
               난시도수 (CYL)
             </option>
-            {cylOptions.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
+            {cylOptions.map((o) => {
+              const ok = hasStock((v) => v.sphere === sph && v.cylinder === o);
+              return (
+                <option key={o} value={o} disabled={!ok}>{o}{ok ? '' : ' (품절)'}</option>
+              );
+            })}
           </select>
 
           <select
@@ -144,9 +155,12 @@ export function VariantSelector({
             <option value="" disabled>
               난시축 (AXIS)
             </option>
-            {axisOptions.map((o) => (
-              <option key={o} value={o}>{o}</option>
-            ))}
+            {axisOptions.map((o) => {
+              const ok = hasStock((v) => v.sphere === sph && v.cylinder === cyl && String(v.axis) === o);
+              return (
+                <option key={o} value={o} disabled={!ok}>{o}{ok ? '' : ' (품절)'}</option>
+              );
+            })}
           </select>
         </>
       )}
@@ -165,9 +179,12 @@ export function VariantSelector({
           <option value="" disabled>
             가입도 (ADD)
           </option>
-          {addOptions.map((o) => (
-            <option key={o} value={o}>{o}</option>
-          ))}
+          {addOptions.map((o) => {
+            const ok = hasStock((v) => v.sphere === sph && v.addPower === o);
+            return (
+              <option key={o} value={o} disabled={!ok}>{o}{ok ? '' : ' (품절)'}</option>
+            );
+          })}
         </select>
       )}
     </div>
