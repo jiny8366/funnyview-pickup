@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { InventoryError } from '@/lib/inventory-fifo';
 import {
   TransitionError,
   cancelOrder,
@@ -46,6 +47,14 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
   } catch (e) {
     if (e instanceof TransitionError) {
       return NextResponse.json({ error: e.code, message: e.message }, { status: 400 });
+    }
+    // FIFO 출고 예외 — 표시 재고는 있어도 입고 로트가 없거나 부족.
+    // 운영자에게 원인·해결경로를 명확히 전달 (500 → 409).
+    if (e instanceof InventoryError) {
+      return NextResponse.json(
+        { error: e.code, message: e.message, detail: e.detail },
+        { status: 409 },
+      );
     }
     throw e;
   }

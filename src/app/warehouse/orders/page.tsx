@@ -73,7 +73,11 @@ function WarehouseOrdersInner() {
     );
     const failed = results.filter((r) => r.status === 'rejected' || (r.status === 'fulfilled' && r.value));
     if (failed.length > 0) {
-      setError(`${failed.length}건 처리 실패`);
+      // API 가 내려준 사유(예: FIFO 로트 없음·재고부족)를 운영자에게 그대로 노출 — 해결경로 안내
+      const firstMsg = failed
+        .map((r) => (r.status === 'fulfilled' ? (r.value as { message?: string } | null)?.message : null))
+        .find(Boolean);
+      setError(firstMsg ? `${failed.length}건 처리 실패 — ${firstMsg}` : `${failed.length}건 처리 실패`);
     }
     setSelected(new Set());
     // 패킹 시작이 성공하면 픽리스트 화면으로 이동(거기서 픽킹·출고 진행).

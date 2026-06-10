@@ -32,6 +32,22 @@ export interface FifoConsumeResult {
   unitCostIncVat: number;
 }
 
+/**
+ * FIFO 출고 시 발생하는 운영상 예외 (재고 부족 / 입고 로트 없음).
+ * 일반 Error 로 던지면 호출 라우트가 TransitionError 만 잡아 500 이 되므로,
+ * 운영자에게 원인·해결경로를 명확히 전달하기 위해 타입화함.
+ */
+export class InventoryError extends Error {
+  constructor(
+    public code: 'NO_LOTS' | 'INSUFFICIENT_STOCK',
+    message: string,
+    public detail: { variantId: string; requested: number; available: number; short: number },
+  ) {
+    super(message);
+    this.name = 'InventoryError';
+  }
+}
+
 // =============================================================
 // 입고 (Inbound)
 // =============================================================
@@ -243,8 +259,20 @@ export async function consumeLotsForVariant(
   }
 
   if (remaining > 0) {
-    throw new Error(
-      `FIFO: 재고 부족 (variantId=${variantId}, 요청=${qty}, 부족=${remaining})`,
+    const available = qty - remaining; // 로트로 충당 가능한 수량
+    if (lots.length === 0) {
+      // 표시 재고(레거시 inventory)는 있어도 확정 입고 로트가 없으면 출고 불가.
+      // 운영자 해결경로: 해당 도수의 입고(전표) 등록 → confirmed 후 재시도.
+      throw new InventoryError(
+        'NO_LOTS',
+        '출고 가능한 입고 로트가 없습니다. 해당 도수의 입고(전표)를 등록·확정한 뒤 다시 출고하세요.',
+        { variantId, requested: qty, available, short: remaining },
+      );
+    }
+    throw new InventoryError(
+      'INSUFFICIENT_STOCK',
+      `FIFO 재고가 부족합니다. (요청 ${qty} / 출고가능 ${available} / 부족 ${remaining})`,
+      { variantId, requested: qty, available, short: remaining },
     );
   }
 
