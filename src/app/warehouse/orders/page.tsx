@@ -4,7 +4,7 @@ import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/badge';
-import { formatDateTime, formatKRW } from '@/lib/utils/format';
+import { formatKRW } from '@/lib/utils/format';
 import type { OrderStatus } from '@/types/order';
 
 interface OrderRow {
@@ -134,9 +134,8 @@ function WarehouseOrdersInner() {
                   <span className="text-xs text-gray-500">{o.customerPhone}</span>
                 </div>
                 <div className="mt-0.5 text-xs text-gray-500">→ {o.storeName}</div>
-                <div className="mt-1 flex items-center justify-between text-xs">
-                  <span className="text-gray-500">{formatDateTime(o.paidAt)}</span>
-                  <span className="font-semibold">{formatKRW(o.total)} · {o.itemCount}건</span>
+                <div className="mt-1 flex items-center justify-end text-xs">
+                  <span className="font-semibold">{formatKRW(o.total)} · 수량 {o.itemCount}</span>
                 </div>
               </div>
             </div>
@@ -169,8 +168,7 @@ function WarehouseOrdersInner() {
               <th className="px-3 py-2 text-left">고객</th>
               <th className="px-3 py-2 text-left">픽업가맹점</th>
               <th className="px-3 py-2 text-right">금액</th>
-              <th className="px-3 py-2 text-right">아이템</th>
-              <th className="px-3 py-2 text-left">결제완료</th>
+              <th className="px-3 py-2 text-right">수량</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
@@ -190,12 +188,11 @@ function WarehouseOrdersInner() {
                 <td className="px-3 py-2">{o.storeName}</td>
                 <td className="px-3 py-2 text-right">{formatKRW(o.total)}</td>
                 <td className="px-3 py-2 text-right">{o.itemCount}</td>
-                <td className="px-3 py-2 text-xs text-gray-500">{formatDateTime(o.paidAt)}</td>
               </tr>
             ))}
             {orders && orders.length === 0 && (
               <tr>
-                <td colSpan={8} className="px-3 py-10 text-center text-gray-400">
+                <td colSpan={7} className="px-3 py-10 text-center text-gray-400">
                   처리할 주문이 없습니다
                 </td>
               </tr>
