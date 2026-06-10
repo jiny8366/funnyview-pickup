@@ -119,6 +119,33 @@ export async function markAccepted(orderId: string, byUserId: string) {
 
 export async function markPicking(orderId: string, byUserId: string) {
   await transition(orderId, 'picking', byUserId, { pickingAt: new Date() });
+
+  // 접수(패킹 시작) → 고객 + 가맹점 직원에 'order_received'(주문접수) 알림 (보드 #11)
+  try {
+    const summary = await orderSummary(orderId);
+    if (summary) {
+      const staff = await db
+        .select({ id: users.id, phone: users.phone })
+        .from(users)
+        .where(and(eq(users.role, 'store_staff'), eq(users.storeId, summary.storeId)));
+      await dispatchNotification({
+        kind: 'order_received',
+        recipients: [
+          { userId: summary.customerUserId, phone: summary.customerPhone, preferKakao: true },
+          ...staff.map((s) => ({ userId: s.id, phone: s.phone })),
+        ],
+        context: {
+          orderNumber: summary.orderNumber,
+          customerName: summary.customerName,
+          storeName: summary.storeName,
+        },
+        referenceType: 'order',
+        referenceId: orderId,
+      });
+    }
+  } catch {
+    // ignore
+  }
 }
 
 export async function markShipped(orderId: string, byUserId: string) {
