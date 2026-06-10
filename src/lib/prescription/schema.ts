@@ -1,12 +1,21 @@
 import { z } from 'zod';
 
 /** 도수 입력/저장 공통 검증 스키마 (admin / customer / store API 공용). */
-export const prescriptionEyeSchema = z.object({
-  sphere: z.string().min(1),
-  cylinder: z.string().nullable().optional(),
-  axis: z.number().int().min(0).max(180).nullable().optional(),
-  addPower: z.string().nullable().optional(),
-});
+export const prescriptionEyeSchema = z
+  .object({
+    sphere: z.string().min(1),
+    cylinder: z.string().nullable().optional(),
+    axis: z.number().int().min(0).max(180).nullable().optional(),
+    addPower: z.string().nullable().optional(),
+  })
+  // 난시(|CYL| >= 0.5)면 난시축(AXIS) 필수 — 토릭 처방은 축이 있어야 함
+  .refine(
+    (e) => {
+      const cyl = e.cylinder ? Math.abs(parseFloat(e.cylinder)) : 0;
+      return !(Number.isFinite(cyl) && cyl >= 0.5) || e.axis != null;
+    },
+    { message: '난시(CYL)가 있으면 난시축(AXIS)을 입력해야 합니다', path: ['axis'] },
+  );
 
 export const prescriptionPostSchema = z.object({
   kind: z.enum(['glasses', 'contact']),
