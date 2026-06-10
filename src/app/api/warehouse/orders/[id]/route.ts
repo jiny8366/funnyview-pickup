@@ -57,6 +57,7 @@ export async function GET(
     withDbRetry(() =>
       db
         .select({
+          variantId: orderItems.variantId, // 검수 UI 가 바코드 매칭(variantId)과 대조
           lensName: orderItems.lensName,
           lensBrand: orderItems.lensBrand,
           sku: orderItems.skuSnapshot,
