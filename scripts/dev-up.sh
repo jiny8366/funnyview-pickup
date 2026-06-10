@@ -3,8 +3,8 @@
 #
 # 새 머신/M3 에서:
 #   1) git clone 후 이 레포로 cd
-#   2) .env.local 을 M1 에서 안전하게 복사 (AirDrop 등) — git 으로 안 옴 (시크릿)
-#   3) brew install colima docker docker-compose   # 엔진 없으면
+#   2) .env.local 을 안전하게 전달받기 (Mac↔Mac=AirDrop, Mac↔Win=암호화메모/1Password/USB) — git 으로 안 옴 (시크릿)
+#   3) 컨테이너 엔진 준비: macOS=colima 또는 Docker Desktop / Windows(WSL)=Docker Desktop+WSL통합 / Linux=docker-ce
 #   4) bash scripts/dev-up.sh
 #
 # 멱등(idempotent): 여러 번 돌려도 안전. 끝나면 npm run dev → http://localhost:3001
@@ -17,13 +17,22 @@ if [ ! -f .env.local ]; then
   exit 1
 fi
 
-echo "▶ 2/6 컨테이너 엔진(colima) 확인/기동"
-if ! command -v colima >/dev/null 2>&1; then
-  echo "✗ colima 없음 — 설치: brew install colima docker docker-compose"
+echo "▶ 2/6 컨테이너 엔진 확인/기동 (크로스플랫폼)"
+if docker info >/dev/null 2>&1; then
+  # 이미 docker 데몬 사용 가능 (WSL/Docker Desktop, Linux docker-ce 등) — colima 불필요
+  echo "   ✅ docker 데몬 사용 가능"
+elif command -v colima >/dev/null 2>&1; then
+  # macOS: colima 엔진 기동
+  echo "   colima 기동..."
+  colima status >/dev/null 2>&1 || colima start --cpu 2 --memory 4 --disk 60
+  docker context use colima >/dev/null 2>&1 || true
+else
+  echo "✗ docker 데몬을 찾을 수 없습니다. 엔진을 먼저 준비하세요:"
+  echo "   • Windows(WSL): Docker Desktop 설치 + Settings→Resources→WSL Integration 켜기 (또는 WSL 안에 docker-ce 설치)"
+  echo "   • macOS: brew install colima docker docker-compose  (또는 Docker Desktop)"
+  echo "   • Linux: sudo apt install docker.io docker-compose-plugin && sudo usermod -aG docker \$USER"
   exit 1
 fi
-colima status >/dev/null 2>&1 || colima start --cpu 2 --memory 4 --disk 60
-docker context use colima >/dev/null 2>&1 || true
 
 echo "▶ 3/6 의존성 설치 (npm install)"
 npm install

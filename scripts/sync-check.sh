@@ -14,7 +14,7 @@ ba=$(git rev-list --left-right --count origin/main...HEAD 2>/dev/null || echo "?
 echo "behind/ahead : ${ba}"
 echo "uncommitted  : $(git status --porcelain 2>/dev/null | wc -l | tr -d ' ')개"
 echo "node         : $(node -v 2>/dev/null)"
-echo "colima       : $(colima status 2>&1 | grep -ioE 'running|stopped' | head -1 || echo n/a)"
+echo "docker       : $(docker info >/dev/null 2>&1 && echo running || echo 'n/a(엔진미기동)')"
 pg=$(docker inspect --format '{{.State.Health.Status}}' funnyview-postgres 2>/dev/null || echo down)
 rd=$(docker inspect --format '{{.State.Health.Status}}' funnyview-redis 2>/dev/null || echo down)
 echo "postgres     : $pg"
