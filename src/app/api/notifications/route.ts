@@ -16,12 +16,15 @@ export async function GET(req: Request) {
   const unreadOnly = url.searchParams.get('unread') === '1';
   const limit = Math.min(Number(url.searchParams.get('limit') ?? 30), 100);
 
+  // 인앱(벨)은 channel='app' 행만. 같은 알림이 sms/kakao 행으로도 적재되므로
+  // 필터 없으면 벨에 중복 표시 + 미읽음수가 2배로 집계됨.
   const rows = await db
     .select()
     .from(notifications)
     .where(
       and(
         eq(notifications.recipientUserId, user.id),
+        eq(notifications.channel, 'app'),
         unreadOnly ? isNull(notifications.readAt) : sql`TRUE`,
       ),
     )
@@ -34,6 +37,7 @@ export async function GET(req: Request) {
     .where(
       and(
         eq(notifications.recipientUserId, user.id),
+        eq(notifications.channel, 'app'),
         isNull(notifications.readAt),
       ),
     );
