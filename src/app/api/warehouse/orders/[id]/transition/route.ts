@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { withDbRetry } from '@/lib/db/retry';
 import { InventoryError } from '@/lib/inventory-fifo';
 import {
   TransitionError,
@@ -29,18 +30,22 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
   }
 
   try {
+    // 각 전이는 단일 원자 트랜잭션(markShipped 의 FIFO 차감 포함) — 연결 블립에 한해 재시도 안전.
+    // 이미 커밋된 뒤 재시도되면 INVALID_TRANSITION(비전이 오류)으로 즉시 반환된다. (보드 #4)
     switch (parsed.data.action) {
       case 'accept':
-        await markAccepted(ctx.params.id, user.id);
+        await withDbRetry(() => markAccepted(ctx.params.id, user.id));
         break;
       case 'pick':
-        await markPicking(ctx.params.id, user.id);
+        await withDbRetry(() => markPicking(ctx.params.id, user.id));
         break;
       case 'ship':
-        await markShipped(ctx.params.id, user.id);
+        await withDbRetry(() => markShipped(ctx.params.id, user.id));
         break;
       case 'cancel':
-        await cancelOrder(ctx.params.id, user.id, parsed.data.reason ?? 'warehouse_cancel');
+        await withDbRetry(() =>
+          cancelOrder(ctx.params.id, user.id, parsed.data.reason ?? 'warehouse_cancel'),
+        );
         break;
     }
     return NextResponse.json({ ok: true });

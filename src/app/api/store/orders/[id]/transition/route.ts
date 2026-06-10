@@ -4,6 +4,7 @@ import { z } from 'zod';
 import { db } from '@/db/client';
 import { orders, payments } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
+import { withDbRetry } from '@/lib/db/retry';
 import {
   TransitionError,
   markArrived,
@@ -32,12 +33,14 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
     return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
   }
 
-  // 가맹점 직원은 본인 storeId 의 주문만 처리 가능
-  const ord = await db
-    .select({ pickupStoreId: orders.pickupStoreId, isPaid: orders.isPaid })
-    .from(orders)
-    .where(eq(orders.id, ctx.params.id))
-    .limit(1);
+  // 가맹점 직원은 본인 storeId 의 주문만 처리 가능 (연결 블립 재시도 — 보드 #4)
+  const ord = await withDbRetry(() =>
+    db
+      .select({ pickupStoreId: orders.pickupStoreId, isPaid: orders.isPaid })
+      .from(orders)
+      .where(eq(orders.id, ctx.params.id))
+      .limit(1),
+  );
   if (!ord[0]) {
     return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
   }
@@ -51,15 +54,17 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
   }
 
   try {
+    // 각 전이는 원자 트랜잭션 — 연결 블립에 한해 재시도 안전. (보드 #4)
+    // 단 결제(payments insert)는 이중 기록 방지를 위해 재시도하지 않는다.
     switch (parsed.data.action) {
       case 'arrive':
-        await markArrived(ctx.params.id, user.id);
+        await withDbRetry(() => markArrived(ctx.params.id, user.id));
         break;
       case 'ready':
-        await markReady(ctx.params.id, user.id);
+        await withDbRetry(() => markReady(ctx.params.id, user.id));
         break;
       case 'complete': {
-        // 매장 결제 처리: payment 가 전달되면 record 생성
+        // 매장 결제 처리: payment 가 전달되면 record 생성 (재시도 제외 — 금전 기록)
         if (parsed.data.payment) {
           await db.insert(payments).values({
             orderId: ctx.params.id,
@@ -72,14 +77,16 @@ export async function POST(req: Request, ctx: { params: { id: string } }) {
             collectedBy: user.id,
           });
         }
-        await markCompleted(ctx.params.id, user.id);
+        await withDbRetry(() => markCompleted(ctx.params.id, user.id));
         break;
       }
       case 'no_show':
-        await markNoShow(ctx.params.id, user.id);
+        await withDbRetry(() => markNoShow(ctx.params.id, user.id));
         break;
       case 'return':
-        await markReturned(ctx.params.id, user.id, parsed.data.reason ?? '매장 반품');
+        await withDbRetry(() =>
+          markReturned(ctx.params.id, user.id, parsed.data.reason ?? '매장 반품'),
+        );
         break;
     }
     return NextResponse.json({ ok: true });
