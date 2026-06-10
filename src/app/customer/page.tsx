@@ -139,10 +139,16 @@ export default function CustomerMyPage() {
                 full
               />
               {profile.referrerCode && (
-                <Info label="내 추천코드" value={profile.referrerCode} mono />
+                <Info
+                  label="내 추천코드 (공유용·자동발급)"
+                  value={profile.referrerCode}
+                  mono
+                  full
+                  hint="친구에게 이 코드를 공유하면 추천 혜택이 적용됩니다. 모든 회원에게 가입 시 자동 발급되며, 아래 '추천인'(가입 때 입력)과는 별개입니다."
+                />
               )}
               {profile.referredByCode && (
-                <Info label="추천인" value={profile.referredByCode} mono />
+                <Info label="추천인 (가입 시 입력)" value={profile.referredByCode} mono />
               )}
             </dl>
           </div>
@@ -266,11 +272,13 @@ function Info({
   value,
   full,
   mono,
+  hint,
 }: {
   label: string;
   value: string;
   full?: boolean;
   mono?: boolean;
+  hint?: string;
 }) {
   return (
     <div className={full ? 'sm:col-span-2' : undefined}>
@@ -282,6 +290,7 @@ function Info({
       >
         {value}
       </dd>
+      {hint && <p className="mt-0.5 text-[11px] leading-snug text-gray-500">{hint}</p>}
     </div>
   );
 }
