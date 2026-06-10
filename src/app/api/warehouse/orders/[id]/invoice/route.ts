@@ -73,10 +73,6 @@ export async function GET(
       .orderBy(asc(orderItems.eyeSide)),
   );
 
-  // VAT 포함가 → 공급가액/부가세 10% 역산
-  const supplyAmount = Math.round(h.total / 1.1);
-  const vatAmount = h.total - supplyAmount;
-
   return NextResponse.json({
     order: {
       orderNumber: h.orderNumber,
@@ -98,12 +94,15 @@ export async function GET(
       subtotal: h.subtotal,
       discount: h.discount,
       total: h.total,
-      supplyAmount,
-      vatAmount,
     },
     issuer: {
       company: '(주)퍼니뷰',
       service: 'Funnyview Pickup',
+      // 거래명세서 형식용 공급자 정보 — 실제값은 JINY 제공 후 채움(빈값은 UI 자리표시)
+      bizNo: '',
+      address: '',
+      phone: '',
+      ceo: '',
       issuedAt: new Date().toISOString(),
     },
   });
