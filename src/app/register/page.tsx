@@ -11,6 +11,8 @@ interface FormState {
   password: string;
   passwordConfirm: string;
   name: string;
+  gender: '' | 'male' | 'female' | 'other';
+  birthDate: string; // YYYY-MM-DD — 콘택트렌즈 구매 연령제한 판단용
   postalCode: string;
   addressLine1: string;
   addressLine2: string;
@@ -35,6 +37,8 @@ const EMPTY: FormState = {
   password: '',
   passwordConfirm: '',
   name: '',
+  gender: '',
+  birthDate: '',
   postalCode: '',
   addressLine1: '',
   addressLine2: '',
@@ -98,6 +102,14 @@ export default function RegisterPage() {
       setError('휴대전화 번호를 입력해주세요');
       return;
     }
+    if (!f.gender) {
+      setError('성별을 선택해주세요');
+      return;
+    }
+    if (!f.birthDate) {
+      setError('생년월일을 입력해주세요');
+      return;
+    }
     // 비밀번호 정책 클라이언트 선검증 (제출 전 인지 — 서버 400 왕복 제거)
     const pwTypes = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((re) => re.test(f.password)).length;
     if (f.password.length < 8 || f.password.length > 16 || pwTypes < 3) {
@@ -126,6 +138,8 @@ export default function RegisterPage() {
           password: f.password,
           passwordConfirm: f.passwordConfirm,
           name: f.name,
+          gender: f.gender,
+          birthDate: f.birthDate,
           phone,
           landlinePhone,
           postalCode: f.postalCode || null,
@@ -157,8 +171,8 @@ export default function RegisterPage() {
         }
         return;
       }
-      router.replace('/');
-      router.refresh();
+      // 자동 로그인하지 않고 로그인 페이지로 — 가입한 이메일로 직접 로그인
+      router.replace('/login?registered=1');
     } finally {
       setSubmitting(false);
     }
@@ -258,6 +272,36 @@ export default function RegisterPage() {
               />
               {fieldErrors.name && <p className="mt-1 text-xs text-red-600">⚠ {fieldErrors.name}</p>}
             </Row>
+            <Row label="성별" required>
+              <div className="flex gap-4 text-sm">
+                {([['male', '남성'], ['female', '여성'], ['other', '기타']] as const).map(([v, label]) => (
+                  <label key={v} className="inline-flex items-center gap-1.5">
+                    <input
+                      type="radio"
+                      name="gender"
+                      checked={f.gender === v}
+                      onChange={() => update('gender', v)}
+                      className="h-4 w-4"
+                    />
+                    {label}
+                  </label>
+                ))}
+              </div>
+            </Row>
+            <Row label="생년월일" required>
+              <div>
+                <input
+                  type="date"
+                  aria-label="생년월일"
+                  value={f.birthDate}
+                  onChange={(e) => update('birthDate', e.target.value)}
+                  required
+                  max={new Date().toISOString().slice(0, 10)}
+                  className="cafe-input-sm max-w-sm"
+                />
+                <p className="mt-1 text-xs text-gray-500">콘택트렌즈 구매 연령 확인에 사용됩니다.</p>
+              </div>
+            </Row>
             <Row label="주소">
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
@@ -332,7 +376,7 @@ export default function RegisterPage() {
                 className="cafe-input-sm max-w-sm"
               />
             </Row>
-            <Row label="환불계좌 정보">
+            <Row label="환불계좌 정보 (선택)">
               <div className="space-y-2">
                 <div className="flex items-center gap-2 text-sm">
                   <span className="w-16 text-gray-700">· 예금주</span>

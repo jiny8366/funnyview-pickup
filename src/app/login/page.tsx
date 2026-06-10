@@ -20,6 +20,7 @@ function CustomerLoginInner() {
   const search = useSearchParams();
   // 로그인 후 기본 이동 = 홈(쇼핑). 보호페이지에서 온 경우 next 유지.
   const next = search.get('next') ?? '/';
+  const justRegistered = search.get('registered') === '1';
 
   const [id, setId] = useState('');
   const [pw, setPw] = useState('');
@@ -56,6 +57,12 @@ function CustomerLoginInner() {
       <Breadcrumb items={[{ href: '/', label: '홈' }, { label: '로그인' }]} />
 
       <h1 className="mt-8 text-center text-2xl font-bold text-gray-900">로그인</h1>
+
+      {justRegistered && (
+        <p className="mx-auto mt-4 max-w-md rounded-lg bg-green-50 px-4 py-3 text-center text-sm text-green-700">
+          🎉 회원가입이 완료되었습니다. 가입한 이메일과 비밀번호로 로그인해주세요.
+        </p>
+      )}
 
       <form onSubmit={onSubmit} className="mt-10 space-y-3">
         <input

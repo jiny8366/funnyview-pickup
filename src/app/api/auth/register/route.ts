@@ -4,7 +4,6 @@ import { z } from 'zod';
 import { db } from '@/db/client';
 import { customers, users } from '@/db/schema';
 import { hashPassword } from '@/lib/auth/password';
-import { setSessionCookie } from '@/lib/auth/session';
 import { withDbRetry } from '@/lib/db/retry';
 import { checkRateLimit, clientIp } from '@/lib/security/rate-limit';
 
@@ -27,6 +26,10 @@ const registerSchema = z.object({
     .refine(isStrongPassword, '영문 대소문자/숫자/특수문자 중 3가지 이상 조합'),
   passwordConfirm: z.string(),
   name: z.string().min(2).max(30),
+  gender: z.enum(['male', 'female', 'other'], { errorMap: () => ({ message: '성별을 선택해주세요' }) }),
+  birthDate: z
+    .string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, '생년월일 형식이 올바르지 않습니다'), // 구매 연령제한 판단용
   phone: z
     .string()
     .regex(/^01[016789]\d{7,8}$/, '휴대전화번호 형식이 올바르지 않습니다'),
@@ -124,6 +127,8 @@ export async function POST(req: Request) {
       .values({
         userId: user.id,
         name: input.name,
+        gender: input.gender,
+        birthDate: input.birthDate,
         phone: input.phone,
         landlinePhone: input.landlinePhone ?? null,
         postalCode: input.postalCode ?? null,
@@ -141,8 +146,7 @@ export async function POST(req: Request) {
     }),
   );
 
-  await setSessionCookie({ uid: created.userId, role: 'customer' });
-
+  // 가입 후 자동 로그인하지 않음 — 가입한 정보로 직접 로그인 (JINY 지시, 일반 관행)
   return NextResponse.json({
     ok: true,
     userId: created.userId,
