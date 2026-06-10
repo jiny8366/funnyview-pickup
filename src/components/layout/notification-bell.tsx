@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { formatDateTime } from '@/lib/utils/format';
+import { resolvePortal } from '@/lib/portal';
 
 interface Notification {
   id: string;
@@ -57,9 +58,20 @@ export function NotificationBell() {
     load();
   }
 
+  // 알림 링크는 현재 포털에 맞게 분기 (customer 하드코딩 → 포털별 주문 경로)
   function hrefFor(n: Notification): string | null {
     if (n.referenceType === 'order' && n.referenceId) {
-      return `/customer/orders/${n.referenceId}`;
+      const portal = typeof window !== 'undefined' ? resolvePortal(window.location.hostname) : 'customer';
+      switch (portal) {
+        case 'customer':
+          return `/customer/orders/${n.referenceId}`;
+        case 'store':
+          return `/store/pickup/${n.referenceId}`;
+        case 'admin':
+          return '/admin/orders'; // 관리자: 주문 상세 단독 라우트 없음 → 목록
+        case 'staff':
+          return '/warehouse/orders'; // 픽업서비스: 목록
+      }
     }
     return null;
   }
