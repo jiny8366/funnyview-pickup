@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PrintButton } from '@/components/ui/print-button';
 import { COMPANY, SERVICE_NAME } from '@/lib/terms';
 
 export const metadata = { title: '개인정보처리방침 · Funnyview Pickup' };
@@ -124,9 +125,12 @@ const SECTIONS: Sec[] = [
 export default function PrivacyPage() {
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-8 md:py-12">
-      <Link href="/" className="text-sm text-gray-500 transition hover:text-brand-600">
-        ← 홈으로
-      </Link>
+      <div className="flex items-center justify-between gap-2">
+        <Link href="/" className="text-sm text-gray-500 transition hover:text-brand-600 print:hidden">
+          ← 홈으로
+        </Link>
+        <PrintButton />
+      </div>
       <h1 className="mt-4 text-2xl font-bold text-gray-900">개인정보처리방침</h1>
       <p className="mt-2 text-[13px] text-gray-500">
         {COMPANY} ({SERVICE_NAME}) · 사업자등록번호 {INFO.bizNo} · 소재지 {INFO.address}

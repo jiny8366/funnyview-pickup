@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import { PrintButton } from '@/components/ui/print-button';
 import { TERMS } from '@/lib/terms';
 
 export const metadata = { title: '이용약관 · Funnyview Pickup' };
@@ -7,9 +8,12 @@ export default function TermsPage() {
   const sections = TERMS.filter((t) => t.group === 'service');
   return (
     <main className="mx-auto w-full max-w-3xl px-5 py-8 md:py-12">
-      <Link href="/" className="text-sm text-gray-500 transition hover:text-brand-600">
-        ← 홈으로
-      </Link>
+      <div className="flex items-center justify-between gap-2">
+        <Link href="/" className="text-sm text-gray-500 transition hover:text-brand-600 print:hidden">
+          ← 홈으로
+        </Link>
+        <PrintButton />
+      </div>
       <h1 className="mt-4 text-2xl font-bold text-gray-900">이용약관</h1>
       <div className="mt-8 space-y-10">
         {sections.map((s) => (
