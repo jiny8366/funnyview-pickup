@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { formatLensDisplayName } from '@/lib/lens/format';
 import { formatDateTime } from '@/lib/utils/format';
@@ -112,28 +113,7 @@ export default function WarehousePicklistPage() {
     window.print();
   }
 
-  // 팩킹(배송): 선택/해당 주문을 출고(shipped) 단계로 넘김. accepted 면 picking 경유.
-  async function shipOrder(o: OrderRow) {
-    const url = `/api/warehouse/orders/${o.id}/transition`;
-    const post = (action: string) =>
-      fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify({ action }) });
-    if (o.status === 'accepted') await post('pick');
-    const res = await post('ship');
-    if (res.ok) {
-      setOrders((prev) => prev.filter((x) => x.id !== o.id));
-      setSelected((prev) => {
-        const n = new Set(prev);
-        n.delete(o.id);
-        return n;
-      });
-    } else {
-      const j = await res.json().catch(() => ({}));
-      alert(`배송 전환 실패: ${j.message ?? res.status}`);
-    }
-  }
-  async function shipSelected() {
-    for (const o of orders.filter((x) => selected.has(x.id))) await shipOrder(o);
-  }
+  // 출고(배송)는 이제 패킹 검수 화면(/warehouse/packing/[id])에서 스캔 검수 후 진행한다.
 
   return (
     <div className="space-y-6">
@@ -203,9 +183,13 @@ export default function WarehousePicklistPage() {
                     <td className="px-3 py-2">{o.storeName}</td>
                     <td className="px-3 py-2 text-right">{o.itemCount}</td>
                     <td className="px-3 py-2 text-right">
-                      <Button variant="secondary" className="px-2 py-1 text-xs" onClick={() => shipOrder(o)}>
-                        팩킹(배송) →
-                      </Button>
+                      {/* 무검증 직접출고 대신 패킹 검수(스캔) 화면 경유 */}
+                      <Link
+                        href={`/warehouse/packing/${o.id}`}
+                        className="inline-block rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                      >
+                        📦 검수→출고
+                      </Link>
                     </td>
                   </tr>
                 ))}
