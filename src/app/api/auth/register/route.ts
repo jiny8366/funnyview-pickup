@@ -6,6 +6,7 @@ import { customers, users } from '@/db/schema';
 import { hashPassword } from '@/lib/auth/password';
 import { setSessionCookie } from '@/lib/auth/session';
 import { withDbRetry } from '@/lib/db/retry';
+import { checkRateLimit, clientIp } from '@/lib/security/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -46,6 +47,15 @@ const registerSchema = z.object({
 });
 
 export async function POST(req: Request) {
+  // 자동 가입(봇) 방어: IP 당 5회/10분 (go-live 보안)
+  const rl = checkRateLimit(`register:ip:${clientIp(req)}`, 5, 600_000);
+  if (!rl.allowed) {
+    return NextResponse.json(
+      { error: 'TOO_MANY_ATTEMPTS', message: `가입 시도가 너무 많습니다. ${rl.retryAfterSec}초 후 다시 시도해주세요.` },
+      { status: 429, headers: { 'Retry-After': String(rl.retryAfterSec) } },
+    );
+  }
+
   const parsed = registerSchema.safeParse(await req.json().catch(() => ({})));
   if (!parsed.success) {
     return NextResponse.json(

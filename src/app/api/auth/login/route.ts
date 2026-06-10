@@ -6,6 +6,7 @@ import { users } from '@/db/schema';
 import { verifyPassword } from '@/lib/auth/password';
 import { setSessionCookie } from '@/lib/auth/session';
 import { withDbRetry } from '@/lib/db/retry';
+import { checkRateLimit, clientIp } from '@/lib/security/rate-limit';
 
 export const dynamic = 'force-dynamic';
 
@@ -23,6 +24,18 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
   }
   const { phone: identifier, password, expectedRole } = parsed.data;
+
+  // 무차별 대입 방어: IP 10회/분 + 동일 계정식별자 5회/분 (go-live 보안)
+  const ip = clientIp(req);
+  const byIp = checkRateLimit(`login:ip:${ip}`, 10, 60_000);
+  const byId = checkRateLimit(`login:id:${identifier.toLowerCase()}`, 5, 60_000);
+  if (!byIp.allowed || !byId.allowed) {
+    const retry = Math.max(byIp.retryAfterSec, byId.retryAfterSec);
+    return NextResponse.json(
+      { error: 'TOO_MANY_ATTEMPTS', message: `로그인 시도가 너무 많습니다. ${retry}초 후 다시 시도해주세요.` },
+      { status: 429, headers: { 'Retry-After': String(retry) } },
+    );
+  }
 
   // 이메일 / phone / (기존)username 매칭 (일시적 연결 블립 시 짧게 재시도)
   const rows = await withDbRetry(() =>
