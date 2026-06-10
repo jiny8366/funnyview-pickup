@@ -98,7 +98,15 @@ export default function RegisterPage() {
       setError('휴대전화 번호를 입력해주세요');
       return;
     }
+    // 비밀번호 정책 클라이언트 선검증 (제출 전 인지 — 서버 400 왕복 제거)
+    const pwTypes = [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((re) => re.test(f.password)).length;
+    if (f.password.length < 8 || f.password.length > 16 || pwTypes < 3) {
+      setFieldErrors((p) => ({ ...p, password: '8~16자, 영문 대소문자·숫자·특수문자 중 3가지 이상 조합' }));
+      setError('비밀번호 형식을 확인해주세요 — 비밀번호 (해당 항목 아래 안내 참고)');
+      return;
+    }
     if (f.password !== f.passwordConfirm) {
+      setFieldErrors((p) => ({ ...p, passwordConfirm: '비밀번호가 일치하지 않습니다' }));
       setError('비밀번호가 일치하지 않습니다');
       return;
     }
@@ -203,6 +211,7 @@ export default function RegisterPage() {
             <Row label="이메일" required>
               <input
                 type="email"
+                aria-label="이메일"
                 value={f.email}
                 onChange={(e) => update('email', e.target.value)}
                 required
@@ -215,6 +224,7 @@ export default function RegisterPage() {
               <div className="space-y-1">
                 <input
                   type="password"
+                  aria-label="비밀번호"
                   value={f.password}
                   onChange={(e) => update('password', e.target.value)}
                   required
@@ -229,6 +239,7 @@ export default function RegisterPage() {
             <Row label="비밀번호 확인" required>
               <input
                 type="password"
+                aria-label="비밀번호 확인"
                 value={f.passwordConfirm}
                 onChange={(e) => update('passwordConfirm', e.target.value)}
                 required
@@ -239,6 +250,7 @@ export default function RegisterPage() {
             <Row label="이름" required>
               <input
                 type="text"
+                aria-label="이름"
                 value={f.name}
                 onChange={(e) => update('name', e.target.value)}
                 required

@@ -123,7 +123,8 @@ export async function createOrder(input: CreateOrderInput) {
         axis: v.axis,
         addPower: v.addPower,
         skuSnapshot: v.sku,
-        unitCost: v.lensCost,
+        // 표준원가 선기록 금지 — FIFO 실단가는 출고(markShipped) 시 기록. 생성 시엔 null.
+        unitCost: null,
       });
 
       const updated = await tx
