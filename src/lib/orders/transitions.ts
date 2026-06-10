@@ -228,6 +228,33 @@ export async function markShipped(orderId: string, byUserId: string) {
 
 export async function markArrived(orderId: string, byUserId: string) {
   await transition(orderId, 'arrived', byUserId, { arrivedAt: new Date() });
+
+  // 가맹점 입고 알림 — 고객에게 '매장 도착' 안내 (보드 #8: 기존엔 템플릿만 있고 미발송)
+  try {
+    const summary = await orderSummary(orderId);
+    if (summary) {
+      await dispatchNotification({
+        kind: 'order_arrived',
+        recipients: [
+          {
+            userId: summary.customerUserId,
+            phone: summary.customerPhone,
+            preferKakao: true,
+          },
+        ],
+        context: {
+          orderNumber: summary.orderNumber,
+          customerName: summary.customerName,
+          storeName: summary.storeName,
+          storeAddress: summary.storeAddress ?? undefined,
+        },
+        referenceType: 'order',
+        referenceId: orderId,
+      });
+    }
+  } catch {
+    // 알림 실패는 전이를 막지 않음
+  }
 }
 
 export async function markReady(orderId: string, byUserId: string) {
