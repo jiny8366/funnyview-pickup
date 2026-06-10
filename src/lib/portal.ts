@@ -91,7 +91,15 @@ const PORTAL_ALLOWED: Record<Portal, string[]> = {
     '/api/push',
     '/api/events',
   ],
-  admin: ['/admin', '/login/admin', '/api/admin', '/api/auth'],
+  admin: [
+    '/admin',
+    '/login/admin',
+    '/api/admin',
+    '/api/auth',
+    '/api/notifications', // 알림 벨 (다른 포털과 동일) — 누락 시 SSE/fetch 가 로그인 HTML 로 redirect 됨
+    '/api/push',
+    '/api/events',
+  ],
   staff: [
     '/warehouse',
     '/login/warehouse',
