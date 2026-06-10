@@ -15,6 +15,7 @@ export * from './lens-price-entries';
 export * from './inventory';
 export * from './orders';
 export * from './payments';
+export * from './business';
 export * from './notifications';
 export * from './oauth';
 export * from './home';
