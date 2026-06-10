@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { desc, eq, inArray } from 'drizzle-orm';
+import { and, desc, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { stores, users } from '@/db/schema';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
@@ -31,7 +31,13 @@ export default async function AdminStaffPage() {
       createdAt: users.createdAt,
     })
     .from(users)
-    .where(inArray(users.role, ['admin', 'warehouse_staff', 'store_staff']))
+    // 삭제(deletedAt)된 계정은 목록에서 제외 — 삭제 즉시 사라지도록.
+    .where(
+      and(
+        inArray(users.role, ['admin', 'warehouse_staff', 'store_staff']),
+        isNull(users.deletedAt),
+      ),
+    )
     .orderBy(desc(users.createdAt));
 
   // 마스터 계정은 목록에서 숨김 (env 기반 화이트리스트, 관리 대상 아님)
