@@ -23,7 +23,7 @@
  *   검토:   npx tsx scripts/backfill-opening-lots.ts
  *   적용:   APPLY=1 npx tsx scripts/backfill-opening-lots.ts   (DATABASE_URL=대상 prod 6543)
  */
-import { and, eq, gt, inArray, sql } from 'drizzle-orm';
+import { and, eq, gt, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import {
   inboundShipments,
@@ -72,7 +72,8 @@ async function main() {
     .from(inventory)
     .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
     .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
-    .where(gt(inventory.quantityOnHand, 0));
+    // 삭제(soft-delete)된 제품은 개시로트 생성 제외 (M3 nit #582)
+    .where(and(gt(inventory.quantityOnHand, 0), isNull(lenses.deletedAt)));
 
   if (invRows.length === 0) {
     console.log('on-hand>0 재고 없음 — 작업 없음');
