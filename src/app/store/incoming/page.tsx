@@ -50,7 +50,8 @@ export default function StoreIncomingPage() {
     <div className="space-y-4">
       <h1 className="text-xl font-bold md:text-2xl">입고 / 배송 중</h1>
       <p className="text-sm text-gray-500">
-        픽업서비스 업체에서 출고된 주문. 입고 처리 후 고객에게 도착알림을 보냅니다.
+        픽업서비스 업체에서 출고된 주문. <b>입고 처리</b> 시 고객에게 <b>매장 도착 알림</b>이 자동 발송되고,
+        픽업 준비가 끝나면 <b>픽업준비 알림</b>을 보냅니다.
       </p>
 
       {/* 모바일 카드 */}
@@ -73,7 +74,7 @@ export default function StoreIncomingPage() {
             <div className="mt-2">
               {r.status === 'shipped' && (
                 <Button size="sm" disabled={busy === r.id} onClick={() => transition(r.id, 'arrive')} className="w-full">
-                  입고 처리
+                  입고 처리 (도착알림)
                 </Button>
               )}
               {r.status === 'arrived' && (
@@ -83,7 +84,7 @@ export default function StoreIncomingPage() {
                   disabled={busy === r.id}
                   onClick={() => transition(r.id, 'ready')}
                 >
-                  도착알림 발송
+                  픽업준비 완료 알림
                 </Button>
               )}
             </div>
@@ -128,7 +129,7 @@ export default function StoreIncomingPage() {
                   )}
                   {r.status === 'arrived' && (
                     <Button size="sm" className="bg-orange-600 hover:bg-orange-700" disabled={busy === r.id} onClick={() => transition(r.id, 'ready')}>
-                      도착알림 발송
+                      픽업준비 알림
                     </Button>
                   )}
                 </td>
