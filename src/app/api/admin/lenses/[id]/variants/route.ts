@@ -63,12 +63,20 @@ export async function GET(
  */
 export async function PATCH(
   req: Request,
-  { params: _ }: { params: { id: string } },
+  { params }: { params: { id: string } },
 ) {
   const user = await requireAdmin();
   if (!user) return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
 
   const body = await req.json().catch(() => ({}));
+
+  // 안전재고 일괄 설정 — 헤더 클릭 한번에 전체 도수 셋팅 (JINY)
+  if (Number.isInteger(body.safetyStockAll) && body.safetyStockAll >= 0) {
+    const { setSafetyStockForLens } = await import('@/lib/inventory-levels');
+    const applied = await setSafetyStockForLens(params.id, body.safetyStockAll as number);
+    return NextResponse.json({ ok: true, applied });
+  }
+
   const variantId = typeof body.variantId === 'string' ? body.variantId : '';
   if (!variantId) return NextResponse.json({ error: 'MISSING_VARIANT_ID' }, { status: 400 });
 

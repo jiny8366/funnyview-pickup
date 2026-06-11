@@ -77,6 +77,36 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
     }
   }
 
+  // 안전재고 일괄 설정 — 헤더 '안전재고 ⚡일괄' 클릭 (JINY: 한번에 셋팅)
+  const [bulkEditing, setBulkEditing] = useState(false);
+  const [bulkValue, setBulkValue] = useState('');
+  const [bulkSaving, setBulkSaving] = useState(false);
+
+  async function applyBulkSafety() {
+    const n = Number(bulkValue);
+    if (!Number.isInteger(n) || n < 0 || bulkValue === '') {
+      setBulkEditing(false);
+      return;
+    }
+    setBulkSaving(true);
+    setError(null);
+    try {
+      const res = await fetch(`/api/admin/lenses/${lensId}/variants`, {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ safetyStockAll: n }),
+      });
+      if (!res.ok) {
+        setError('안전재고 일괄 설정 실패');
+        return;
+      }
+      setVariants((prev) => prev?.map((v) => ({ ...v, safetyStock: n })) ?? null);
+    } finally {
+      setBulkSaving(false);
+      setBulkEditing(false);
+    }
+  }
+
   // 현재고·안전재고 인라인 편집 (JINY — 리스트에서 선택 수정, frame-ops 패턴)
   async function saveLevels(variantId: string, patch: { onHand?: number; safetyStock?: number }) {
     setError(null);
@@ -233,7 +263,37 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
                 <th className="px-3 py-2 text-left">도수</th>
                 <th className="px-3 py-2 text-left font-mono">SKU</th>
                 <th className="px-3 py-2 text-right">재고 (팩)</th>
-                <th className="px-3 py-2 text-right">안전재고</th>
+                {/* 헤더 클릭 → 전체 도수에 안전재고 일괄 셋팅 (JINY) */}
+                <th className="px-3 py-2 text-right">
+                  {bulkEditing ? (
+                    <input
+                      autoFocus
+                      inputMode="numeric"
+                      value={bulkValue}
+                      disabled={bulkSaving}
+                      onChange={(e) => setBulkValue(e.target.value.replace(/[^0-9]/g, ''))}
+                      onBlur={applyBulkSafety}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') applyBulkSafety();
+                        if (e.key === 'Escape') setBulkEditing(false);
+                      }}
+                      placeholder="전체 적용값"
+                      className="w-20 rounded border border-amber-400 bg-white px-1 py-0.5 text-right text-xs font-normal normal-case focus:outline-none disabled:opacity-50"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setBulkValue('');
+                        setBulkEditing(true);
+                      }}
+                      title="클릭하면 모든 도수에 안전재고를 한번에 설정합니다"
+                      className="rounded px-1 underline decoration-dotted underline-offset-2 hover:bg-amber-50 hover:text-amber-700"
+                    >
+                      안전재고 ⚡일괄
+                    </button>
+                  )}
+                </th>
                 <th className="px-3 py-2 text-center">활성</th>
                 <th className="px-3 py-2 text-center">바코드</th>
               </tr>
