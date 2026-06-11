@@ -8,22 +8,45 @@ import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card';
 interface Supplier {
   id: string;
   name: string;
+  bizNo: string | null;
+  address: string | null;
+  businessAddress: string | null;
   contact: string | null;
   phone: string | null;
-  bizNo: string | null;
   memo: string | null;
   isActive: boolean;
 }
 
 interface FormState {
   name: string;
+  bizNo: string;
+  address: string;
+  businessAddress: string;
   contact: string;
   phone: string;
-  bizNo: string;
   memo: string;
 }
 
-const EMPTY: FormState = { name: '', contact: '', phone: '', bizNo: '', memo: '' };
+const EMPTY: FormState = {
+  name: '',
+  bizNo: '',
+  address: '',
+  businessAddress: '',
+  contact: '',
+  phone: '',
+  memo: '',
+};
+
+/** 폼 필드 정의 — 표기 순서: 매입처명·사업자등록번호·주소·사업장주소·담당자·담당자 연락처·비고 */
+const FIELDS: { key: keyof FormState; label: string; ph?: string }[] = [
+  { key: 'name', label: '매입처명 *', ph: '예: (주)렌즈공급' },
+  { key: 'bizNo', label: '사업자등록번호', ph: '000-00-00000' },
+  { key: 'address', label: '주소' },
+  { key: 'businessAddress', label: '사업장주소' },
+  { key: 'contact', label: '담당자' },
+  { key: 'phone', label: '담당자 연락처', ph: '02-000-0000' },
+  { key: 'memo', label: '비고' },
+];
 
 export function SuppliersManager() {
   const [rows, setRows] = useState<Supplier[]>([]);
@@ -87,9 +110,11 @@ export function SuppliersManager() {
     setEditingId(s.id);
     setEditForm({
       name: s.name,
+      bizNo: s.bizNo ?? '',
+      address: s.address ?? '',
+      businessAddress: s.businessAddress ?? '',
       contact: s.contact ?? '',
       phone: s.phone ?? '',
-      bizNo: s.bizNo ?? '',
       memo: s.memo ?? '',
     });
   }
@@ -145,34 +170,15 @@ export function SuppliersManager() {
         </CardHeader>
         <CardBody>
           <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            <Input
-              label="매입처명 *"
-              value={form.name}
-              onChange={(e) => set('name', e.target.value)}
-              placeholder="예: (주)렌즈공급"
-            />
-            <Input
-              label="담당자"
-              value={form.contact}
-              onChange={(e) => set('contact', e.target.value)}
-            />
-            <Input
-              label="연락처"
-              value={form.phone}
-              onChange={(e) => set('phone', e.target.value)}
-              placeholder="02-000-0000"
-            />
-            <Input
-              label="사업자등록번호"
-              value={form.bizNo}
-              onChange={(e) => set('bizNo', e.target.value)}
-              placeholder="000-00-00000"
-            />
-            <Input
-              label="메모"
-              value={form.memo}
-              onChange={(e) => set('memo', e.target.value)}
-            />
+            {FIELDS.map(({ key, label, ph }) => (
+              <Input
+                key={key}
+                label={label}
+                value={form[key]}
+                placeholder={ph}
+                onChange={(e) => set(key, e.target.value)}
+              />
+            ))}
           </div>
           <div className="mt-3 flex items-center gap-3">
             <Button onClick={create} disabled={saving}>
@@ -201,10 +207,12 @@ export function SuppliersManager() {
                 <thead className="bg-gray-50 text-xs text-gray-500">
                   <tr>
                     <th className="px-3 py-2 text-left">매입처명</th>
+                    <th className="px-3 py-2 text-left">사업자등록번호</th>
+                    <th className="px-3 py-2 text-left">주소</th>
+                    <th className="px-3 py-2 text-left">사업장주소</th>
                     <th className="px-3 py-2 text-left">담당자</th>
-                    <th className="px-3 py-2 text-left">연락처</th>
-                    <th className="px-3 py-2 text-left">사업자번호</th>
-                    <th className="px-3 py-2 text-left">메모</th>
+                    <th className="px-3 py-2 text-left">담당자 연락처</th>
+                    <th className="px-3 py-2 text-left">비고</th>
                     <th className="px-3 py-2 text-center">상태</th>
                     <th className="px-3 py-2 text-right">작업</th>
                   </tr>
@@ -213,41 +221,17 @@ export function SuppliersManager() {
                   {rows.map((s) =>
                     editingId === s.id ? (
                       <tr key={s.id} className="bg-blue-50/40">
-                        <td className="px-3 py-2">
-                          <input
-                            value={editForm.name}
-                            onChange={(e) => setEdit('name', e.target.value)}
-                            className="input h-8"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            value={editForm.contact}
-                            onChange={(e) => setEdit('contact', e.target.value)}
-                            className="input h-8"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            value={editForm.phone}
-                            onChange={(e) => setEdit('phone', e.target.value)}
-                            className="input h-8"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            value={editForm.bizNo}
-                            onChange={(e) => setEdit('bizNo', e.target.value)}
-                            className="input h-8"
-                          />
-                        </td>
-                        <td className="px-3 py-2">
-                          <input
-                            value={editForm.memo}
-                            onChange={(e) => setEdit('memo', e.target.value)}
-                            className="input h-8"
-                          />
-                        </td>
+                        {(['name', 'bizNo', 'address', 'businessAddress', 'contact', 'phone', 'memo'] as (keyof FormState)[]).map(
+                          (k) => (
+                            <td key={k} className="px-3 py-2">
+                              <input
+                                value={editForm[k]}
+                                onChange={(e) => setEdit(k, e.target.value)}
+                                className="input h-8 min-w-[7rem]"
+                              />
+                            </td>
+                          ),
+                        )}
                         <td className="px-3 py-2 text-center text-xs text-gray-500">
                           {s.isActive ? '활성' : '비활성'}
                         </td>
@@ -269,11 +253,13 @@ export function SuppliersManager() {
                     ) : (
                       <tr key={s.id} className={s.isActive ? '' : 'opacity-50'}>
                         <td className="px-3 py-2 font-medium text-gray-900">{s.name}</td>
-                        <td className="px-3 py-2 text-gray-600">{s.contact ?? '—'}</td>
-                        <td className="px-3 py-2 text-gray-600">{s.phone ?? '—'}</td>
                         <td className="px-3 py-2 font-mono text-xs text-gray-500">
                           {s.bizNo ?? '—'}
                         </td>
+                        <td className="px-3 py-2 text-gray-600">{s.address ?? '—'}</td>
+                        <td className="px-3 py-2 text-gray-600">{s.businessAddress ?? '—'}</td>
+                        <td className="px-3 py-2 text-gray-600">{s.contact ?? '—'}</td>
+                        <td className="px-3 py-2 text-gray-600">{s.phone ?? '—'}</td>
                         <td className="px-3 py-2 text-gray-600">{s.memo ?? '—'}</td>
                         <td className="px-3 py-2 text-center">
                           <span

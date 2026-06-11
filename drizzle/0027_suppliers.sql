@@ -1,15 +1,19 @@
 CREATE TABLE IF NOT EXISTS "suppliers" (
 	"id" uuid PRIMARY KEY DEFAULT gen_random_uuid() NOT NULL,
 	"name" text NOT NULL,
+	"business_number" text,
+	"address" text,
+	"business_address" text,
 	"contact" text,
 	"phone" text,
-	"business_number" text,
 	"memo" text,
 	"is_active" boolean DEFAULT true NOT NULL,
 	"created_at" timestamp with time zone DEFAULT now() NOT NULL,
 	"updated_at" timestamp with time zone DEFAULT now() NOT NULL
 );
 --> statement-breakpoint
+ALTER TABLE "suppliers" ADD COLUMN IF NOT EXISTS "address" text;--> statement-breakpoint
+ALTER TABLE "suppliers" ADD COLUMN IF NOT EXISTS "business_address" text;--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "suppliers_name_idx" ON "suppliers" USING btree ("name");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "suppliers_active_idx" ON "suppliers" USING btree ("is_active");--> statement-breakpoint
 DO $$ BEGIN

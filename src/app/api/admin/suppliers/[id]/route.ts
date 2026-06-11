@@ -8,7 +8,7 @@ export const dynamic = 'force-dynamic';
 
 /**
  * PUT /api/admin/suppliers/[id] — 매입처 수정. admin 전용.
- *   body: { name?, contact?, phone?, bizNo?, memo?, isActive? }
+ *   body: { name?, bizNo?, address?, businessAddress?, contact?, phone?, memo?, isActive? }
  */
 export async function PUT(
   req: Request,
@@ -27,9 +27,11 @@ export async function PUT(
     if (v) patch.name = v;
   }
   const NULLABLE: { key: keyof typeof suppliers.$inferInsert; field: string }[] = [
+    { key: 'bizNo', field: 'bizNo' },
+    { key: 'address', field: 'address' },
+    { key: 'businessAddress', field: 'businessAddress' },
     { key: 'contact', field: 'contact' },
     { key: 'phone', field: 'phone' },
-    { key: 'bizNo', field: 'bizNo' },
     { key: 'memo', field: 'memo' },
   ];
   for (const { key, field } of NULLABLE) {

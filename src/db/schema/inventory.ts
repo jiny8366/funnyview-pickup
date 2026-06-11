@@ -24,10 +24,12 @@ export const suppliers = pgTable(
   {
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
-    contact: text('contact'), // 담당자명
-    phone: text('phone'),
     bizNo: text('business_number'), // 사업자등록번호
-    memo: text('memo'),
+    address: text('address'), // 주소
+    businessAddress: text('business_address'), // 사업장주소
+    contact: text('contact'), // 담당자명
+    phone: text('phone'), // 담당자 연락처
+    memo: text('memo'), // 비고
     isActive: boolean('is_active').default(true).notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
