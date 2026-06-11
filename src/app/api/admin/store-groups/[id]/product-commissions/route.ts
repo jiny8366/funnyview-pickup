@@ -28,6 +28,7 @@ export async function GET(
       id: groupProductCommissions.id,
       lensId: groupProductCommissions.lensId,
       commissionRate: groupProductCommissions.commissionRate,
+      supplyPrice: groupProductCommissions.supplyPrice,
       brand: lenses.brand,
       name: lenses.name,
       productCode: lenses.productCode,
@@ -43,8 +44,17 @@ export async function GET(
 
 /**
  * POST /api/admin/store-groups/[id]/product-commissions
- *   upsert (group_id, lens_id) → commission_rate. admin 전용.
- *   body: { lensId: string, commissionRate: string|number }
+ *   upsert (group_id, lens_id) → 할인율(commission_rate) + 공급가(supply_price). admin 전용.
+ *
+ *   body: {
+ *     lensIds: string[]   // (또는 단일 lensId: string)
+ *     discountRate?: number|string|null  // 가맹점 할인율(%) — commission_rate 컬럼
+ *     supplyPrice?: number|string|null   // 가맹점 공급가(원)
+ *   }
+ *   discountRate / supplyPrice 중 최소 하나 필수. 선택한 모든 lensId 에 동일 값 일괄 적용.
+ *   (그룹은 변경이력 테이블이 없으므로 history 기록은 하지 않는다.)
+ *
+ *   하위호환: 기존 { lensId, commissionRate } 바디도 그대로 동작한다.
  */
 export async function POST(
   req: Request,
@@ -56,28 +66,67 @@ export async function POST(
   }
 
   const body = (await req.json().catch(() => ({}))) as Record<string, unknown>;
-  const lensId = typeof body.lensId === 'string' ? body.lensId.trim() : '';
-  if (!lensId) {
-    return NextResponse.json({ error: 'lensId required' }, { status: 400 });
-  }
-  if (body.commissionRate == null || body.commissionRate === '') {
-    return NextResponse.json({ error: 'commissionRate required' }, { status: 400 });
-  }
-  const rate = String(body.commissionRate);
-  if (Number.isNaN(Number(rate))) {
-    return NextResponse.json({ error: 'commissionRate invalid' }, { status: 400 });
+
+  const lensIds: string[] = Array.isArray(body.lensIds)
+    ? (body.lensIds as unknown[]).filter((v): v is string => typeof v === 'string' && v.trim() !== '').map((v) => v.trim())
+    : typeof body.lensId === 'string' && body.lensId.trim() !== ''
+      ? [body.lensId.trim()]
+      : [];
+  if (lensIds.length === 0) {
+    return NextResponse.json({ error: 'lensIds required' }, { status: 400 });
   }
 
-  const [row] = await db
-    .insert(groupProductCommissions)
-    .values({ groupId: params.id, lensId, commissionRate: rate })
-    .onConflictDoUpdate({
-      target: [groupProductCommissions.groupId, groupProductCommissions.lensId],
-      set: { commissionRate: rate, updatedAt: new Date() },
-    })
-    .returning();
+  const rawRate = body.discountRate ?? body.commissionRate;
+  const hasRate = rawRate != null && rawRate !== '';
+  const rate = hasRate ? String(rawRate) : null;
+  if (rate != null && Number.isNaN(Number(rate))) {
+    return NextResponse.json({ error: 'discountRate invalid' }, { status: 400 });
+  }
 
-  return NextResponse.json({ ok: true, commission: row });
+  const hasSupply = body.supplyPrice != null && body.supplyPrice !== '';
+  const supplyPrice = hasSupply ? String(body.supplyPrice) : null;
+  if (supplyPrice != null && Number.isNaN(Number(supplyPrice))) {
+    return NextResponse.json({ error: 'supplyPrice invalid' }, { status: 400 });
+  }
+
+  if (rate == null && supplyPrice == null) {
+    return NextResponse.json(
+      { error: 'discountRate or supplyPrice required' },
+      { status: 400 },
+    );
+  }
+
+  const results = [];
+  for (const lensId of lensIds) {
+    const [existing] = await db
+      .select({
+        commissionRate: groupProductCommissions.commissionRate,
+        supplyPrice: groupProductCommissions.supplyPrice,
+      })
+      .from(groupProductCommissions)
+      .where(
+        and(
+          eq(groupProductCommissions.groupId, params.id),
+          eq(groupProductCommissions.lensId, lensId),
+        ),
+      )
+      .limit(1);
+
+    const effectiveRate = rate ?? existing?.commissionRate ?? '0';
+    const effectiveSupply = supplyPrice ?? existing?.supplyPrice ?? null;
+
+    const [row] = await db
+      .insert(groupProductCommissions)
+      .values({ groupId: params.id, lensId, commissionRate: effectiveRate, supplyPrice: effectiveSupply })
+      .onConflictDoUpdate({
+        target: [groupProductCommissions.groupId, groupProductCommissions.lensId],
+        set: { commissionRate: effectiveRate, supplyPrice: effectiveSupply, updatedAt: new Date() },
+      })
+      .returning();
+    results.push(row);
+  }
+
+  return NextResponse.json({ ok: true, count: results.length, commissions: results });
 }
 
 /**

@@ -116,8 +116,11 @@ export const groupProductCommissions = pgTable(
     lensId: uuid('lens_id')
       .notNull()
       .references(() => lenses.id),
+    // 가맹점 할인율(수수료율, %) — 운영자가 명시 입력
     commissionRate: numeric('commission_rate', { precision: 5, scale: 2 })
       .notNull(),
+    // 가맹점 공급가 (원, KRW) — 할인율과 독립 저장. 정산 시 공급가 우선.
+    supplyPrice: numeric('supply_price', { precision: 10, scale: 0 }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -152,8 +155,11 @@ export const storeProductCommissions = pgTable(
     lensId: uuid('lens_id')
       .notNull()
       .references(() => lenses.id),
+    // 가맹점 할인율(수수료율, %) — 운영자가 명시 입력
     commissionRate: numeric('commission_rate', { precision: 5, scale: 2 })
       .notNull(),
+    // 가맹점 공급가 (원, KRW) — 할인율과 독립 저장. 정산 시 공급가 우선.
+    supplyPrice: numeric('supply_price', { precision: 10, scale: 0 }),
     createdAt: timestamp('created_at', { withTimezone: true })
       .defaultNow()
       .notNull(),
@@ -192,6 +198,9 @@ export const storeProductCommissionHistory = pgTable(
     action: text('action').notNull(), // 'set' | 'update' | 'delete'
     oldRate: numeric('old_rate', { precision: 5, scale: 2 }),
     newRate: numeric('new_rate', { precision: 5, scale: 2 }),
+    // 공급가 변경이력 (원, KRW)
+    oldSupplyPrice: numeric('old_supply_price', { precision: 10, scale: 0 }),
+    newSupplyPrice: numeric('new_supply_price', { precision: 10, scale: 0 }),
     changedBy: uuid('changed_by'),
     changedAt: timestamp('changed_at', { withTimezone: true })
       .defaultNow()

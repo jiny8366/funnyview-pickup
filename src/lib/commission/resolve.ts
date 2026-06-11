@@ -64,3 +64,64 @@ export function resolveCommissionRate(input: CommissionResolveInput): number {
   // 5. 기본값
   return 0;
 }
+
+/**
+ * (매장, 제품) 조합의 "효과 공급가(원, KRW)" 를 가장 구체적인 수준부터
+ * 해석한다. 할인율과 동일하게 most-specific-wins:
+ *
+ *   1. 매장 × 제품 공급가 (store_product_commissions.supply_price)  — 가장 구체적
+ *   2. 그룹 × 제품 공급가 (group_product_commissions.supply_price)
+ *   3. null (그 무엇도 없으면 — 공급가는 매장/그룹 "전체" 개념이 없다)
+ *
+ * 공급가는 명시적으로 입력했을 때만 존재한다(없으면 null). 0 도 유효한 값으로 본다.
+ */
+export interface SupplyPriceResolveInput {
+  /** 매장 × 제품 공급가 (원) — 없으면 null/undefined */
+  storeProduct?: number | string | null;
+  /** 그룹 × 제품 공급가 (원) — 없으면 null/undefined */
+  groupProduct?: number | string | null;
+}
+
+export function resolveSupplyPrice(input: SupplyPriceResolveInput): number | null {
+  const storeProduct = toNum(input.storeProduct);
+  if (storeProduct != null) return storeProduct;
+
+  const groupProduct = toNum(input.groupProduct);
+  if (groupProduct != null) return groupProduct;
+
+  return null;
+}
+
+export interface EffectiveCommissionInput
+  extends CommissionResolveInput {
+  /** 매장 × 제품 공급가 (원) */
+  storeProductSupplyPrice?: number | string | null;
+  /** 그룹 × 제품 공급가 (원) */
+  groupProductSupplyPrice?: number | string | null;
+}
+
+export interface EffectiveCommission {
+  /** 효과 할인율(수수료율, %) */
+  rate: number;
+  /** 효과 공급가(원). 미설정이면 null. */
+  supplyPrice: number | null;
+}
+
+/**
+ * 효과 할인율 + 효과 공급가를 함께 해석한다.
+ *
+ * 정산(미연결) 시 적용 규칙: **공급가 우선** — supplyPrice 가 있으면 공급가로
+ * 정산하고, 없으면(null) rate(할인율)로 정산한다. 본 util 은 순수 함수이며
+ * 정산/대시보드(src/app/api/admin/dashboard/route.ts)에는 연결하지 않는다.
+ */
+export function resolveEffectiveCommission(
+  input: EffectiveCommissionInput,
+): EffectiveCommission {
+  return {
+    rate: resolveCommissionRate(input),
+    supplyPrice: resolveSupplyPrice({
+      storeProduct: input.storeProductSupplyPrice,
+      groupProduct: input.groupProductSupplyPrice,
+    }),
+  };
+}

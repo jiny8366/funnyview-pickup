@@ -35,12 +35,15 @@ interface LensRow {
   brand: string;
   name: string;
   productCode: string;
+  replacementCycle: string;
+  piecesPerBox: number;
 }
 
 interface GroupProductCommission {
   id: string;
   lensId: string;
   commissionRate: string;
+  supplyPrice: string | null;
   brand: string;
   name: string;
   productCode: string;
@@ -48,6 +51,53 @@ interface GroupProductCommission {
 
 const gpcInputCls =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none';
+
+// 교체주기 코드 → 한글 라벨
+const GPC_CYCLE_LABEL: Record<string, string> = {
+  '1day': '원데이',
+  '2week': '2주',
+  '1month': '1개월',
+  '3month': '3개월',
+  '6month': '6개월',
+  '1year': '1년',
+  daily: '원데이',
+  biweekly: '2주',
+  monthly: '월간',
+  quarterly: '분기',
+  yearly: '장기',
+};
+const gpcCycleLabel = (v: string) => GPC_CYCLE_LABEL[v] ?? v;
+
+function GpcChip({
+  active,
+  onClick,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`rounded-full px-2.5 py-1 text-xs transition ${
+        active ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+function GpcFilterRow({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-start gap-2">
+      <div className="w-14 shrink-0 pt-1 text-xs font-medium text-gray-600">{label}</div>
+      <div className="flex flex-1 flex-wrap gap-1.5">{children}</div>
+    </div>
+  );
+}
 
 const EMPTY: FormState = { name: '', commissionRate: '', sortOrder: '0', memo: '' };
 
@@ -491,8 +541,12 @@ function GroupProductCommissions({
   const [items, setItems] = useState<GroupProductCommission[]>([]);
   const [lenses, setLenses] = useState<LensRow[]>([]);
   const [query, setQuery] = useState('');
-  const [selectedLensId, setSelectedLensId] = useState('');
-  const [rate, setRate] = useState('');
+  const [brands, setBrands] = useState<Set<string>>(new Set());
+  const [cycles, setCycles] = useState<Set<string>>(new Set());
+  const [packs, setPacks] = useState<Set<number>>(new Set());
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [supplyPrice, setSupplyPrice] = useState('');
+  const [discountRate, setDiscountRate] = useState('');
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
 
@@ -509,6 +563,8 @@ function GroupProductCommissions({
           brand: l.brand,
           name: l.name,
           productCode: l.productCode,
+          replacementCycle: l.replacementCycle,
+          piecesPerBox: l.piecesPerBox,
         })),
       );
     } catch {
@@ -522,27 +578,92 @@ function GroupProductCommissions({
   }, [groupId]);
 
   const overriddenIds = useMemo(() => new Set(items.map((i) => i.lensId)), [items]);
+  const lensById = useMemo(() => new Map(lenses.map((l) => [l.id, l])), [lenses]);
+
+  const allBrands = useMemo(
+    () => Array.from(new Set(lenses.map((l) => l.brand))).sort(),
+    [lenses],
+  );
+  const allCycles = useMemo(
+    () => Array.from(new Set(lenses.map((l) => l.replacementCycle))).sort(),
+    [lenses],
+  );
+  const allPacks = useMemo(
+    () => Array.from(new Set(lenses.map((l) => l.piecesPerBox))).sort((a, b) => a - b),
+    [lenses],
+  );
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
-    if (!q) return [];
+    const hasFilter = q !== '' || brands.size > 0 || cycles.size > 0 || packs.size > 0;
+    if (!hasFilter) return [];
     return lenses
-      .filter(
-        (l) =>
-          l.brand.toLowerCase().includes(q) ||
-          l.name.toLowerCase().includes(q) ||
-          l.productCode.toLowerCase().includes(q),
-      )
-      .slice(0, 20);
-  }, [query, lenses]);
+      .filter((l) => {
+        if (brands.size > 0 && !brands.has(l.brand)) return false;
+        if (cycles.size > 0 && !cycles.has(l.replacementCycle)) return false;
+        if (packs.size > 0 && !packs.has(l.piecesPerBox)) return false;
+        if (q) {
+          return (
+            l.brand.toLowerCase().includes(q) ||
+            l.name.toLowerCase().includes(q) ||
+            l.productCode.toLowerCase().includes(q)
+          );
+        }
+        return true;
+      })
+      .slice(0, 50);
+  }, [query, brands, cycles, packs, lenses]);
+
+  function toggleChip<T>(set: Set<T>, val: T, setter: (s: Set<T>) => void) {
+    const s = new Set(set);
+    if (s.has(val)) s.delete(val);
+    else s.add(val);
+    setter(s);
+  }
+
+  function toggleSelect(id: string) {
+    setSelectedIds((prev) => {
+      const s = new Set(prev);
+      if (s.has(id)) s.delete(id);
+      else s.add(id);
+      return s;
+    });
+  }
+
+  const allFilteredSelected =
+    filtered.length > 0 && filtered.every((l) => selectedIds.has(l.id));
+
+  function toggleSelectAll() {
+    setSelectedIds((prev) => {
+      const s = new Set(prev);
+      if (allFilteredSelected) filtered.forEach((l) => s.delete(l.id));
+      else filtered.forEach((l) => s.add(l.id));
+      return s;
+    });
+  }
+
+  const selectedLenses = useMemo(
+    () => Array.from(selectedIds).map((id) => lensById.get(id)).filter((l): l is LensRow => !!l),
+    [selectedIds, lensById],
+  );
 
   async function save() {
-    if (!selectedLensId) {
-      setMsg('제품을 선택하세요');
+    if (selectedIds.size === 0) {
+      setMsg('제품을 한 개 이상 선택하세요');
       return;
     }
-    if (rate.trim() === '' || Number.isNaN(Number(rate))) {
-      setMsg('수수료율을 입력하세요');
+    const sp = supplyPrice.trim();
+    const dr = discountRate.trim();
+    if (sp === '' && dr === '') {
+      setMsg('공급가 또는 할인율 중 하나는 입력하세요');
+      return;
+    }
+    if (sp !== '' && Number.isNaN(Number(sp))) {
+      setMsg('공급가가 올바르지 않습니다');
+      return;
+    }
+    if (dr !== '' && Number.isNaN(Number(dr))) {
+      setMsg('할인율이 올바르지 않습니다');
       return;
     }
     setBusy(true);
@@ -551,13 +672,18 @@ function GroupProductCommissions({
       const res = await fetch(`/api/admin/store-groups/${groupId}/product-commissions`, {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ lensId: selectedLensId, commissionRate: rate.trim() }),
+        body: JSON.stringify({
+          lensIds: Array.from(selectedIds),
+          supplyPrice: sp === '' ? null : sp,
+          discountRate: dr === '' ? null : dr,
+        }),
       });
       if (!res.ok) throw new Error();
       setMsg('저장되었습니다');
-      setSelectedLensId('');
+      setSelectedIds(new Set());
+      setSupplyPrice('');
+      setDiscountRate('');
       setQuery('');
-      setRate('');
       await load();
     } catch {
       setMsg('저장 실패');
@@ -584,73 +710,155 @@ function GroupProductCommissions({
     }
   }
 
-  const selectedLens = lenses.find((l) => l.id === selectedLensId);
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>제품별 수수료율 — {groupName || '그룹'}</CardTitle>
+        <CardTitle>제품별 공급가·할인율 — {groupName || '그룹'}</CardTitle>
       </CardHeader>
       <CardBody>
         <p className="mb-4 text-xs text-gray-500">
-          그룹 전체율({groupOverallRate}%)보다 우선하는 제품별 그룹 수수료율입니다. 매장 × 제품 오버라이드가 있으면 그쪽이 더 우선합니다.
+          그룹 전체율({groupOverallRate}%)보다 우선하는 제품별 그룹 공급가/할인율입니다. 매장 × 제품 오버라이드가 있으면 그쪽이 더 우선합니다. 정산은 공급가 우선(있으면 공급가, 없으면 할인율).
         </p>
 
-        <div className="mb-4 grid gap-2 md:grid-cols-[1fr_140px_auto]">
-          <div className="relative">
-            <input
-              type="text"
-              value={
-                selectedLens
-                  ? `${selectedLens.brand} ${selectedLens.name} (${selectedLens.productCode})`
-                  : query
-              }
-              onChange={(e) => {
-                setSelectedLensId('');
-                setQuery(e.target.value);
-              }}
-              placeholder="제품 검색 (브랜드/제품명/코드)"
-              className={gpcInputCls}
-            />
-            {!selectedLensId && filtered.length > 0 && (
-              <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-                {filtered.map((l) => (
-                  <li key={l.id}>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setSelectedLensId(l.id);
-                        setQuery('');
-                      }}
-                      disabled={overriddenIds.has(l.id)}
-                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-40"
-                    >
-                      <span>
-                        <span className="font-medium text-gray-900">{l.brand}</span>{' '}
-                        <span className="text-gray-700">{l.name}</span>{' '}
-                        <span className="font-mono text-xs text-gray-400">{l.productCode}</span>
-                      </span>
-                      {overriddenIds.has(l.id) && (
-                        <span className="text-xs text-gray-400">이미 설정됨</span>
-                      )}
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
+        {/* 검색 + 칩 필터 */}
+        <div className="mb-3 space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
           <input
-            type="number"
-            step="0.01"
-            value={rate}
-            onChange={(e) => setRate(e.target.value)}
-            placeholder="수수료율 %"
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="제품 검색 (브랜드/제품명/코드)"
             className={gpcInputCls}
           />
-          <Button onClick={save} disabled={busy || !selectedLensId}>
-            추가/저장
-          </Button>
+          {allBrands.length > 0 && (
+            <GpcFilterRow label="브랜드">
+              {allBrands.map((b) => (
+                <GpcChip key={b} active={brands.has(b)} onClick={() => toggleChip(brands, b, setBrands)}>
+                  {b}
+                </GpcChip>
+              ))}
+            </GpcFilterRow>
+          )}
+          {allCycles.length > 0 && (
+            <GpcFilterRow label="교체주기">
+              {allCycles.map((c) => (
+                <GpcChip key={c} active={cycles.has(c)} onClick={() => toggleChip(cycles, c, setCycles)}>
+                  {gpcCycleLabel(c)}
+                </GpcChip>
+              ))}
+            </GpcFilterRow>
+          )}
+          {allPacks.length > 0 && (
+            <GpcFilterRow label="갯수">
+              {allPacks.map((p) => (
+                <GpcChip key={p} active={packs.has(p)} onClick={() => toggleChip(packs, p, setPacks)}>
+                  {p}P
+                </GpcChip>
+              ))}
+            </GpcFilterRow>
+          )}
         </div>
+
+        {/* 검색 결과 리스트 */}
+        {filtered.length > 0 && (
+          <div className="mb-3 overflow-hidden rounded-lg border border-gray-200">
+            <div className="flex items-center gap-2 border-b border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-600">
+              <input
+                type="checkbox"
+                checked={allFilteredSelected}
+                onChange={toggleSelectAll}
+                aria-label="전체선택"
+              />
+              <span>검색결과 {filtered.length}개 — 전체선택</span>
+            </div>
+            <ul className="max-h-72 divide-y divide-gray-100 overflow-auto">
+              {filtered.map((l) => (
+                <li key={l.id}>
+                  <label className="flex cursor-pointer items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50">
+                    <input
+                      type="checkbox"
+                      checked={selectedIds.has(l.id)}
+                      onChange={() => toggleSelect(l.id)}
+                    />
+                    <span className="flex-1">
+                      <span className="font-medium text-gray-900">{l.brand}</span>{' '}
+                      <span className="text-gray-700">{l.name}</span>{' '}
+                      <span className="text-xs text-gray-500">
+                        {gpcCycleLabel(l.replacementCycle)} · {l.piecesPerBox}P
+                      </span>{' '}
+                      <span className="font-mono text-xs text-gray-400">{l.productCode}</span>
+                    </span>
+                    {overriddenIds.has(l.id) && (
+                      <span className="rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700">
+                        설정됨
+                      </span>
+                    )}
+                  </label>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {/* 선택한 제품 */}
+        {selectedLenses.length > 0 && (
+          <div className="mb-3 rounded-lg border border-brand-200 bg-gray-50 p-3">
+            <div className="mb-2 text-xs font-medium text-gray-600">
+              선택한 제품 {selectedLenses.length}개
+            </div>
+            <div className="flex flex-wrap gap-1.5">
+              {selectedLenses.map((l) => (
+                <span
+                  key={l.id}
+                  className="inline-flex items-center gap-1 rounded-full bg-gray-100 px-2.5 py-1 text-xs text-gray-700"
+                >
+                  <span className="font-medium text-gray-900">{l.brand}</span>
+                  <span>{l.name}</span>
+                  <span className="font-mono text-gray-400">{l.productCode}</span>
+                  <button
+                    type="button"
+                    onClick={() => toggleSelect(l.id)}
+                    className="ml-0.5 text-gray-400 hover:text-gray-700"
+                    aria-label="선택 해제"
+                  >
+                    ×
+                  </button>
+                </span>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* 공급가 / 할인율 입력 + 일괄 저장 */}
+        <div className="mb-4 grid gap-2 md:grid-cols-[1fr_1fr_auto]">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">가맹점 공급가 (원)</label>
+            <input
+              type="number"
+              step="1"
+              value={supplyPrice}
+              onChange={(e) => setSupplyPrice(e.target.value)}
+              placeholder="예: 8000"
+              className={gpcInputCls}
+            />
+          </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-600">가맹점 할인율 (%)</label>
+            <input
+              type="number"
+              step="0.01"
+              value={discountRate}
+              onChange={(e) => setDiscountRate(e.target.value)}
+              placeholder="수수료율 %"
+              className={gpcInputCls}
+            />
+          </div>
+          <div className="flex items-end">
+            <Button onClick={save} disabled={busy || selectedIds.size === 0}>
+              저장
+            </Button>
+          </div>
+        </div>
+        <p className="mb-3 text-xs text-gray-400">공급가/할인율 중 최소 하나 입력. 선택한 모든 제품에 동일 적용됩니다.</p>
         {msg && <p className="mb-3 text-sm text-gray-600">{msg}</p>}
 
         {items.length === 0 ? (
@@ -663,7 +871,8 @@ function GroupProductCommissions({
                   <th className="px-3 py-2 text-left">브랜드</th>
                   <th className="px-3 py-2 text-left">제품명</th>
                   <th className="px-3 py-2 text-left">코드</th>
-                  <th className="px-3 py-2 text-right">수수료율</th>
+                  <th className="px-3 py-2 text-right">공급가(원)</th>
+                  <th className="px-3 py-2 text-right">할인율</th>
                   <th className="px-3 py-2 text-right">작업</th>
                 </tr>
               </thead>
@@ -673,6 +882,32 @@ function GroupProductCommissions({
                     <td className="px-3 py-2 font-medium text-gray-900">{it.brand}</td>
                     <td className="px-3 py-2 text-gray-700">{it.name}</td>
                     <td className="px-3 py-2 font-mono text-xs text-gray-400">{it.productCode}</td>
+                    <td className="px-3 py-2 text-right">
+                      <input
+                        type="number"
+                        step="1"
+                        defaultValue={it.supplyPrice ?? ''}
+                        placeholder="—"
+                        onBlur={async (e) => {
+                          const v = e.target.value.trim();
+                          const cur = it.supplyPrice ?? '';
+                          if (v === cur) return;
+                          if (v !== '' && Number.isNaN(Number(v))) return;
+                          setBusy(true);
+                          await fetch(
+                            `/api/admin/store-groups/${groupId}/product-commissions`,
+                            {
+                              method: 'POST',
+                              headers: { 'content-type': 'application/json' },
+                              body: JSON.stringify({ lensId: it.lensId, supplyPrice: v === '' ? null : v }),
+                            },
+                          );
+                          setBusy(false);
+                          await load();
+                        }}
+                        className="w-28 rounded border border-gray-200 px-2 py-1 text-right text-sm focus:border-brand-500 focus:outline-none"
+                      />
+                    </td>
                     <td className="px-3 py-2 text-right">
                       <input
                         type="number"
@@ -687,7 +922,7 @@ function GroupProductCommissions({
                             {
                               method: 'POST',
                               headers: { 'content-type': 'application/json' },
-                              body: JSON.stringify({ lensId: it.lensId, commissionRate: v }),
+                              body: JSON.stringify({ lensId: it.lensId, discountRate: v }),
                             },
                           );
                           setBusy(false);

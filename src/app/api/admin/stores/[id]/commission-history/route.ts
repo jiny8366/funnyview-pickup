@@ -46,6 +46,8 @@ export async function GET(
       action: storeProductCommissionHistory.action,
       oldRate: storeProductCommissionHistory.oldRate,
       newRate: storeProductCommissionHistory.newRate,
+      oldSupplyPrice: storeProductCommissionHistory.oldSupplyPrice,
+      newSupplyPrice: storeProductCommissionHistory.newSupplyPrice,
       changedBy: storeProductCommissionHistory.changedBy,
       changedAt: storeProductCommissionHistory.changedAt,
       changedByName: users.name,
@@ -63,7 +65,17 @@ export async function GET(
 
   const url = new URL(req.url);
   if (url.searchParams.get('format') === 'csv') {
-    const header = ['일시', '제품', '브랜드', '동작', '이전율(%)', '변경율(%)', '변경자'];
+    const header = [
+      '일시',
+      '제품',
+      '브랜드',
+      '동작',
+      '이전율(%)',
+      '변경율(%)',
+      '이전공급가(원)',
+      '변경공급가(원)',
+      '변경자',
+    ];
     const lines = [header.join(',')];
     for (const r of history) {
       lines.push(
@@ -74,6 +86,8 @@ export async function GET(
           csvCell(ACTION_LABEL[r.action] ?? r.action),
           csvCell(r.oldRate),
           csvCell(r.newRate),
+          csvCell(r.oldSupplyPrice),
+          csvCell(r.newSupplyPrice),
           csvCell(r.changedByLabel),
         ].join(','),
       );
