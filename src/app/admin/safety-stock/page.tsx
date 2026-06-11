@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { InlineNumberCell } from '@/components/ui/inline-number-cell';
+import { ProductFilterBar } from '@/components/product/product-filter-bar';
 
 interface Row {
   variantId: string;
@@ -33,6 +34,20 @@ const CYCLE_LABEL: Record<string, string> = {
   '1day': '원데이', '2week': '2주', '1month': '1개월', '3month': '3개월', '6month': '6개월', '1year': '연간',
 };
 
+const TYPE_OPTIONS = [
+  { value: 'spherical', label: '구면(투명)' },
+  { value: 'toric', label: '난시(토릭)' },
+  { value: 'multifocal', label: '멀티포컬' },
+  { value: 'color', label: '컬러' },
+];
+
+function toggleInSet<T>(set: Set<T>, val: T, setter: (s: Set<T>) => void) {
+  const s = new Set(set);
+  if (s.has(val)) s.delete(val);
+  else s.add(val);
+  setter(s);
+}
+
 function doseLabel(r: Row) {
   const parts: string[] = [];
   if (r.sphere) parts.push(`SPH ${Number(r.sphere) > 0 ? '+' : ''}${r.sphere}`);
@@ -48,20 +63,49 @@ function doseLabel(r: Row) {
  */
 export default function SafetyStockPage() {
   const [q, setQ] = useState('');
+  const [brands, setBrands] = useState<Set<string>>(new Set());
+  const [types, setTypes] = useState<Set<string>>(new Set());
+  const [cycles, setCycles] = useState<Set<string>>(new Set());
+  const [packs, setPacks] = useState<Set<number>>(new Set());
+  const [allBrands, setAllBrands] = useState<string[]>([]);
+  const [allCycles, setAllCycles] = useState<string[]>([]);
+  const [allPacks, setAllPacks] = useState<number[]>([]);
   const [rows, setRows] = useState<Row[] | null>(null);
   const [params, setParams] = useState<Params | null>(null);
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'search' | 'all' | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
+  // 필터 칩 facet — 다른 화면과 동일한 표준 검색
+  useEffect(() => {
+    fetch('/api/admin/safety-stock?facets=1')
+      .then((r) => r.json())
+      .then((j) => {
+        setAllBrands(j.brands ?? []);
+        setAllCycles(j.cycles ?? []);
+        setAllPacks(j.packs ?? []);
+      })
+      .catch(() => {});
+  }, []);
+
+  const hasFilter = Boolean(q.trim() || brands.size || types.size || cycles.size || packs.size);
+
   async function load(all: boolean) {
-    if (!all && !q.trim()) return;
+    if (!all && !hasFilter) return;
     setLoading(true);
     setMode(all ? 'all' : 'search');
     setErr(null);
     try {
-      const sp = all ? 'all=1' : `q=${encodeURIComponent(q.trim())}`;
-      const res = await fetch(`/api/admin/safety-stock?${sp}`);
+      const sp = new URLSearchParams();
+      if (all) sp.set('all', '1');
+      else {
+        if (q.trim()) sp.set('q', q.trim());
+        if (brands.size > 0) sp.set('brand', [...brands].join(','));
+        if (types.size > 0) sp.set('type', [...types].join(','));
+        if (cycles.size > 0) sp.set('cycle', [...cycles].join(','));
+        if (packs.size > 0) sp.set('pack', [...packs].join(','));
+      }
+      const res = await fetch(`/api/admin/safety-stock?${sp.toString()}`);
       const j = await res.json();
       setRows(j.rows ?? []);
       setParams(j.params ?? null);
@@ -112,25 +156,32 @@ export default function SafetyStockPage() {
         )}
       </header>
 
-      <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-gray-200 bg-white p-3">
-        <input
-          value={q}
-          onChange={(e) => setQ(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && load(false)}
-          placeholder="제품명 · 브랜드 · SKU 검색"
-          className="min-w-0 flex-1 rounded-xl border border-gray-200 px-3 py-2 text-sm focus:border-gray-900 focus:outline-none md:max-w-sm"
+      <div className="space-y-2 rounded-2xl border border-gray-200 bg-white p-3">
+        {/* 검색 + 브랜드/타입/주기/갯수 칩 — 공용 ProductFilterBar (표준 검색, JINY) */}
+        <ProductFilterBar
+          className="space-y-2"
+          facets={{ brands: allBrands, types: TYPE_OPTIONS, cycles: allCycles, packs: allPacks }}
+          values={{ query: q, brands, types, cycles, packs }}
+          onQuery={setQ}
+          onToggleBrand={(b) => toggleInSet(brands, b, setBrands)}
+          onToggleType={(t) => toggleInSet(types, t, setTypes)}
+          onToggleCycle={(c) => toggleInSet(cycles, c, setCycles)}
+          onTogglePack={(p) => toggleInSet(packs, p, setPacks)}
+          searchPlaceholder="제품명 · 브랜드 · SKU 검색"
         />
-        <Button size="sm" onClick={() => load(false)} disabled={loading || !q.trim()}>
-          {loading && mode === 'search' ? '조회 중…' : '🔍 제품 검색'}
-        </Button>
-        <Button variant="secondary" size="sm" onClick={() => load(true)} disabled={loading}>
-          {loading && mode === 'all' ? '분석 중…' : '📋 전체 품목 안전재고 권고'}
-        </Button>
-        {rows && rows.some((r) => r.recommended > 0 && r.recommended !== r.safetyStock) && (
-          <Button variant="secondary" size="sm" onClick={applyAll}>
-            ⚡ 권고값 일괄 적용
+        <div className="flex flex-wrap items-center gap-2 pt-1">
+          <Button size="sm" onClick={() => load(false)} disabled={loading || !hasFilter}>
+            {loading && mode === 'search' ? '조회 중…' : '🔍 조회'}
           </Button>
-        )}
+          <Button variant="secondary" size="sm" onClick={() => load(true)} disabled={loading}>
+            {loading && mode === 'all' ? '분석 중…' : '📋 전체 품목 안전재고 권고'}
+          </Button>
+          {rows && rows.some((r) => r.recommended > 0 && r.recommended !== r.safetyStock) && (
+            <Button variant="secondary" size="sm" onClick={applyAll}>
+              ⚡ 권고값 일괄 적용
+            </Button>
+          )}
+        </div>
       </div>
 
       {err && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{err}</p>}

@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { and, eq, ilike, or, sql } from 'drizzle-orm';
+import { and, asc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/client';
 import { inventory, inventoryMovements, lensVariants, lenses } from '@/db/schema';
@@ -30,9 +30,36 @@ export async function GET(req: Request) {
   if (!me) return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
 
   const url = new URL(req.url);
+
+  // 필터 칩 facet 목록 — 다른 화면과 동일한 표준 검색(브랜드/주기/갯수)
+  if (url.searchParams.get('facets') === '1') {
+    const live = sql`${lenses.deletedAt} IS NULL`;
+    const [brandRows, cycleRows, packRows] = await Promise.all([
+      db.selectDistinct({ v: lenses.brand }).from(lenses).where(live).orderBy(asc(lenses.brand)),
+      db.selectDistinct({ v: lenses.replacementCycle }).from(lenses).where(live).orderBy(asc(lenses.replacementCycle)),
+      db.selectDistinct({ v: lenses.piecesPerBox }).from(lenses).where(live).orderBy(asc(lenses.piecesPerBox)),
+    ]);
+    return NextResponse.json({
+      brands: brandRows.map((b) => b.v),
+      cycles: cycleRows.map((r) => r.v),
+      packs: packRows.map((r) => r.v),
+    });
+  }
+
   const q = url.searchParams.get('q')?.trim();
   const all = url.searchParams.get('all') === '1';
-  if (!q && !all) return NextResponse.json({ rows: [], params: SAFETY_STOCK_PARAMS });
+  // 표준 칩 필터 (콤마 구분 복수). 주의: pack 은 빈 토큰을 Number 변환 전에 제거 (보드 #23 버그 클래스)
+  const brandList = (url.searchParams.get('brand') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const typeList = (url.searchParams.get('type') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const cycleList = (url.searchParams.get('cycle') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const packList = (url.searchParams.get('pack') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter((n) => Number.isFinite(n));
+  const hasFilter = Boolean(q || brandList.length || typeList.length || cycleList.length || packList.length);
+  if (!hasFilter && !all) return NextResponse.json({ rows: [], params: SAFETY_STOCK_PARAMS });
 
   // 관측창 내 일별 출고(outbound: 고객 배송 + B2B 발주) 집계 — σ 계산용 Σq² 포함
   const windowDays = SAFETY_STOCK_PARAMS.windowDays;
@@ -65,6 +92,10 @@ export async function GET(req: Request) {
     const search = or(ilike(lenses.name, pat), ilike(lenses.brand, pat), ilike(lensVariants.sku, pat));
     if (search) conds.push(search);
   }
+  if (brandList.length > 0) conds.push(inArray(lenses.brand, brandList));
+  if (typeList.length > 0) conds.push(inArray(lenses.lensType, typeList as never));
+  if (cycleList.length > 0) conds.push(inArray(lenses.replacementCycle, cycleList as never));
+  if (packList.length > 0) conds.push(inArray(lenses.piecesPerBox, packList));
   if (all) {
     // 전체 모드: 의미 있는 행만 (판매이력 또는 현재고/안전재고 보유)
     conds.push(
