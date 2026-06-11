@@ -39,6 +39,35 @@ export async function GET(req: Request) {
     return NextResponse.json({ inventoryCount: a, joinVariants: b, joinLenses: c, sums: d });
   }
 
+  // [임시 진단2 — drizzle 단계별] 어느 단계에서 0이 되는지 확정. 확인 후 제거.
+  if (url.searchParams.get('debug') === 'steps') {
+    const s1 = await db.select({ id: inventory.id }).from(inventory).limit(3);
+    const s2 = await db.select({ id: inventory.id }).from(inventory)
+      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId)).limit(3);
+    const s3 = await db.select({ id: inventory.id }).from(inventory)
+      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
+      .innerJoin(lenses, eq(lenses.id, lensVariants.lensId)).limit(3);
+    const lotSub = db
+      .select({
+        variantId: inventoryLots.variantId,
+        lotCount: sql<number>`COUNT(*)::int`.as('lot_count'),
+      })
+      .from(inventoryLots)
+      .innerJoin(inboundShipments, eq(inventoryLots.shipmentId, inboundShipments.id))
+      .where(sql`${inventoryLots.quantityRemaining} > 0 AND ${inboundShipments.status} = 'confirmed'`)
+      .groupBy(inventoryLots.variantId)
+      .as('lot_agg');
+    const s4 = await db.select({ id: inventory.id, lc: sql<number>`COALESCE(${lotSub.lotCount}, 0)` }).from(inventory)
+      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
+      .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
+      .leftJoin(lotSub, eq(lotSub.variantId, lensVariants.id)).limit(3);
+    const s5 = await db.select({ id: inventory.id }).from(inventory)
+      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
+      .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
+      .where(sql.join([sql`TRUE`, sql`TRUE`], sql` AND `)).limit(3);
+    return NextResponse.json({ s1: s1.length, s2: s2.length, s3: s3.length, s4: s4.length, s5: s5.length });
+  }
+
   const onlyLow = url.searchParams.get('low') === '1';
   // 검색 조건: q=제품명/SKU, brand/type 은 콤마구분 복수 선택(칩 토글) 지원
   const q = url.searchParams.get('q')?.trim();
