@@ -24,6 +24,32 @@ function fmtSph(s: string): string {
 }
 
 /**
+ * 구면(SPH) 옵션 렌더 — 0.00 기준. 원시(+)가 포함되면 위쪽=원시(＋)·아래쪽=근시(－)로
+ * optgroup 구분(내리면 근시, 올리면 원시). opts 는 내림차순 전제(+높은 것 → 0 → −).
+ */
+function SphOptions({ opts, isOk }: { opts: string[]; isOk: (o: string) => boolean }) {
+  const opt = (o: string) => {
+    const ok = isOk(o);
+    return (
+      <option key={o} value={o} disabled={!ok}>
+        {fmtSph(o)}{ok ? '' : ' (품절)'}
+      </option>
+    );
+  };
+  const plus = opts.filter((o) => Number(o) > 0);
+  if (plus.length === 0) return <>{opts.map(opt)}</>; // 원시 없음 → 평면(근시만)
+  const zero = opts.filter((o) => Number(o) === 0);
+  const minus = opts.filter((o) => Number(o) < 0);
+  return (
+    <>
+      <optgroup label="원시 (＋) ↑">{plus.map(opt)}</optgroup>
+      {zero.map(opt)}
+      {minus.length > 0 && <optgroup label="근시 (－) ↓">{minus.map(opt)}</optgroup>}
+    </>
+  );
+}
+
+/**
  * 가맹점 발주용 도수+수량 선택 패널.
  *
  * 구면(spherical): SPH 단일 드롭다운.
@@ -164,14 +190,10 @@ export function StoreVariantPicker({
                 onChange={(e) => setSph(e.target.value)}
               >
                 <option value="">구면도수 (SPH) 선택</option>
-                {sphOptionsToric.map((o) => {
-                  const ok = hasStock((v) => matchExcept(v, { s: o, c: cyl, a: axis }));
-                  return (
-                    <option key={o} value={o} disabled={!ok}>
-                      {fmtSph(o)}{ok ? '' : ' (품절)'}
-                    </option>
-                  );
-                })}
+                <SphOptions
+                  opts={sphOptionsToric}
+                  isOk={(o) => hasStock((v) => matchExcept(v, { s: o, c: cyl, a: axis }))}
+                />
               </select>
 
               {/* 난시도수(CYL) */}
@@ -218,14 +240,7 @@ export function StoreVariantPicker({
                 <option value="" disabled>
                   구면도수 (SPH)
                 </option>
-                {sphOptions.map((o) => {
-                  const ok = hasStock((v) => v.sphere === o);
-                  return (
-                    <option key={o} value={o} disabled={!ok}>
-                      {fmtSph(o)}{ok ? '' : ' (품절)'}
-                    </option>
-                  );
-                })}
+                <SphOptions opts={sphOptions} isOk={(o) => hasStock((v) => v.sphere === o)} />
               </select>
 
               {/* 가입도(ADD)는 제품 등급(HIGH/MID/MED 등)으로 구분 — 선택이 아닌 범위 안내 (JINY) */}
