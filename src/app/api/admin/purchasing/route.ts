@@ -255,6 +255,7 @@ const createSchema = z.object({
         variantId: z.string().uuid(),
         quantity: z.number().int().positive(),
         unitCost: z.number().int().min(0).default(0),
+        reason: z.string().max(50).optional(),
       }),
     )
     .min(1),
@@ -336,6 +337,7 @@ export async function POST(req: Request) {
               addPower: v.addPower,
               quantity: it.quantity,
               unitCost: it.unitCost,
+              reason: it.reason ?? null,
             };
           }),
         );

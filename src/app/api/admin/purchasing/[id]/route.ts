@@ -67,13 +67,14 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 
   const url = new URL(req.url);
   if (url.searchParams.get('format') === 'csv') {
-    const headerRow = ['브랜드', '제품명', 'SKU', '도수', '수량(팩)', '예상단가', '금액'];
+    const headerRow = ['브랜드', '제품명', 'SKU', '도수', '사유', '수량(팩)', '예상단가', '금액'];
     const lines = items.map((it) =>
       [
         it.brand ?? '',
         it.productName ?? '',
         it.sku ?? '',
         doseLabel(it),
+        it.reason ?? '',
         it.quantity,
         it.unitCost,
         it.quantity * it.unitCost,

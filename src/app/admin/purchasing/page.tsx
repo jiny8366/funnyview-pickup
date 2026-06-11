@@ -242,8 +242,20 @@ export default function PurchasingPage() {
       setErr('매입거래처를 선택하세요.');
       return;
     }
+    const reasonOf = (id: string) => {
+      const c = cands?.find((x) => x.variantId === id);
+      if (!c) return undefined;
+      if (c.manual) return '임의발주';
+      const parts = [c.reasonSold && '출고분', c.reasonLow && '안전재고 미달'].filter(Boolean);
+      return parts.length ? parts.join('·') : undefined;
+    };
     const items = [...checked]
-      .map((id) => ({ variantId: id, quantity: qty.get(id) ?? 0, unitCost: cost.get(id) ?? 0 }))
+      .map((id) => ({
+        variantId: id,
+        quantity: qty.get(id) ?? 0,
+        unitCost: cost.get(id) ?? 0,
+        reason: reasonOf(id),
+      }))
       .filter((i) => i.quantity > 0);
     if (items.length === 0) {
       setErr('발주할 품목을 선택하고 수량을 입력하세요.');
@@ -576,6 +588,7 @@ export default function PurchasingPage() {
 
 interface DetailItem {
   id: string;
+  reason: string | null;
   brand: string | null;
   productName: string | null;
   sku: string | null;
@@ -649,6 +662,7 @@ function OrderDetailModal({
                 <tr>
                   <th className="py-1.5 pr-2">제품</th>
                   <th className="py-1.5 pr-2">도수</th>
+                  <th className="py-1.5 pr-2">사유</th>
                   <th className="py-1.5 pr-2 text-right">수량</th>
                   <th className="py-1.5 pr-2 text-right">단가</th>
                   <th className="py-1.5 text-right">합계</th>
@@ -664,6 +678,13 @@ function OrderDetailModal({
                     <td className="py-1.5 pr-2 text-gray-600">
                       {doseLabel({ sphere: it.sphere ?? '', cylinder: it.cylinder, axis: it.axis, addPower: it.addPower })}
                     </td>
+                    <td className="py-1.5 pr-2">
+                      {it.reason && (
+                        <span className={`rounded px-1.5 py-0.5 text-[10px] font-medium ${it.reason === '임의발주' ? 'bg-purple-50 text-purple-700' : 'bg-blue-50 text-blue-700'}`}>
+                          {it.reason}
+                        </span>
+                      )}
+                    </td>
                     <td className="py-1.5 pr-2 text-right">{it.quantity}</td>
                     <td className="py-1.5 pr-2 text-right">{it.unitCost.toLocaleString()}</td>
                     <td className="py-1.5 text-right">{(it.quantity * it.unitCost).toLocaleString()}</td>
@@ -672,7 +693,7 @@ function OrderDetailModal({
               </tbody>
               <tfoot>
                 <tr className="border-t border-gray-200 font-semibold">
-                  <td colSpan={2} className="py-2 pr-2">합계 ({data.items.length}종)</td>
+                  <td colSpan={3} className="py-2 pr-2">합계 ({data.items.length}종)</td>
                   <td className="py-2 pr-2 text-right">{totalQty}팩</td>
                   <td />
                   <td className="py-2 text-right">{(o?.totalCost ?? 0).toLocaleString()}원</td>

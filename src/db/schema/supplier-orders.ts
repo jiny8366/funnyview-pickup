@@ -71,6 +71,8 @@ export const supplierOrderItems = pgTable(
     quantity: integer('quantity').notNull(),
     // 예상 매입단가 (원, 참고 — 표준매입가 기반, 화면에서 조정 가능)
     unitCost: integer('unit_cost').notNull().default(0),
+    // 발주 사유 스냅샷 — '임의발주' | '출고분' | '안전재고 미달' 등 (JINY)
+    reason: text('reason'),
   },
   (t) => ({
     orderIdx: index('supplier_order_items_order_idx').on(t.orderId),

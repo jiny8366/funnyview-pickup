@@ -105,6 +105,7 @@ export default async function PurchaseOrderPrintPage({ params }: { params: { id:
               <th className="py-1.5 pr-2">브랜드</th>
               <th className="py-1.5 pr-2">제품명</th>
               <th className="py-1.5 pr-2">도수</th>
+              <th className="py-1.5 pr-2">사유</th>
               <th className="py-1.5 pr-2 text-right">수량(팩)</th>
               <th className="py-1.5 pr-2 text-right">단가</th>
               <th className="py-1.5 text-right">금액</th>
@@ -120,6 +121,7 @@ export default async function PurchaseOrderPrintPage({ params }: { params: { id:
                   <span className="ml-1 font-mono text-[10px] text-gray-400">{it.sku}</span>
                 </td>
                 <td className="py-1.5 pr-2">{doseLabel(it)}</td>
+                <td className="py-1.5 pr-2 text-gray-600">{it.reason ?? ''}</td>
                 <td className="py-1.5 pr-2 text-right">{it.quantity}</td>
                 <td className="py-1.5 pr-2 text-right">{it.unitCost.toLocaleString()}</td>
                 <td className="py-1.5 text-right">{(it.quantity * it.unitCost).toLocaleString()}</td>
@@ -128,7 +130,7 @@ export default async function PurchaseOrderPrintPage({ params }: { params: { id:
           </tbody>
           <tfoot>
             <tr className="border-t-2 border-gray-700 font-semibold">
-              <td colSpan={4} className="py-2 pr-2">
+              <td colSpan={5} className="py-2 pr-2">
                 합계 ({items.length}종)
               </td>
               <td className="py-2 pr-2 text-right">{totalQty}</td>
