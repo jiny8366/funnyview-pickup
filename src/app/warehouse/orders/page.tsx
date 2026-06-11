@@ -34,9 +34,10 @@ interface PoRow {
   itemCount: number;
 }
 
+// 상태 라벨 체계 (JINY): 가맹점 발주=발주접수 → 업체 접수=주문접수 → 배송=배송중
 const PO_STATUS_LABEL: Record<PoRow['status'], string> = {
   placed: '발주접수',
-  confirmed: '발주확인',
+  confirmed: '주문접수',
   shipped: '배송중',
   received: '입고완료',
   cancelled: '취소',
@@ -44,7 +45,7 @@ const PO_STATUS_LABEL: Record<PoRow['status'], string> = {
 
 /** 발주 행의 다음 처리 액션 (placed→confirmed→shipped) */
 function poNextAction(status: PoRow['status']): { to: PoRow['status']; label: string } | null {
-  if (status === 'placed') return { to: 'confirmed', label: '발주 확인' };
+  if (status === 'placed') return { to: 'confirmed', label: '접수' };
   if (status === 'confirmed') return { to: 'shipped', label: '배송 처리' };
   return null;
 }
