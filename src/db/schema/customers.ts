@@ -13,6 +13,7 @@ import {
   uuid,
 } from 'drizzle-orm/pg-core';
 import { eyeSideEnum, genderEnum } from './enums';
+import { stores } from './stores';
 import { users } from './users';
 
 /**
@@ -93,6 +94,9 @@ export const customerPrescriptions = pgTable(
     axis: integer('axis'), // 축 (0 ~ 180)
     addPower: numeric('add_power', { precision: 4, scale: 2 }), // 가입도(다초점)
     source: text('source'), // 'self_input' | 'doctor' | 'last_order'
+    // 수정 주체 — 고객 본인 변경 시 null(비움), 픽업가맹점 변경 시 상호 스냅샷 기록 (마이페이지 이력 노출)
+    changedByStoreId: uuid('changed_by_store_id').references(() => stores.id),
+    changedByStoreName: text('changed_by_store_name'),
     recordedAt: timestamp('recorded_at', { withTimezone: true })
       .defaultNow()
       .notNull(),

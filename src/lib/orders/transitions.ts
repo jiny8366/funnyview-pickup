@@ -34,8 +34,9 @@ const ALLOWED_FROM: Record<OrderStatus, OrderStatus[]> = {
   accepted: ['picking', 'cancelled'],
   picking: ['shipped', 'cancelled'],
   shipped: ['arrived'],
-  arrived: ['ready'],
-  ready: ['completed', 'no_show'],
+  // 배송된 제품은 가맹점이 반품요청 가능 (도수 오류 등 → 수정 후 재주문 흐름)
+  arrived: ['ready', 'returned'],
+  ready: ['completed', 'no_show', 'returned'],
   completed: ['returned'],
   cancelled: [],
   no_show: ['completed', 'returned'],

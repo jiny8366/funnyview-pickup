@@ -48,6 +48,6 @@ export async function middleware(req: NextRequest) {
 // 모든 path 에서 실행 (정적 자산 + 일부 공개 API 제외).
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|_next/data|favicon\\.ico|manifest\\.json|sw\\.js|icons/|uploads/|images/).*)',
+    '/((?!_next/static|_next/image|_next/data|favicon\\.ico|icon\\.png|apple-icon\\.png|manifest\\.json|manifest\\.webmanifest|sw\\.js|icons/|brand/|og\\.png|uploads/|images/).*)',
   ],
 };

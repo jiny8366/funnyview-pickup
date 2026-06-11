@@ -33,6 +33,9 @@ export const orders = pgTable(
       .notNull()
       .references(() => stores.id),
 
+    // 주문 주체 — 픽업가맹점이 대리 발주한 주문이면 해당 매장 id (staff 화면에서 고객명 대신 '발주' 표시)
+    orderedByStoreId: uuid('ordered_by_store_id').references(() => stores.id),
+
     status: orderStatusEnum('status').default('pending').notNull(),
 
     // 금액 (원)

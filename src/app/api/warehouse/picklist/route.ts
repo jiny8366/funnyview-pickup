@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { asc, eq, inArray } from 'drizzle-orm';
+import { asc, eq, inArray, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/client';
 import {
@@ -43,8 +43,9 @@ export async function POST(req: Request) {
       storeName: stores.name,
       storePhone: stores.phone,
       storeAddress: stores.addressLine1,
-      customerName: customers.name,
-      customerPhone: customers.phone,
+      // 가맹점 발주 주문은 고객명 대신 '발주' 표기 (JINY)
+      customerName: sql<string>`CASE WHEN ${orders.orderedByStoreId} IS NOT NULL THEN '발주' ELSE ${customers.name} END`,
+      customerPhone: sql<string>`CASE WHEN ${orders.orderedByStoreId} IS NOT NULL THEN '' ELSE ${customers.phone} END`,
     })
     .from(orders)
     .innerJoin(stores, eq(stores.id, orders.pickupStoreId))

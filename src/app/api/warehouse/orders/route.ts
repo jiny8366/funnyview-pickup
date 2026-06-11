@@ -58,6 +58,7 @@ export async function GET(req: Request) {
         completedAt: orders.completedAt,
         customerName: customers.name,
         customerPhone: customers.phone,
+        orderedByStoreId: orders.orderedByStoreId,
         storeId: orders.pickupStoreId,
         storeName: stores.name,
         storePhone: stores.phone,
