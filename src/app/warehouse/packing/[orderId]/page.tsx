@@ -234,6 +234,28 @@ export default function PackingPage() {
 
       {err && <p className="text-sm text-red-600">{err}</p>}
 
+      {/* 검수 확정 후 — 이 건의 거래명세서·송장 출력 (JINY 지시). 새 탭으로 열어 검수 상태 유지 */}
+      {allMatched && !wrongStatus && (
+        <div className="flex gap-2">
+          <a
+            href={`/warehouse/invoice-bundle?ids=${data.order.id}&mode=invoice`}
+            target="_blank"
+            rel="noreferrer"
+            className="tap flex-1 rounded-lg border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            🧾 거래명세서 출력
+          </a>
+          <a
+            href={`/warehouse/invoice-bundle?ids=${data.order.id}&mode=waybill`}
+            target="_blank"
+            rel="noreferrer"
+            className="tap flex-1 rounded-lg border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
+          >
+            🚚 송장 출력
+          </a>
+        </div>
+      )}
+
       <Button onClick={ship} disabled={!canShip || busy} className="w-full bg-emerald-600 hover:bg-emerald-700">
         {busy ? '출고 처리 중…' : canShip ? '✅ 검수 완료 — 출고(배송) 처리' : '전 품목 스캔 후 출고 가능'}
       </Button>
