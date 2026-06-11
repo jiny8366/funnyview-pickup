@@ -4,6 +4,7 @@ import {
   IconBox,
   IconCart,
   IconChart,
+  IconClipboard,
   IconHome,
   IconLayout,
   IconPlus,
@@ -32,6 +33,7 @@ const SECTIONS: MenuSection[] = [
     title: '상품',
     items: [
       { href: '/admin/products', label: '제품 마스터', icon: <IconBox size={16} />, permission: 'products_read' },
+      { href: '/admin/suppliers', label: '매입처 관리', icon: <IconClipboard size={16} />, permission: 'settings_write' },
       { href: '/admin/categories', label: '카테고리', icon: <IconTag size={16} />, permission: 'categories_write' },
       { href: '/admin/price-history', label: '가격변동이력', icon: <IconChart size={16} />, permission: 'price_history_view' },
     ],
