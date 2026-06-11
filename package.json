@@ -17,7 +17,11 @@
     "db:import-jinys": "tsx scripts/import-jinys-stores.ts",
     "db:import-catalog": "tsx scripts/import-jinys-catalog.ts",
     "db:cleanup-seed": "tsx scripts/cleanup-seed-products.ts",
-    "vercel:build": "bash scripts/vercel-build.sh"
+    "vercel:build": "bash scripts/vercel-build.sh",
+    "test:e2e": "playwright test",
+    "test:e2e:ui": "playwright test --ui",
+    "test:e2e:report": "playwright show-report",
+    "e2e:install": "playwright install --with-deps chromium"
   },
   "dependencies": {
     "@vercel/blob": "^2.4.0",
@@ -40,6 +44,7 @@
     "zustand": "^5.0.2"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/bcryptjs": "^2.4.6",
     "@types/node": "^20.17.10",
     "@types/react": "^18.3.18",

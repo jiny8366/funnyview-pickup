@@ -6,6 +6,12 @@
 
 # testing
 /coverage
+# playwright e2e (w1)
+/test-results/
+/playwright-report/
+/playwright/.cache/
+/.last-run.json
+/qa-out/
 
 # next.js
 /.next/

@@ -149,8 +149,7 @@ async function loadCatalog(): Promise<CatalogLens[]> {
 }
 
 async function scrapeKlenspop(): Promise<ScrapedImage[]> {
-  // Playwright dynamic import — 미설치 시 친절한 안내
-  // @ts-expect-error — playwright 는 devDependency, 미설치 시 catch
+  // Playwright dynamic import — 미설치 시 친절한 안내 (.catch 로 런타임 가드)
   const mod = await import('playwright').catch(() => null);
   if (!mod) {
     console.error('❌ playwright 가 설치되지 않았습니다.');

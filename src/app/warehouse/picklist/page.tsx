@@ -13,6 +13,7 @@ interface OrderRow {
   status: string;
   customerName: string;
   customerPhone: string;
+  storeId: string;
   storeName: string;
   itemCount: number;
   acceptedAt: string | null;
@@ -237,7 +238,7 @@ export default function WarehousePicklistPage() {
                   const groupItems = list.reduce((s, o) => s + o.itemCount, 0);
                   return (
                     <Fragment key={store}>
-                      {/* 가맹점 그룹 헤더 — 동일 가맹점 묶음 + 매장 단위 일괄선택 */}
+                      {/* 가맹점 그룹 헤더 — 동일 가맹점 묶음 + 매장 단위 일괄선택 + 매장 단위 팩킹 진입 */}
                       <tr className="bg-gray-100">
                         <td className="px-3 py-2">
                           <input
@@ -247,8 +248,17 @@ export default function WarehousePicklistPage() {
                             aria-label={`${store} 전체선택`}
                           />
                         </td>
-                        <td colSpan={5} className="px-3 py-2 text-sm font-semibold text-gray-800">
+                        <td colSpan={3} className="px-3 py-2 text-sm font-semibold text-gray-800">
                           🏪 {store} · {list.length}건 · {groupItems}아이템
+                        </td>
+                        <td colSpan={2} className="px-3 py-2 text-right">
+                          {/* 한 가맹점의 여러 전표를 한 박스로 묶어 스캔 검수 → 확정 → 거래명세서 동봉 → 배송 */}
+                          <Link
+                            href={`/warehouse/packing/store/${list[0].storeId}`}
+                            className="inline-block rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700"
+                          >
+                            📦 이 가맹점 팩킹·확정 →
+                          </Link>
                         </td>
                       </tr>
                       {list.map((o) => (
@@ -269,12 +279,12 @@ export default function WarehousePicklistPage() {
                           <td className="px-3 py-2 text-gray-400">{o.storeName}</td>
                           <td className="px-3 py-2 text-right">{o.itemCount}</td>
                           <td className="px-3 py-2 text-right">
-                            {/* 무검증 직접출고 대신 패킹 검수(스캔) 화면 경유 */}
+                            {/* 단건 검수(부족분 급매입 등 개별 처리). 일반 배송은 가맹점 단위 팩킹 권장 */}
                             <Link
                               href={`/warehouse/packing/${o.id}`}
-                              className="inline-block rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                              className="inline-block rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-500 hover:bg-gray-50"
                             >
-                              📦 검수→출고
+                              단건 검수
                             </Link>
                           </td>
                         </tr>
