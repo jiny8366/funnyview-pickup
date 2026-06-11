@@ -372,7 +372,18 @@ function ProductCard({
     <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white">
       <div className="aspect-square overflow-hidden bg-gray-50">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageSrc} alt={item.name} className="h-full w-full object-contain p-2" loading="lazy" />
+        <img
+          src={imageSrc}
+          alt={item.name}
+          className="h-full w-full object-contain p-2"
+          loading="lazy"
+          onError={(e) => {
+            const el = e.currentTarget;
+            if (el.dataset.fb) return;
+            el.dataset.fb = '1';
+            el.src = `/api/lens-image/${item.productCode}`;
+          }}
+        />
       </div>
       <div className="flex flex-1 flex-col p-3">
         <p className="truncate text-[10px] text-gray-400">{item.brand}</p>
@@ -459,7 +470,18 @@ function ProductRow({
     <div className="flex items-center gap-3 px-3 py-2.5">
       <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-gray-50">
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={imageSrc} alt={item.name} className="h-full w-full object-contain p-1" loading="lazy" />
+        <img
+          src={imageSrc}
+          alt={item.name}
+          className="h-full w-full object-contain p-1"
+          loading="lazy"
+          onError={(e) => {
+            const el = e.currentTarget;
+            if (el.dataset.fb) return;
+            el.dataset.fb = '1';
+            el.src = `/api/lens-image/${item.productCode}`;
+          }}
+        />
       </div>
       <div className="min-w-0 flex-1">
         <p className="truncate text-[11px] text-gray-400">{item.brand}</p>
