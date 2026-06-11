@@ -1,7 +1,7 @@
 'use client';
 
 import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { IconSearch } from '@/components/ui/icons';
@@ -36,6 +36,38 @@ interface LookupResponse {
   } | null;
 }
 
+// 매입 발주서(본사→매입처, M3) — 입고 프리필용
+interface PoItem {
+  variantId: string | null;
+  brand: string | null;
+  productName: string | null;
+  sku: string | null;
+  sphere: string | null;
+  cylinder: string | null;
+  axis: number | null;
+  quantity: number;
+  unitCost: number;
+}
+interface PurchaseOrder {
+  id: string;
+  orderNumber: string;
+  supplierId: string | null;
+  supplierName: string | null;
+  items: PoItem[];
+}
+
+function composePoName(it: PoItem): string {
+  const power = [
+    it.sphere ? `SPH ${it.sphere}` : '',
+    it.cylinder ? `CYL ${it.cylinder}` : '',
+    it.axis != null ? `AX ${it.axis}` : '',
+  ]
+    .filter(Boolean)
+    .join(' ');
+  const base = [it.brand, it.productName].filter(Boolean).join(' ');
+  return `${base}${power ? ` · ${power}` : ''}`.trim() || it.sku || it.variantId || '제품';
+}
+
 export default function InboundNewPage() {
   return (
     <Suspense fallback={null}>
@@ -46,7 +78,12 @@ export default function InboundNewPage() {
 
 function InboundNewInner() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const scanRef = useRef<HTMLInputElement | null>(null);
+
+  // 매입 발주서 프리필
+  const [pos, setPos] = useState<PurchaseOrder[]>([]);
+  const [loadedPo, setLoadedPo] = useState<PurchaseOrder | null>(null);
 
   // 전표 헤더
   const [inboundDate, setInboundDate] = useState(todayISO());
@@ -75,6 +112,49 @@ function InboundNewInner() {
   useEffect(() => {
     scanRef.current?.focus();
   }, []);
+
+  // 발주완료(ordered) 매입 발주서 로드 — 입고 프리필용 (M3 매입 관리 연계).
+  // ?poId= 가 있으면 자동 프리필(매입 관리에서 바로 진입).
+  useEffect(() => {
+    fetch('/api/warehouse/purchase-orders')
+      .then((r) => (r.ok ? r.json() : { orders: [] }))
+      .then((d) => {
+        const list: PurchaseOrder[] = d.orders ?? [];
+        setPos(list);
+        const poId = searchParams.get('poId');
+        if (poId) {
+          const po = list.find((p) => p.id === poId);
+          if (po) loadFromPo(po);
+        }
+      })
+      .catch(() => setPos([]));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // 발주서 → 입고 라인 프리필 (variantId 있는 품목만; lensId 는 입고 API 가 도출).
+  function loadFromPo(po: PurchaseOrder) {
+    const next: ScanLine[] = po.items
+      .filter((it) => it.variantId)
+      .map((it) => ({
+        variantId: it.variantId as string,
+        lensId: '', // 입고 API 가 variantId→lensId 도출
+        displayName: composePoName(it),
+        sku: it.sku ?? '',
+        currentStock: 0,
+        quantity: it.quantity,
+        unitCost: it.unitCost,
+      }));
+    setLines(next);
+    if (po.supplierId) setSupplierId(po.supplierId);
+    setInvoiceRef(po.orderNumber);
+    setLoadedPo(po);
+  }
+
+  function clearPo() {
+    setLoadedPo(null);
+    setLines([]);
+    setInvoiceRef('');
+  }
 
   const handleScan = useCallback(
     async (text: string) => {
@@ -167,6 +247,14 @@ function InboundNewInner() {
         const j = await res.json().catch(() => ({}));
         throw new Error(j.detail ?? j.error ?? '입고 실패');
       }
+      // 매입 발주서에서 불러온 입고면 → 발주서 입고완료(received) 마킹 (M3 매입 관리 연계).
+      if (loadedPo) {
+        await fetch('/api/warehouse/purchase-orders', {
+          method: 'PATCH',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ id: loadedPo.id }),
+        }).catch(() => {});
+      }
       router.push('/warehouse/inbound/history');
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : '입고 실패');
@@ -190,6 +278,46 @@ function InboundNewInner() {
           </Button>
         </div>
       </div>
+
+      {/* 매입 발주서 불러오기 — 입고 프리필 (M3 매입 관리 연계) */}
+      {(pos.length > 0 || loadedPo) && (
+        <Card>
+          <CardBody>
+            {loadedPo ? (
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <div className="text-sm text-gray-700">
+                  📥 매입 발주서 <b className="font-mono">{loadedPo.orderNumber}</b>
+                  {loadedPo.supplierName ? ` · ${loadedPo.supplierName}` : ''} 프리필됨 — 입고 등록 시 발주서가{' '}
+                  <b>입고완료</b>로 처리됩니다.
+                </div>
+                <Button variant="secondary" size="sm" onClick={clearPo}>
+                  해제
+                </Button>
+              </div>
+            ) : (
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="text-xs font-medium text-gray-700">매입 발주서에서 불러오기</label>
+                <select
+                  className="input max-w-md"
+                  defaultValue=""
+                  onChange={(e) => {
+                    const po = pos.find((p) => p.id === e.target.value);
+                    if (po) loadFromPo(po);
+                  }}
+                >
+                  <option value="">발주완료 발주서 선택…</option>
+                  {pos.map((p) => (
+                    <option key={p.id} value={p.id}>
+                      {p.orderNumber}
+                      {p.supplierName ? ` · ${p.supplierName}` : ''} · {p.items.length}품목
+                    </option>
+                  ))}
+                </select>
+              </div>
+            )}
+          </CardBody>
+        </Card>
+      )}
 
       {/* 전표 헤더 */}
       <Card>
