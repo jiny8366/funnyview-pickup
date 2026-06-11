@@ -235,7 +235,7 @@ function EditDialog({
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center bg-black/40 p-4">
-      <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-xl max-h-[90vh] overflow-y-auto">
+      <div className="w-full max-w-2xl animate-scale-in rounded-2xl bg-white p-6 shadow-pop max-h-[90vh] overflow-y-auto">
         <h3 className="text-lg font-bold">섹션 편집 — {section.kind}</h3>
 
         <div className="mt-4 space-y-4">

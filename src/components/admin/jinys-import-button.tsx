@@ -98,7 +98,7 @@ export function JinysImportButton() {
       {step !== 'idle' && (
         <div className="fixed inset-0 z-50 grid place-items-center bg-black/40 p-4" onClick={close}>
           <div
-            className="max-h-[85vh] w-full max-w-2xl overflow-y-auto rounded-2xl bg-white p-6 shadow-2xl"
+            className="max-h-[85vh] w-full max-w-2xl animate-scale-in overflow-y-auto rounded-2xl bg-white p-6 shadow-pop"
             onClick={(e) => e.stopPropagation()}
           >
             {step === 'preview' && dryRun && (

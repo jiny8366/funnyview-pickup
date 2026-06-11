@@ -129,7 +129,7 @@ export function PowerChartModal({
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="flex max-h-[90vh] w-full max-w-5xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+      <div className="flex max-h-[90vh] w-full max-w-5xl animate-scale-in flex-col overflow-hidden rounded-2xl bg-white shadow-pop">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <div>
             <h2 className="text-base font-semibold text-gray-900">파워챠트</h2>

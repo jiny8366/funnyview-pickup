@@ -161,7 +161,7 @@ export function MyPowerSelector({
       {step !== 'idle' && presc && (
         <div className="fixed inset-0 z-[70] flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4" onClick={closeModal}>
           <div
-            className="w-full max-w-sm rounded-t-2xl bg-white p-6 shadow-2xl sm:rounded-2xl"
+            className="w-full max-w-sm animate-slide-up rounded-t-2xl bg-white p-6 shadow-pop sm:animate-scale-in sm:rounded-2xl"
             onClick={(e) => e.stopPropagation()}
           >
             {step === 'warn' ? (

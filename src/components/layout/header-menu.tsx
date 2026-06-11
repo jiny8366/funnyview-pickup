@@ -119,7 +119,7 @@ export function HeaderMenu({
 
       {open && (
         <div
-          className="absolute right-0 top-[calc(100%+8px)] z-50 w-72 origin-top-right overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-xl"
+          className="absolute right-0 top-[calc(100%+8px)] z-50 w-72 origin-top-right animate-scale-in overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-pop"
           role="menu"
         >
           {user && (

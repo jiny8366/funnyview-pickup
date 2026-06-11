@@ -104,7 +104,7 @@ export function BrandManagerModal({ open, onClose, onCreated }: Props) {
         if (e.target === e.currentTarget) onClose();
       }}
     >
-      <div className="w-full max-w-2xl overflow-hidden rounded-2xl bg-white shadow-xl">
+      <div className="w-full max-w-2xl animate-scale-in overflow-hidden rounded-2xl bg-white shadow-pop">
         <div className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <h2 className="text-base font-semibold text-gray-900">브랜드 관리</h2>
           <button
