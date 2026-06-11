@@ -79,7 +79,7 @@ export default function CustomerMyPage() {
   const recent = useMemo(() => (orders ? orders.slice(0, 5) : []), [orders]);
 
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <section>
         <h1 className="text-2xl font-bold">마이페이지</h1>
         <p className="mt-1 text-sm text-gray-500">내 정보, 주문 현황, 시력정보를 한 곳에서 확인하세요.</p>
@@ -182,7 +182,7 @@ export default function CustomerMyPage() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <Link
             href="/customer/order"
-            className="rounded-2xl border border-gray-200 bg-white p-4 hover:border-brand-500"
+            className="tap rounded-2xl border border-gray-200 bg-white p-4 shadow-card transition hover:border-brand-500 hover:shadow-elevated"
           >
             <div className="text-2xl" aria-hidden>
               🛒
@@ -192,7 +192,7 @@ export default function CustomerMyPage() {
           </Link>
           <Link
             href="/customer/orders"
-            className="rounded-2xl border border-gray-200 bg-white p-4 hover:border-brand-500"
+            className="tap rounded-2xl border border-gray-200 bg-white p-4 shadow-card transition hover:border-brand-500 hover:shadow-elevated"
           >
             <div className="text-2xl" aria-hidden>
               📦
@@ -202,7 +202,7 @@ export default function CustomerMyPage() {
           </Link>
           <Link
             href="/customer/prescriptions"
-            className="rounded-2xl border border-gray-200 bg-white p-4 hover:border-brand-500"
+            className="tap rounded-2xl border border-gray-200 bg-white p-4 shadow-card transition hover:border-brand-500 hover:shadow-elevated"
           >
             <div className="text-2xl" aria-hidden>
               👁️
