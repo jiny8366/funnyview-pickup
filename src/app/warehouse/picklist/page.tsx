@@ -210,7 +210,9 @@ export default function WarehousePicklistPage() {
         <div>
           <h1 className="text-2xl font-bold">배송준비중 — 픽리스트</h1>
           <p className="mt-1 text-xs text-gray-500">
-            픽리스트/거래명세서/송장 출력 후 <b>검수→배송</b>. 단계: 주문접수 → <b>픽리스트 출력(배송준비)</b> → 검수 → 배송중.
+            이 단계는 <b>픽리스트 미리보기·인쇄</b>까지만. 거래명세서·송장은 다음 단계(팩킹 검수 확정 후)에서 출력합니다.
+            단계: <b>픽리스트(미리보기·인쇄) → 팩킹확정 → 검수 → 명세서·송장 → 배송</b>
+
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
