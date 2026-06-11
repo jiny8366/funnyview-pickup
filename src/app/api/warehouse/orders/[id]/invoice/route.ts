@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { asc, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { customers, orderItems, orders, stores } from '@/db/schema';
+import { businessInfo, customers, orderItems, orders, stores } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { withDbRetry } from '@/lib/db/retry';
 
@@ -73,6 +73,11 @@ export async function GET(
       .orderBy(asc(orderItems.eyeSide)),
   );
 
+  // 발행자 = business_info 싱글톤 (admin 사업장정보, 보드 #18)
+  const [biz] = await withDbRetry(() =>
+    db.select().from(businessInfo).where(eq(businessInfo.id, 1)).limit(1),
+  );
+
   return NextResponse.json({
     order: {
       orderNumber: h.orderNumber,
@@ -96,13 +101,14 @@ export async function GET(
       total: h.total,
     },
     issuer: {
-      company: '(주)퍼니뷰',
-      service: 'Funnyview Pickup',
-      // 거래명세서 형식용 공급자 정보 — 실제값은 JINY 제공 후 채움(빈값은 UI 자리표시)
-      bizNo: '',
-      address: '',
-      phone: '',
-      ceo: '',
+      company: biz?.companyName ?? '(주)퍼니뷰',
+      service: biz?.serviceName ?? 'Funnyview Pickup',
+      bizNo: biz?.bizNo ?? '',
+      address: biz?.address ?? '',
+      phone: biz?.phone ?? '',
+      ceo: biz?.ceo ?? '',
+      mailOrderNo: biz?.mailOrderNo ?? '',
+      sealUrl: biz?.sealUrl ?? '',
       issuedAt: new Date().toISOString(),
     },
   });

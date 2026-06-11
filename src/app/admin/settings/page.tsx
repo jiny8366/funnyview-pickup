@@ -1,14 +1,16 @@
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
+import Link from 'next/link';
 import { Card, CardBody, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
-const SECTIONS = [
+const SECTIONS: { title: string; desc: string; status: string; href?: string }[] = [
   {
     title: '회사 정보',
-    desc: '상호 · 사업자번호 · 통신판매신고번호 · 대표자 정보',
-    status: 'pending',
+    desc: '상호 · 사업자번호 · 통신판매신고번호 · 대표자 정보 (거래명세서 발행자)',
+    status: 'ready',
+    href: '/admin/settings/business',
   },
   {
     title: '결제 PG',
@@ -40,6 +42,7 @@ const SECTIONS = [
 const STATUS_BADGE: Record<string, { label: string; cls: string }> = {
   env: { label: 'ENV 환경변수', cls: 'bg-blue-50 text-blue-700' },
   pending: { label: '추후 활성화', cls: 'bg-gray-100 text-gray-600' },
+  ready: { label: '설정', cls: 'bg-green-50 text-green-700' },
 };
 
 export default async function AdminSettingsPage() {
@@ -55,8 +58,8 @@ export default async function AdminSettingsPage() {
       <div className="grid gap-3 md:grid-cols-2">
         {SECTIONS.map((s) => {
           const badge = STATUS_BADGE[s.status];
-          return (
-            <Card key={s.title}>
+          const card = (
+            <Card>
               <CardHeader>
                 <div className="flex-1">
                   <CardTitle>{s.title}</CardTitle>
@@ -68,12 +71,21 @@ export default async function AdminSettingsPage() {
               </CardHeader>
               <CardBody>
                 <p className="text-xs text-gray-500">
-                  {s.status === 'env'
-                    ? 'Vercel → Settings → Environment Variables 에서 관리하세요.'
-                    : '관리 UI 는 다음 단계에서 제공됩니다.'}
+                  {s.href
+                    ? '설정하기 →'
+                    : s.status === 'env'
+                      ? 'Vercel → Settings → Environment Variables 에서 관리하세요.'
+                      : '관리 UI 는 다음 단계에서 제공됩니다.'}
                 </p>
               </CardBody>
             </Card>
+          );
+          return s.href ? (
+            <Link key={s.title} href={s.href} className="block transition hover:opacity-80">
+              {card}
+            </Link>
+          ) : (
+            <div key={s.title}>{card}</div>
           );
         })}
       </div>
