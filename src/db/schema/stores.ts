@@ -12,6 +12,33 @@ import {
 } from 'drizzle-orm/pg-core';
 
 /**
+ * 픽업가맹점 그룹.
+ * 그룹 단위 운영 설정(수수료율 등)을 매장에 fallback 으로 적용한다.
+ *
+ * 효과 수수료율 = 매장 자체율 우선, 없으면(0 또는 null) 그룹율.
+ * (stores 가 group_id 로 참조하므로 stores 위에 선언한다.)
+ */
+export const storeGroups = pgTable('store_groups', {
+  id: uuid('id').primaryKey().defaultRandom(),
+  name: text('name').notNull(), // 그룹명
+  // 그룹 기본 수수료율 (%) — 소속 매장의 fallback
+  commissionRate: numeric('commission_rate', { precision: 5, scale: 2 })
+    .default('0')
+    .notNull(),
+  sortOrder: integer('sort_order').default(0).notNull(),
+  memo: text('memo'),
+  createdAt: timestamp('created_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+  updatedAt: timestamp('updated_at', { withTimezone: true })
+    .defaultNow()
+    .notNull(),
+});
+
+export type StoreGroup = typeof storeGroups.$inferSelect;
+export type NewStoreGroup = typeof storeGroups.$inferInsert;
+
+/**
  * 픽업가맹점 마스터.
  * 카카오맵/네이버지도/T맵 URL 은 미리 저장 가능, 미저장 시 lat/lng 로 동적 생성.
  */
@@ -47,6 +74,9 @@ export const stores = pgTable(
     commissionRate: numeric('commission_rate', { precision: 5, scale: 2 })
       .default('0')
       .notNull(),
+
+    // 소속 그룹 (선택) — 그룹 운영 설정이 fallback 으로 적용
+    groupId: uuid('group_id').references(() => storeGroups.id),
 
     // 픽업 처리 우선순위 (낮을수록 우선 노출)
     sortOrder: integer('sort_order').default(0).notNull(),

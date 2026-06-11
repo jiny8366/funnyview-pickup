@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { eq, sql } from 'drizzle-orm';
+import { asc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { stores } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
@@ -24,6 +24,32 @@ interface CreateBody {
 
 function isAdmin(user: { role: string; isMaster: boolean; permissions: string[] }) {
   return user.role === 'admin' || user.isMaster || user.permissions.includes('stores_write');
+}
+
+/**
+ * GET /api/admin/stores — 가맹점 목록 (그룹 배정 UI 용). admin 전용.
+ *   삭제되지 않은 매장만, name ASC.
+ */
+export async function GET() {
+  const user = await getCurrentUser();
+  if (!user || !isAdmin(user)) {
+    return NextResponse.json({ error: 'admin only' }, { status: 403 });
+  }
+
+  const rows = await db
+    .select({
+      id: stores.id,
+      code: stores.code,
+      name: stores.name,
+      commissionRate: stores.commissionRate,
+      groupId: stores.groupId,
+      isActive: stores.isActive,
+    })
+    .from(stores)
+    .where(isNull(stores.deletedAt))
+    .orderBy(asc(stores.name));
+
+  return NextResponse.json({ stores: rows });
 }
 
 export async function POST(req: Request) {
@@ -91,4 +117,40 @@ export async function POST(req: Request) {
     .returning({ id: stores.id, code: stores.code });
 
   return NextResponse.json({ store: created }, { status: 201 });
+}
+
+/**
+ * PATCH /api/admin/stores — 그룹 일괄 배정/해제. admin 전용.
+ *   body: { storeIds: string[], groupId: string | null }
+ *   groupId 가 null 이면 해당 매장들의 그룹을 해제.
+ */
+export async function PATCH(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || !isAdmin(user)) {
+    return NextResponse.json({ error: 'admin only' }, { status: 403 });
+  }
+
+  const body = (await req.json().catch(() => ({}))) as {
+    storeIds?: unknown;
+    groupId?: unknown;
+  };
+
+  const storeIds = Array.isArray(body.storeIds)
+    ? body.storeIds.filter((x): x is string => typeof x === 'string')
+    : [];
+  if (storeIds.length === 0) {
+    return NextResponse.json({ error: 'storeIds required' }, { status: 400 });
+  }
+
+  const groupId =
+    typeof body.groupId === 'string' && body.groupId.trim() !== ''
+      ? body.groupId.trim()
+      : null;
+
+  await db
+    .update(stores)
+    .set({ groupId, updatedAt: new Date() })
+    .where(inArray(stores.id, storeIds));
+
+  return NextResponse.json({ ok: true, updated: storeIds.length, groupId });
 }
