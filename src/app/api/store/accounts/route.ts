@@ -8,8 +8,6 @@ import { hashPassword } from '@/lib/auth/password';
 
 export const dynamic = 'force-dynamic';
 
-const USERNAME_RE = /^[a-z0-9]{4,16}$/;
-
 /** 가맹점 대표자(owner)만 — 자기 매장 담당 안경사 계정 관리. */
 async function requireOwner() {
   const me = await getCurrentUser();
@@ -17,9 +15,9 @@ async function requireOwner() {
   return me;
 }
 
-function strongPw(pw: string): boolean {
-  if (pw.length < 8 || pw.length > 16) return false;
-  return [/[a-z]/, /[A-Z]/, /\d/, /[^A-Za-z0-9]/].filter((re) => re.test(pw)).length >= 3;
+// 운영자가 임의 입력 — 최소 길이만 보장(이메일 아이디 + 임의 비밀번호).
+function validPw(pw: string): boolean {
+  return pw.length >= 4 && pw.length <= 72;
 }
 
 /** GET — 우리 매장 담당 안경사 목록. */
@@ -30,6 +28,7 @@ export async function GET() {
   const rows = await db
     .select({
       id: users.id,
+      email: users.email,
       username: users.username,
       name: users.name,
       isActive: users.isActive,
@@ -44,12 +43,12 @@ export async function GET() {
 }
 
 const createSchema = z.object({
-  username: z.string().regex(USERNAME_RE, '아이디는 영문 소문자·숫자 4~16자'),
-  password: z.string().refine(strongPw, '비밀번호 8~16자·영문 대소문/숫자/특수 중 3종 이상'),
+  email: z.string().email('아이디는 이메일 형식으로 입력하세요'),
+  password: z.string().refine(validPw, '비밀번호는 4자 이상'),
   name: z.string().min(1, '담당 안경사 이름을 입력하세요').max(40),
 });
 
-/** POST — 담당 안경사 신규 등록(자기 매장). */
+/** POST — 담당 안경사 신규 등록(자기 매장). 아이디=이메일. */
 export async function POST(req: Request) {
   const me = await requireOwner();
   if (!me) return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
@@ -58,15 +57,15 @@ export async function POST(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'INVALID_INPUT', detail: parsed.error.flatten() }, { status: 400 });
   }
-  const { username, password, name } = parsed.data;
+  const { email, password, name } = parsed.data;
 
-  const dup = await db.select({ id: users.id }).from(users).where(and(eq(users.username, username), isNull(users.deletedAt))).limit(1);
-  if (dup[0]) return NextResponse.json({ error: 'USERNAME_TAKEN', message: '이미 사용 중인 아이디입니다' }, { status: 409 });
+  const dup = await db.select({ id: users.id }).from(users).where(and(eq(users.email, email), isNull(users.deletedAt))).limit(1);
+  if (dup[0]) return NextResponse.json({ error: 'EMAIL_TAKEN', message: '이미 사용 중인 아이디(이메일)입니다' }, { status: 409 });
 
   const [row] = await db
     .insert(users)
     .values({
-      username,
+      email,
       passwordHash: await hashPassword(password),
       role: 'store_staff',
       storeId: me.storeId,
@@ -74,13 +73,13 @@ export async function POST(req: Request) {
       name,
       isActive: true,
     })
-    .returning({ id: users.id, username: users.username, name: users.name });
+    .returning({ id: users.id, email: users.email, name: users.name });
   return NextResponse.json({ optician: row });
 }
 
 const patchSchema = z.object({
   id: z.string().uuid(),
-  password: z.string().refine(strongPw, '비밀번호 규칙 불충족').optional(),
+  password: z.string().refine(validPw, '비밀번호는 4자 이상').optional(),
   name: z.string().min(1).max(40).optional(),
   isActive: z.boolean().optional(),
 });

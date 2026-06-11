@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 
 interface Account {
   id: string;
+  email: string | null;
   username: string | null;
   name: string | null;
   storeRole?: string | null;
@@ -30,7 +31,7 @@ export function AccountsManager({
 }) {
   const [items, setItems] = useState<Account[] | null>(null);
   const [err, setErr] = useState('');
-  const [form, setForm] = useState({ name: '', username: '', password: '', storeRole: 'optician' });
+  const [form, setForm] = useState({ name: '', email: '', password: '', storeRole: 'optician' });
   const [busy, setBusy] = useState(false);
 
   const load = useCallback(async () => {
@@ -50,25 +51,25 @@ export function AccountsManager({
 
   async function add() {
     setErr('');
-    if (!form.name.trim() || !form.username.trim() || !form.password) {
-      setErr('이름·아이디·비밀번호를 모두 입력하세요');
+    if (!form.name.trim() || !form.email.trim() || !form.password) {
+      setErr('이름·아이디(이메일)·비밀번호를 모두 입력하세요');
       return;
     }
     setBusy(true);
     try {
       const body: Record<string, unknown> = {
         name: form.name.trim(),
-        username: form.username.trim().toLowerCase(),
+        email: form.email.trim().toLowerCase(),
         password: form.password,
       };
       if (canSetRole) body.storeRole = form.storeRole;
       const r = await fetch(endpoint, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) });
       const j = await r.json().catch(() => ({}));
       if (!r.ok) {
-        setErr(j.message ?? j.detail?.fieldErrors ? JSON.stringify(j.detail.fieldErrors) : j.error ?? '등록 실패');
+        setErr(j.message ?? (j.detail?.fieldErrors ? JSON.stringify(j.detail.fieldErrors) : j.error ?? '등록 실패'));
         return;
       }
-      setForm({ name: '', username: '', password: '', storeRole: 'optician' });
+      setForm({ name: '', email: '', password: '', storeRole: 'optician' });
       load();
     } finally {
       setBusy(false);
@@ -103,7 +104,7 @@ export function AccountsManager({
           <thead className="bg-gray-50 text-xs uppercase text-gray-500">
             <tr>
               <th className="px-3 py-2 text-left">이름</th>
-              <th className="px-3 py-2 text-left">아이디</th>
+              <th className="px-3 py-2 text-left">아이디(이메일)</th>
               {canSetRole && <th className="px-3 py-2 text-left">구분</th>}
               <th className="px-3 py-2 text-left">상태</th>
               <th className="px-3 py-2 text-right">관리</th>
@@ -113,7 +114,7 @@ export function AccountsManager({
             {items?.map((a) => (
               <tr key={a.id} className={a.isActive ? '' : 'opacity-50'}>
                 <td className="px-3 py-2 font-medium">{a.name ?? '—'}</td>
-                <td className="px-3 py-2 font-mono text-xs">{a.username}</td>
+                <td className="px-3 py-2 font-mono text-xs">{a.email ?? a.username}</td>
                 {canSetRole && <td className="px-3 py-2 text-xs">{roleLabel(a.storeRole)}</td>}
                 <td className="px-3 py-2 text-xs">{a.isActive ? '활성' : '비활성'}</td>
                 <td className="px-3 py-2 text-right">
@@ -140,9 +141,9 @@ export function AccountsManager({
       <div className="rounded-2xl border border-gray-200 bg-white p-4">
         <div className="mb-2 text-sm font-semibold">{canSetRole ? '계정 신규 등록' : '담당 안경사 등록'}</div>
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <input className="input" placeholder="이름" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
-          <input className="input" placeholder="아이디 (영문소문자·숫자 4~16자)" value={form.username} onChange={(e) => setForm((f) => ({ ...f, username: e.target.value }))} />
-          <input className="input" type="password" placeholder="비밀번호" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} />
+          <input className="input placeholder:text-gray-300" placeholder="이름 (예: 홍길동)" value={form.name} onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))} />
+          <input className="input placeholder:text-gray-300" type="email" autoComplete="off" placeholder="아이디 (이메일)" value={form.email} onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))} />
+          <input className="input placeholder:text-gray-300" type="password" autoComplete="new-password" placeholder="비밀번호 (임의 입력)" value={form.password} onChange={(e) => setForm((f) => ({ ...f, password: e.target.value }))} />
           {canSetRole && (
             <select className="input" value={form.storeRole} onChange={(e) => setForm((f) => ({ ...f, storeRole: e.target.value }))}>
               <option value="optician">담당 안경사</option>
