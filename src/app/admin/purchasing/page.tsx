@@ -274,7 +274,7 @@ export default function PurchasingPage() {
         setErr(j.message ?? j.error ?? '발주 생성에 실패했습니다.');
         return;
       }
-      setMsg(`발주서 ${j.orderNumber} 생성 완료(작성 상태) — 검토 후 '발주확정'을 눌러 확정하세요.`);
+      setMsg(`발주리스트 ${j.orderNumber} 준비 완료 — 미리보기에서 인쇄·엑셀 확인 후 발주확정을 누르면 완료됩니다.`);
       setTimeout(() => setMsg(null), 6000);
       setCands(null);
       loadOrders();
@@ -295,6 +295,10 @@ export default function PurchasingPage() {
     if (!res.ok) {
       setErr('상태 변경에 실패했습니다.');
       return;
+    }
+    if (status === 'ordered') {
+      setMsg('✅ 발주확정 완료 — 발주완료 상태가 되었고, 해당 품목은 다음 보충 후보에서 제외됩니다.');
+      setTimeout(() => setMsg(null), 5000);
     }
     loadOrders();
   }
@@ -514,7 +518,7 @@ export default function PurchasingPage() {
                 <b>{totalCost.toLocaleString()}원</b>
               </span>
               <Button onClick={createOrder} disabled={creating || selectedCount === 0 || !supplierId}>
-                {creating ? '생성 중…' : '📝 발주리스트 생성 (발주완료)'}
+                {creating ? '준비 중…' : '📝 발주리스트'}
               </Button>
             </div>
           )}
