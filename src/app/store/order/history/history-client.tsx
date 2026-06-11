@@ -14,11 +14,11 @@ interface OrderRow {
 }
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  placed: { label: '발주접수', cls: 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' },
-  confirmed: { label: '확인', cls: 'bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300' },
-  shipped: { label: '출고', cls: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300' },
-  received: { label: '완료', cls: 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-300' },
-  cancelled: { label: '취소', cls: 'bg-gray-200 text-gray-600 dark:bg-gray-700 dark:text-gray-300' },
+  placed: { label: '발주접수', cls: 'bg-blue-100 text-blue-700' },
+  confirmed: { label: '확인', cls: 'bg-amber-100 text-amber-700' },
+  shipped: { label: '출고', cls: 'bg-emerald-100 text-emerald-700' },
+  received: { label: '완료', cls: 'bg-green-100 text-green-700' },
+  cancelled: { label: '취소', cls: 'bg-gray-200 text-gray-600' },
 };
 
 export function StoreOrderHistoryClient() {
@@ -36,8 +36,8 @@ export function StoreOrderHistoryClient() {
     <div className="space-y-5">
       <header className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">내 발주 내역</h1>
-          <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">본사로 발주한 내역(공급가 기준)</p>
+          <h1 className="text-2xl font-bold text-gray-900">내 발주 내역</h1>
+          <p className="mt-1 text-sm text-gray-500">본사로 발주한 내역(공급가 기준)</p>
         </div>
         <Link
           href="/store/order"
@@ -52,9 +52,9 @@ export function StoreOrderHistoryClient() {
       ) : orders.length === 0 ? (
         <p className="py-16 text-center text-sm text-gray-400">발주 내역이 없습니다.</p>
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-gray-200 dark:border-gray-700">
+        <div className="overflow-hidden rounded-2xl border border-gray-200">
           <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-left text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-400">
+            <thead className="bg-gray-50 text-left text-xs text-gray-500">
               <tr>
                 <th className="px-4 py-3">발주번호</th>
                 <th className="px-4 py-3">상태</th>
@@ -63,20 +63,20 @@ export function StoreOrderHistoryClient() {
                 <th className="px-4 py-3">일시</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100 dark:divide-gray-800">
+            <tbody className="divide-y divide-gray-100">
               {orders.map((o) => {
                 const s = STATUS_LABEL[o.status] ?? { label: o.status, cls: 'bg-gray-100 text-gray-600' };
                 return (
-                  <tr key={o.id} className="bg-white dark:bg-gray-900">
-                    <td className="px-4 py-3 font-medium text-gray-900 dark:text-gray-100">{o.orderNumber}</td>
+                  <tr key={o.id} className="bg-white">
+                    <td className="px-4 py-3 font-medium text-gray-900">{o.orderNumber}</td>
                     <td className="px-4 py-3">
                       <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.cls}`}>{s.label}</span>
                     </td>
-                    <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-300">{o.itemCount}건</td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">
+                    <td className="px-4 py-3 text-right text-gray-600">{o.itemCount}건</td>
+                    <td className="px-4 py-3 text-right font-semibold text-gray-900">
                       {o.totalSupplyAmount.toLocaleString()}원
                     </td>
-                    <td className="px-4 py-3 text-gray-500 dark:text-gray-400">
+                    <td className="px-4 py-3 text-gray-500">
                       {new Date(o.createdAt).toLocaleString('ko-KR')}
                     </td>
                   </tr>
