@@ -13,7 +13,7 @@ export default async function Home() {
   const sections = await loadActiveSections().catch(() => []);
 
   return (
-    <main className="min-h-screen bg-white pb-safe">
+    <main className="animate-fade-in min-h-screen bg-white pb-safe">
       <SiteHeader />
 
       {/* 관리자 CMS 프로모션 섹션 (있을 때 최상단) */}
