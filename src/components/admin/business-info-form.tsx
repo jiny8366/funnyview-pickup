@@ -5,14 +5,14 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 
 const FIELDS: { key: string; label: string; ph?: string }[] = [
-  { key: 'companyName', label: '상호 (회사명)' },
-  { key: 'serviceName', label: '서비스명' },
+  { key: 'companyName', label: '상호 (회사명)', ph: '예: (주)퍼니뷰' },
+  { key: 'serviceName', label: '서비스명 (명세서·송장 표기)', ph: '예: 퍼니뷰 예약시스템' },
   { key: 'bizNo', label: '사업자등록번호', ph: '000-00-00000' },
   { key: 'ceo', label: '대표자' },
   { key: 'address', label: '영업소 소재지' },
-  { key: 'phone', label: '연락처' },
+  { key: 'phone', label: '연락처', ph: '02-000-0000' },
   { key: 'email', label: '이메일' },
-  { key: 'mailOrderNo', label: '통신판매업 신고번호' },
+  { key: 'mailOrderNo', label: '통신판매업 신고번호', ph: '제0000-지역-0000호' },
   { key: 'privacyOfficer', label: '개인정보보호책임자' },
   { key: 'sealUrl', label: '직인 이미지 URL', ph: 'https://… (거래명세서 직인)' },
 ];
