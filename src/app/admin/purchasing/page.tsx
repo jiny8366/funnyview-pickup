@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { InlineNumberCell } from '@/components/ui/inline-number-cell';
 import { ProductFilterBar } from '@/components/product/product-filter-bar';
 
 interface Candidate {
@@ -471,31 +472,19 @@ export default function PurchasingPage() {
                     <td className="px-3 py-2 text-right text-gray-500">{c.safetyStock}</td>
                     <td className="px-3 py-2 text-right text-gray-700">{c.sold30d}</td>
                     <td className="px-3 py-2 text-right">
-                      <input
-                        type="text"
-                        inputMode="numeric"
+                      <InlineNumberCell
                         value={qty.get(c.variantId) ?? 0}
-                        onFocus={(e) => e.target.select()}
-                        onChange={(e) =>
-                          setQty((prev) =>
-                            new Map(prev).set(c.variantId, Math.max(0, Number(e.target.value.replace(/[^0-9]/g, '')) || 0)),
-                          )
-                        }
-                        className="w-16 rounded border border-gray-200 px-1.5 py-1 text-right text-sm"
+                        canEdit
+                        onSave={(n) => setQty((prev) => new Map(prev).set(c.variantId, n))}
+                        title="클릭하여 발주수량 입력"
                       />
                     </td>
                     <td className="px-3 py-2 text-right">
-                      <input
-                        type="text"
-                        inputMode="numeric"
+                      <InlineNumberCell
                         value={cost.get(c.variantId) ?? 0}
-                        onFocus={(e) => e.target.select()}
-                        onChange={(e) =>
-                          setCost((prev) =>
-                            new Map(prev).set(c.variantId, Math.max(0, Number(e.target.value.replace(/[^0-9]/g, '')) || 0)),
-                          )
-                        }
-                        className="w-20 rounded border border-gray-200 px-1.5 py-1 text-right text-sm"
+                        canEdit
+                        onSave={(n) => setCost((prev) => new Map(prev).set(c.variantId, n))}
+                        title="클릭하여 단가 입력"
                       />
                     </td>
                     <td className="px-3 py-2 text-right text-gray-700">

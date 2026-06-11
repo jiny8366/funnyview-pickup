@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
+import { InlineNumberCell } from '@/components/ui/inline-number-cell';
 import { PrescriptionManager } from '@/components/prescription/prescription-manager';
 import { StatusBadge } from '@/components/ui/badge';
 import { formatKRW } from '@/lib/utils/format';
@@ -365,12 +366,12 @@ function ReorderModal({
                     ))}
                   </select>
                 )}
-                <input
-                  type="number"
-                  min={1}
+                <InlineNumberCell
                   value={l.quantity}
-                  onChange={(e) => patch(l.key, { quantity: Math.max(1, Number(e.target.value) || 1) })}
-                  className="w-16 rounded-lg border border-gray-200 px-2 py-1.5 text-center text-xs"
+                  canEdit
+                  min={1}
+                  onSave={(n) => patch(l.key, { quantity: n })}
+                  title="클릭하여 수량 입력"
                 />
               </div>
             </div>
