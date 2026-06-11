@@ -237,6 +237,15 @@ export default function PurchasingPage() {
     return sum;
   }, [checked, qty]);
 
+  // 발주리스트 버튼 비활성 사유 — 화면에 안내 (JINY: 버튼이 왜 비활성인지 보이게)
+  const disabledReason = useMemo(() => {
+    if (suppliers.length === 0) return '매입처가 없습니다 — 매입처 관리에서 거래처를 먼저 등록하세요';
+    if (!supplierId) return '매입거래처를 선택하세요';
+    if (selectedCount === 0) return '발주할 품목을 체크하세요';
+    if (totalQtySum === 0) return '체크한 품목의 수량을 입력하세요';
+    return null;
+  }, [suppliers.length, supplierId, selectedCount, totalQtySum]);
+
   async function createOrder() {
     if (!supplierId) {
       setErr('매입거래처를 선택하세요.');
@@ -335,6 +344,11 @@ export default function PurchasingPage() {
         <Button variant="secondary" size="sm" onClick={() => setSearchOpen((v) => !v)}>
           {searchOpen ? '검색 닫기' : '🔍 제품 검색해서 추가'}
         </Button>
+        {suppliers.length === 0 && (
+          <a href="/admin/suppliers" className="text-xs font-medium text-amber-700 underline underline-offset-2">
+            ⚠ 등록된 매입처가 없습니다 — 매입처 관리에서 먼저 등록하세요
+          </a>
+        )}
         {cands && supplierId && !supplierScoped && (
           <span className="text-xs text-amber-600">이 매입처의 입고 이력이 없어 전체 후보를 표시합니다.</span>
         )}
@@ -516,8 +530,9 @@ export default function PurchasingPage() {
               <span className="text-sm text-gray-600">
                 선택 {selectedCount}종 · 발주량 합계 <b>{totalQtySum.toLocaleString()}팩</b> · 합계금액{' '}
                 <b>{totalCost.toLocaleString()}원</b>
+                {disabledReason && <span className="ml-2 text-xs text-amber-600">⚠ {disabledReason}</span>}
               </span>
-              <Button onClick={createOrder} disabled={creating || selectedCount === 0 || !supplierId}>
+              <Button onClick={createOrder} disabled={creating || Boolean(disabledReason)}>
                 {creating ? '준비 중…' : '📝 발주리스트'}
               </Button>
             </div>
