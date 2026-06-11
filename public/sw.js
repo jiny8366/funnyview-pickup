@@ -1,5 +1,5 @@
 /* eslint-disable */
-// Funnyview Pickup Service Worker
+// 퍼니뷰 예약시스템 Service Worker
 // 푸시 알림 수신 + 클릭 라우팅 + 기본 오프라인 폴백.
 
 const CACHE_NAME = 'funnyview-pickup-v1';
@@ -29,7 +29,7 @@ self.addEventListener('activate', (event) => {
 
 // 푸시 수신
 self.addEventListener('push', (event) => {
-  let payload = { title: 'Funnyview Pickup', body: '', url: '/', tag: undefined };
+  let payload = { title: '퍼니뷰 예약시스템', body: '', url: '/', tag: undefined };
   try {
     payload = { ...payload, ...event.data.json() };
   } catch {

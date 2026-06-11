@@ -11,7 +11,7 @@ export function SiteHeader() {
     <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3 md:px-6">
         <Link href="/" className="truncate text-base font-bold tracking-tight text-gray-900 hover:opacity-70 transition-opacity md:text-lg">
-          Funnyview Pickup
+          퍼니뷰 예약시스템
         </Link>
         <nav className="flex items-center gap-1.5 text-sm text-gray-600 md:gap-4">
           <Link href="/products" className="hidden font-medium text-gray-900 transition-colors hover:text-brand-600 md:inline">

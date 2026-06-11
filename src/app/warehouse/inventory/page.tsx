@@ -297,7 +297,7 @@ function WarehouseInventoryInner() {
       <div className="hidden print:block">
         <h2 className="text-lg font-bold">재고 현황</h2>
         <p className="text-xs text-gray-500">
-          Funnyview Pickup · 출력일 {new Date().toLocaleString('ko-KR')}
+          퍼니뷰 예약시스템 · 출력일 {new Date().toLocaleString('ko-KR')}
           {q && ` · 검색어 "${q}"`}{brands.size > 0 && ` · 브랜드 ${[...brands].join('/')}`}{types.size > 0 && ` · 유형 ${types.size}종`}{lowOnly && ' · 저재고만'}
         </p>
       </div>

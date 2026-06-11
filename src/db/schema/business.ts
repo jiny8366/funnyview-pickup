@@ -11,7 +11,7 @@ export const businessInfo = pgTable(
   {
     id: integer('id').primaryKey().default(1),
     companyName: text('company_name').notNull().default('(주)퍼니뷰'),
-    serviceName: text('service_name').notNull().default('Funnyview Pickup'),
+    serviceName: text('service_name').notNull().default('퍼니뷰 예약시스템'),
     bizNo: text('biz_no'), // 사업자등록번호
     ceo: text('ceo'), // 대표자
     address: text('address'), // 영업소 소재지

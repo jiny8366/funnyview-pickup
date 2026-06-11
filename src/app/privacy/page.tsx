@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { PrintButton } from '@/components/ui/print-button';
 import { COMPANY, SERVICE_NAME } from '@/lib/terms';
 
-export const metadata = { title: '개인정보처리방침 · Funnyview Pickup' };
+export const metadata = { title: '개인정보처리방침 · 퍼니뷰 예약시스템' };
 
 // ── 회사 정보(플레이스홀더는 사업자 등록 후 실제값으로 교체) ──────────────
 const INFO = {

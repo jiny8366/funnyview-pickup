@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { PrintButton } from '@/components/ui/print-button';
 import { TERMS } from '@/lib/terms';
 
-export const metadata = { title: '이용약관 · Funnyview Pickup' };
+export const metadata = { title: '이용약관 · 퍼니뷰 예약시스템' };
 
 export default function TermsPage() {
   const sections = TERMS.filter((t) => t.group === 'service');

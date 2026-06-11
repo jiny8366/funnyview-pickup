@@ -2,7 +2,7 @@
  * 회원가입 동의 약관 — (주)퍼니뷰 명의.
  *
  * 정식 약관 텍스트를 반영. 원본의 "호호렌즈" / "렌즈링크" 는
- * "(주)퍼니뷰" / "Funnyview Pickup" 으로 치환됨.
+ * "(주)퍼니뷰" / "퍼니뷰 예약시스템" 으로 치환됨.
  */
 
 export interface TermSection {
@@ -15,7 +15,7 @@ export interface TermSection {
 }
 
 export const COMPANY = '(주)퍼니뷰';
-export const SERVICE_NAME = 'Funnyview Pickup';
+export const SERVICE_NAME = '퍼니뷰 예약시스템';
 
 export const TERMS: TermSection[] = [
   {

@@ -1,7 +1,7 @@
 {
-  "name": "Funnyview Pickup",
-  "short_name": "Funnyview",
-  "description": "콘택트렌즈 픽업서비스",
+  "name": "퍼니뷰 예약시스템",
+  "short_name": "퍼니뷰",
+  "description": "퍼니뷰 콘택트렌즈 예약·픽업 서비스",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#ffffff",

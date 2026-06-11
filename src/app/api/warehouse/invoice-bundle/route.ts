@@ -146,7 +146,7 @@ export async function POST(req: Request) {
           phone: issuer.phone ?? '',
           sealUrl: issuer.sealUrl ?? '',
         }
-      : { company: '(주)퍼니뷰', service: 'Funnyview Pickup', bizNo: '', ceo: '', address: '', phone: '', sealUrl: '' },
+      : { company: '(주)퍼니뷰', service: '퍼니뷰 예약시스템', bizNo: '', ceo: '', address: '', phone: '', sealUrl: '' },
     issuedAt: new Date().toISOString(),
   });
 }
