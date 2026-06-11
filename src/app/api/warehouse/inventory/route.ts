@@ -39,6 +39,35 @@ export async function GET(req: Request) {
     return NextResponse.json({ inventoryCount: a, joinVariants: b, joinLenses: c, sums: d });
   }
 
+  // [임시 진단2 — drizzle 단계별] 어느 단계에서 0이 되는지 확정. 확인 후 제거.
+  if (url.searchParams.get('debug') === 'steps') {
+    const s1 = await db.select({ id: inventory.id }).from(inventory).limit(3);
+    const s2 = await db.select({ id: inventory.id }).from(inventory)
+      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId)).limit(3);
+    const s3 = await db.select({ id: inventory.id }).from(inventory)
+      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
+      .innerJoin(lenses, eq(lenses.id, lensVariants.lensId)).limit(3);
+    const lotSub = db
+      .select({
+        variantId: inventoryLots.variantId,
+        lotCount: sql<number>`COUNT(*)::int`.as('lot_count'),
+      })
+      .from(inventoryLots)
+      .innerJoin(inboundShipments, eq(inventoryLots.shipmentId, inboundShipments.id))
+      .where(sql`${inventoryLots.quantityRemaining} > 0 AND ${inboundShipments.status} = 'confirmed'`)
+      .groupBy(inventoryLots.variantId)
+      .as('lot_agg');
+    const s4 = await db.select({ id: inventory.id, lc: sql<number>`COALESCE(${lotSub.lotCount}, 0)` }).from(inventory)
+      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
+      .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
+      .leftJoin(lotSub, eq(lotSub.variantId, lensVariants.id)).limit(3);
+    const s5 = await db.select({ id: inventory.id }).from(inventory)
+      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
+      .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
+      .where(sql.join([sql`TRUE`, sql`TRUE`], sql` AND `)).limit(3);
+    return NextResponse.json({ s1: s1.length, s2: s2.length, s3: s3.length, s4: s4.length, s5: s5.length });
+  }
+
   const onlyLow = url.searchParams.get('low') === '1';
   // 검색 조건: q=제품명/SKU, brand/type 은 콤마구분 복수 선택(칩 토글) 지원
   const q = url.searchParams.get('q')?.trim();
@@ -62,7 +91,7 @@ export async function GET(req: Request) {
     .groupBy(inventoryLots.variantId)
     .as('lot_agg');
 
-  const rows = await db
+  const rowsQuery = db
     .select({
       inventoryId: inventory.id,
       variantId: lensVariants.id,
@@ -104,6 +133,20 @@ export async function GET(req: Request) {
       sql` AND `,
     ))
     .orderBy(asc(lenses.brand), asc(lenses.name), asc(lensVariants.sphere));
+
+  // [임시 진단3 — #23] 본 쿼리의 생성 SQL 노출. 확인 후 제거.
+  if (url.searchParams.get('debug') === 'main') {
+    const built = (rowsQuery as unknown as { toSQL: () => { sql: string; params: unknown[] } }).toSQL();
+    let count = -1;
+    let err: string | null = null;
+    try {
+      count = (await rowsQuery).length;
+    } catch (e) {
+      err = (e as Error).message;
+    }
+    return NextResponse.json({ count, err, params: built.params, sql: built.sql });
+  }
+  const rows = await rowsQuery;
 
   // 엑셀(CSV) 다운로드 — UTF-8 BOM 으로 한글 엑셀 호환
   if (format === 'csv') {
