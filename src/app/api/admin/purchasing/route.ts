@@ -62,9 +62,53 @@ export async function GET(req: Request) {
     return NextResponse.json({ orders: rows });
   }
 
+  // 제품군 검색 (JINY) — 검색 → 제품 단위 리스트 → 제품 선택 → 도수표(variantsOf)
+  if (url.searchParams.get('products') === '1') {
+    const sq = url.searchParams.get('q')?.trim();
+    const brandList = (url.searchParams.get('brand') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+    const typeList = (url.searchParams.get('type') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+    const cycleList = (url.searchParams.get('cycle') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+    const packList = (url.searchParams.get('pack') ?? '')
+      .split(',')
+      .map((s) => s.trim())
+      .filter(Boolean)
+      .map(Number)
+      .filter((n) => Number.isFinite(n));
+    if (!sq && !brandList.length && !typeList.length && !cycleList.length && !packList.length) {
+      return NextResponse.json({ products: [] });
+    }
+    const conds = [eq(lenses.isActive, true), sql`${lenses.deletedAt} IS NULL`];
+    if (sq) {
+      const pat = `%${sq}%`;
+      conds.push(sql`(${lenses.name} ILIKE ${pat} OR ${lenses.brand} ILIKE ${pat})`);
+    }
+    if (brandList.length > 0) conds.push(inArray(lenses.brand, brandList));
+    if (typeList.length > 0) conds.push(inArray(lenses.lensType, typeList as never));
+    if (cycleList.length > 0) conds.push(inArray(lenses.replacementCycle, cycleList as never));
+    if (packList.length > 0) conds.push(inArray(lenses.piecesPerBox, packList));
+    const products = await withDbRetry(() =>
+      db
+        .select({
+          id: lenses.id,
+          brand: lenses.brand,
+          name: lenses.name,
+          lensType: lenses.lensType,
+          replacementCycle: lenses.replacementCycle,
+          piecesPerBox: lenses.piecesPerBox,
+          variantCount: sql<number>`(SELECT COUNT(*) FROM lens_variants v WHERE v.lens_id = ${lenses.id} AND v.is_active = true)::int`,
+        })
+        .from(lenses)
+        .where(and(...conds))
+        .orderBy(lenses.brand, lenses.name)
+        .limit(100),
+    );
+    return NextResponse.json({ products });
+  }
+
+  const variantsOf = url.searchParams.get('variantsOf');
   const isCandidates = url.searchParams.get('candidates') === '1';
   const isSearch = url.searchParams.get('search') === '1';
-  if (isCandidates || isSearch) {
+  if (isCandidates || isSearch || variantsOf) {
     const supplierId = url.searchParams.get('supplierId');
 
     // 최근 30일 출고량 (고객 배송 + B2B 발주)
@@ -88,7 +132,10 @@ export async function GET(req: Request) {
 
     const conds = [eq(lensVariants.isActive, true), sql`${lenses.deletedAt} IS NULL`];
 
-    if (isCandidates) {
+    if (variantsOf) {
+      // 도수표 — 한 제품의 활성 도수 전체 (적용 시 후보 병합용으로 candidates 와 동일 shape)
+      conds.push(eq(lenses.id, variantsOf));
+    } else if (isCandidates) {
       // 보충 후보: 출고분 또는 안전재고 미달
       conds.push(
         sql`(COALESCE(${sold.qty}, 0) > 0 OR (COALESCE(${inventory.quantityOnHand},0) - COALESCE(${inventory.quantityReserved},0)) < COALESCE(${inventory.safetyStock},0))`,

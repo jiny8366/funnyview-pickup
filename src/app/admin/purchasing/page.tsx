@@ -41,6 +41,21 @@ function toggleInSet<T>(set: Set<T>, val: T, setter: (s: Set<T>) => void) {
   setter(s);
 }
 
+
+interface ProductHit {
+  id: string;
+  brand: string;
+  name: string;
+  lensType: string;
+  replacementCycle: string;
+  piecesPerBox: number;
+  variantCount: number;
+}
+
+const CYCLE_LABEL: Record<string, string> = {
+  '1day': '원데이', '2week': '2주', '1month': '1개월', '3month': '3개월', '6month': '6개월', '1year': '연간',
+};
+
 interface OrderRow {
   id: string;
   orderNumber: string;
@@ -120,12 +135,16 @@ export default function PurchasingPage() {
 
   const sHasFilter = Boolean(sq.trim() || sBrands.size || sTypes.size || sCycles.size || sPacks.size);
 
-  async function searchAndAdd() {
+  // 검색 → 제품군 리스트 → 제품 선택(도수표) → 적용 → 발주리스트 병합 (JINY)
+  const [productResults, setProductResults] = useState<ProductHit[] | null>(null);
+  const [doseLensId, setDoseLensId] = useState<ProductHit | null>(null);
+
+  async function searchProducts() {
     if (!sHasFilter) return;
     setSearching(true);
     setErr(null);
     try {
-      const sp = new URLSearchParams({ search: '1' });
+      const sp = new URLSearchParams({ products: '1' });
       if (sq.trim()) sp.set('q', sq.trim());
       if (sBrands.size > 0) sp.set('brand', [...sBrands].join(','));
       if (sTypes.size > 0) sp.set('type', [...sTypes].join(','));
@@ -133,38 +152,43 @@ export default function PurchasingPage() {
       if (sPacks.size > 0) sp.set('pack', [...sPacks].join(','));
       const res = await fetch('/api/admin/purchasing?' + sp.toString());
       const j = await res.json();
-      const found: Candidate[] = j.candidates ?? [];
-      if (found.length === 0) {
-        setErr('검색 결과가 없습니다.');
-        return;
-      }
-      // 기존 후보에 병합 (중복 제외) — 추가분은 체크 + 제안수량/표준단가 기본값
-      setCands((prev) => {
-        const base = prev ?? [];
-        const have = new Set(base.map((c) => c.variantId));
-        const added = found.filter((c) => !have.has(c.variantId));
-        setQty((q2) => {
-          const next = new Map(q2);
-          added.forEach((c) => next.set(c.variantId, c.suggested));
-          return next;
-        });
-        setCost((c2) => {
-          const next = new Map(c2);
-          added.forEach((c) => next.set(c.variantId, c.lastCost > 0 ? c.lastCost : c.standardCost));
-          return next;
-        });
-        setChecked((ch) => {
-          const next = new Set(ch);
-          added.forEach((c) => next.add(c.variantId));
-          return next;
-        });
-        return [...added, ...base];
-      });
-      setMsg(`검색 결과 ${found.length}개 중 새 품목을 후보 상단에 추가했습니다.`);
-      setTimeout(() => setMsg(null), 4000);
+      setProductResults(j.products ?? []);
+      if ((j.products ?? []).length === 0) setErr('검색 결과가 없습니다.');
     } finally {
       setSearching(false);
     }
+  }
+
+  /** 도수표에서 '적용'된 도수·수량을 발주 후보 리스트에 병합 */
+  function mergeIntoCands(items: { cand: Candidate; quantity: number }[]) {
+    if (items.length === 0) return;
+    setCands((prev) => {
+      const base = prev ?? [];
+      const have = new Map(base.map((c) => [c.variantId, c]));
+      const added = items.filter((i) => !have.has(i.cand.variantId)).map((i) => i.cand);
+      return [...added, ...base];
+    });
+    setQty((q2) => {
+      const next = new Map(q2);
+      items.forEach((i) => next.set(i.cand.variantId, i.quantity));
+      return next;
+    });
+    setCost((c2) => {
+      const next = new Map(c2);
+      items.forEach((i) => {
+        if (!c2.has(i.cand.variantId)) {
+          next.set(i.cand.variantId, i.cand.lastCost > 0 ? i.cand.lastCost : i.cand.standardCost);
+        }
+      });
+      return next;
+    });
+    setChecked((ch) => {
+      const next = new Set(ch);
+      items.forEach((i) => next.add(i.cand.variantId));
+      return next;
+    });
+    setMsg(`${items.length}개 도수를 발주리스트에 추가했습니다.`);
+    setTimeout(() => setMsg(null), 4000);
   }
 
   useEffect(() => {
@@ -316,10 +340,49 @@ export default function PurchasingPage() {
             onTogglePack={(p) => toggleInSet(sPacks, p, setSPacks)}
             searchPlaceholder="제품명 · 브랜드 · SKU 검색"
           />
-          <Button size="sm" onClick={searchAndAdd} disabled={searching || !sHasFilter}>
-            {searching ? '검색 중…' : '＋ 검색 결과를 후보에 추가'}
+          <Button size="sm" onClick={searchProducts} disabled={searching || !sHasFilter}>
+            {searching ? '검색 중…' : '🔍 제품군 검색'}
           </Button>
+
+          {/* 제품군 리스트 — 제품을 선택하면 도수표가 열림 (JINY) */}
+          {productResults && productResults.length > 0 && (
+            <div className="overflow-hidden rounded-xl border border-gray-200">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr>
+                    <th className="px-3 py-2 text-left">제품</th>
+                    <th className="px-3 py-2 text-left">주기 · 팩</th>
+                    <th className="px-3 py-2 text-right">도수 수</th>
+                    <th className="px-3 py-2 text-right" />
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {productResults.map((pr) => (
+                    <tr key={pr.id} onClick={() => setDoseLensId(pr)} className="cursor-pointer hover:bg-amber-50/40">
+                      <td className="px-3 py-2 font-medium text-gray-900">{pr.brand} {pr.name}</td>
+                      <td className="px-3 py-2 text-xs text-gray-500">
+                        {CYCLE_LABEL[pr.replacementCycle] ?? pr.replacementCycle} · {pr.piecesPerBox}P
+                      </td>
+                      <td className="px-3 py-2 text-right text-gray-600">{pr.variantCount}</td>
+                      <td className="px-3 py-2 text-right text-xs text-amber-700">도수표 열기 ›</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
+      )}
+
+      {doseLensId && (
+        <DoseGridModal
+          product={doseLensId}
+          onClose={() => setDoseLensId(null)}
+          onApply={(items) => {
+            mergeIntoCands(items);
+            setDoseLensId(null);
+          }}
+        />
       )}
 
       {/* 후보 테이블 */}
@@ -673,6 +736,142 @@ function OrderDetailModal({
               </>
             )}
           </div>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+
+/**
+ * 도수표 모달 (JINY) — 제품의 도수(variant)를 표로 펼치고 셀에 수량을 입력해
+ * '적용'하면 발주리스트에 들어간다 (수동발주).
+ * 구면/컬러: SPH 목록 · 토릭: SPH × (CYL·AX) · 멀티포컬: SPH × ADD.
+ */
+function DoseGridModal({
+  product,
+  onClose,
+  onApply,
+}: {
+  product: ProductHit;
+  onClose: () => void;
+  onApply: (items: { cand: Candidate; quantity: number }[]) => void;
+}) {
+  const [variants, setVariants] = useState<Candidate[] | null>(null);
+  const [input, setInput] = useState<Map<string, number>>(new Map());
+
+  useEffect(() => {
+    fetch(`/api/admin/purchasing?variantsOf=${product.id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setVariants(j?.candidates ?? []))
+      .catch(() => setVariants([]));
+  }, [product.id]);
+
+  // 피벗: 행 = SPH(내림차순), 열 = 토릭 'CYL·AX' | 멀티포컬 'ADD' | 그 외 단일
+  const grid = useMemo(() => {
+    if (!variants) return null;
+    const colKey = (v: Candidate) => {
+      if (v.cylinder) return `CYL ${v.cylinder}${v.axis !== null ? ` · AX ${v.axis}` : ''}`;
+      if (v.addPower) return `ADD ${v.addPower}`;
+      return '수량';
+    };
+    const cols = [...new Set(variants.map(colKey))].sort();
+    const rows = [...new Set(variants.map((v) => v.sphere))].sort((a, b) => Number(b) - Number(a));
+    const cell = new Map<string, Candidate>();
+    variants.forEach((v) => cell.set(`${v.sphere}|${colKey(v)}`, v));
+    return { cols, rows, cell };
+  }, [variants]);
+
+  const entered = useMemo(() => {
+    if (!variants) return [];
+    return variants
+      .map((v) => ({ cand: v, quantity: input.get(v.variantId) ?? 0 }))
+      .filter((i) => i.quantity > 0);
+  }, [variants, input]);
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-pop"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">도수표 — {product.brand} {product.name}</h2>
+            <p className="mt-0.5 text-xs text-gray-500">
+              발주할 도수 칸에 수량을 입력하고 적용하세요. 칸 아래 회색 숫자는 현재 가용재고입니다.
+            </p>
+          </div>
+          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full text-gray-400 hover:bg-gray-100" aria-label="닫기">
+            ✕
+          </button>
+        </header>
+
+        <div className="flex-1 overflow-auto px-5 py-3">
+          {!grid ? (
+            <p className="py-8 text-center text-sm text-gray-400">도수 불러오는 중...</p>
+          ) : grid.rows.length === 0 ? (
+            <p className="py-8 text-center text-sm text-gray-400">활성 도수가 없습니다.</p>
+          ) : (
+            <table className="text-xs">
+              <thead>
+                <tr>
+                  <th className="sticky left-0 bg-white px-2 py-1.5 text-left text-[11px] uppercase text-gray-400">SPH</th>
+                  {grid.cols.map((c) => (
+                    <th key={c} className="px-2 py-1.5 text-center text-[11px] text-gray-500 whitespace-nowrap">{c}</th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {grid.rows.map((r) => (
+                  <tr key={r} className="border-t border-gray-50">
+                    <td className="sticky left-0 bg-white px-2 py-1 font-medium text-gray-800 whitespace-nowrap">
+                      {Number(r) > 0 ? `+${r}` : r}
+                    </td>
+                    {grid.cols.map((c) => {
+                      const v = grid.cell.get(`${r}|${c}`);
+                      if (!v) return <td key={c} className="px-2 py-1 text-center text-gray-200">·</td>;
+                      return (
+                        <td key={c} className="px-1 py-1 text-center">
+                          <input
+                            type="number"
+                            min={0}
+                            value={input.get(v.variantId) || ''}
+                            placeholder="0"
+                            onChange={(e) =>
+                              setInput((prev) => {
+                                const next = new Map(prev);
+                                const n = Math.max(0, Number(e.target.value) || 0);
+                                if (n === 0) next.delete(v.variantId);
+                                else next.set(v.variantId, n);
+                                return next;
+                              })
+                            }
+                            className="w-14 rounded border border-gray-200 px-1 py-0.5 text-center focus:border-amber-500 focus:outline-none"
+                          />
+                          <div className="mt-0.5 text-[9px] text-gray-300">{v.available}</div>
+                        </td>
+                      );
+                    })}
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+
+        <footer className="flex items-center justify-between border-t border-gray-100 px-5 py-3">
+          <span className="text-xs text-gray-500">
+            입력 {entered.length}개 도수 · 합계 {entered.reduce((s2, i) => s2 + i.quantity, 0)}팩
+          </span>
+          <button
+            type="button"
+            disabled={entered.length === 0}
+            onClick={() => onApply(entered)}
+            className="press rounded-lg bg-gray-900 px-4 py-2 text-xs font-bold text-white hover:bg-black disabled:opacity-50"
+          >
+            ✅ 적용 — 발주리스트에 추가
+          </button>
         </footer>
       </div>
     </div>
