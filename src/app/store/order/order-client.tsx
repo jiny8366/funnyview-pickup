@@ -36,6 +36,8 @@ export function StoreOrderClient() {
   const [brand, setBrand] = useState('');
   const [cycle, setCycle] = useState('');
   const [pack, setPack] = useState<number | null>(null);
+  // 보기 모드: 기본 이미지(그리드)
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   // 장바구니: lensId -> quantity
   const [cart, setCart] = useState<Record<string, number>>({});
@@ -215,19 +217,39 @@ export function StoreOrderClient() {
           }
         />
 
-        <div className="text-xs text-gray-400">
-          <span>{display.length}개 제품</span>
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-gray-400">{display.length}개 제품</span>
+          {/* 보기 전환 — 이미지(기본) / 목록 */}
+          <div className="flex items-center gap-1 rounded-lg border border-gray-200 p-0.5">
+            <ViewToggle active={viewMode === 'grid'} onClick={() => setViewMode('grid')} label="이미지로 보기">
+              <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor"><rect x="2" y="2" width="7" height="7" rx="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5"/></svg>
+            </ViewToggle>
+            <ViewToggle active={viewMode === 'list'} onClick={() => setViewMode('list')} label="목록으로 보기">
+              <svg viewBox="0 0 20 20" className="h-4 w-4" fill="currentColor"><rect x="2" y="3" width="16" height="2.5" rx="1.25"/><rect x="2" y="8.75" width="16" height="2.5" rx="1.25"/><rect x="2" y="14.5" width="16" height="2.5" rx="1.25"/></svg>
+            </ViewToggle>
+          </div>
         </div>
 
-        {/* 제품 그리드 */}
+        {/* 제품 목록 — 이미지(그리드) / 목록(행) */}
         {loading ? (
           <p className="py-16 text-center text-sm text-gray-400">불러오는 중…</p>
         ) : display.length === 0 ? (
           <p className="py-16 text-center text-sm text-gray-400">조건에 맞는 제품이 없습니다.</p>
-        ) : (
+        ) : viewMode === 'grid' ? (
           <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
             {display.map((l) => (
               <ProductCard
+                key={l.id}
+                item={l}
+                qtyInCart={cart[l.id] ?? 0}
+                onAdd={() => addToCart(l.id)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
+            {display.map((l) => (
+              <ProductRow
                 key={l.id}
                 item={l}
                 qtyInCart={cart[l.id] ?? 0}
@@ -391,5 +413,76 @@ function QtyBtn({ onClick, children }: { onClick: () => void; children: React.Re
     >
       {children}
     </button>
+  );
+}
+
+function ViewToggle({
+  active,
+  onClick,
+  label,
+  children,
+}: {
+  active: boolean;
+  onClick: () => void;
+  label: string;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-label={label}
+      title={label}
+      aria-pressed={active}
+      className={`grid h-7 w-7 place-items-center rounded-md transition ${
+        active ? 'bg-amber-600 text-white' : 'text-gray-500 hover:bg-gray-100'
+      }`}
+    >
+      {children}
+    </button>
+  );
+}
+
+/** 목록(행) 보기 — 작은 썸네일 + 정보 + 발주 담기 */
+function ProductRow({
+  item,
+  qtyInCart,
+  onAdd,
+}: {
+  item: CatalogItem;
+  qtyInCart: number;
+  onAdd: () => void;
+}) {
+  const imageSrc = item.imageUrl ?? `/api/lens-image/${item.productCode}`;
+  const cycle = CYCLE_LABEL[item.replacementCycle] ?? item.replacementCycle;
+  return (
+    <div className="flex items-center gap-3 px-3 py-2.5">
+      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-gray-50">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src={imageSrc} alt={item.name} className="h-full w-full object-contain p-1" loading="lazy" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <p className="truncate text-[11px] text-gray-400">{item.brand}</p>
+        <p className="truncate text-sm font-semibold text-gray-900">{item.name}</p>
+        <p className="text-[11px] text-gray-400">{cycle} · {item.piecesPerBox}매입</p>
+      </div>
+      <div className="shrink-0 text-right">
+        <p className="text-[10px] font-semibold text-amber-600">공급가</p>
+        <p className="text-sm font-bold text-gray-900">
+          {item.supplyPrice == null ? (
+            <span className="text-xs font-normal text-gray-400">가격문의</span>
+          ) : (
+            `${item.supplyPrice.toLocaleString()}원`
+          )}
+        </p>
+      </div>
+      <button
+        onClick={onAdd}
+        disabled={item.supplyPrice == null}
+        className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
+      >
+        {qtyInCart > 0 ? `담음 (${qtyInCart})` : '발주 담기'}
+      </button>
+    </div>
   );
 }
