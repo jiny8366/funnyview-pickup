@@ -214,7 +214,7 @@ export default function WarehousePicklistPage() {
           </div>
         </section>
       ) : (
-        <section className="space-y-6">
+        <section className="doc-light space-y-6 rounded-2xl bg-white p-4">
           <header className="border-b pb-3">
             <h2 className="text-xl font-bold">픽리스트</h2>
             <p className="text-xs text-gray-500">

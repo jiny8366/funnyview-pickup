@@ -64,7 +64,7 @@ export default function InvoicePage() {
         <Button onClick={() => window.print()} className="bg-emerald-600 hover:bg-emerald-700">🖨 인쇄 / PDF 저장</Button>
       </div>
 
-      <div className="invoice-doc rounded-2xl border border-gray-300 bg-white p-6 text-gray-900">
+      <div className="doc-light invoice-doc rounded-2xl border border-gray-300 bg-white p-6 text-gray-900">
         <div className="mb-4 text-center">
           <div className="text-xl font-bold tracking-wide">거 래 명 세 서</div>
           <div className="mt-1 text-xs text-gray-500">(공급받는자 보관용) · 발행 {formatDateTime(issuer.issuedAt)}</div>

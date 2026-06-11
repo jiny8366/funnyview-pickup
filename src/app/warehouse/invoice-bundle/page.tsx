@@ -53,7 +53,7 @@ function BundleInner() {
         <Button onClick={() => window.print()} className="bg-emerald-600 hover:bg-emerald-700">🖨 인쇄 / PDF</Button>
       </div>
 
-      <div className="bundle-doc space-y-6">
+      <div className="doc-light bundle-doc space-y-6">
         {data.stores.map((s) => (
           <div key={s.store.id} className="store-page space-y-3 rounded-2xl border border-gray-300 bg-white p-6 text-gray-900">
             {/* 거래명세서 */}

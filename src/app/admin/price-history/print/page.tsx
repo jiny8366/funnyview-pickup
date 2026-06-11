@@ -25,7 +25,7 @@ export default async function PriceHistoryPrintPage({
   });
 
   return (
-    <div className="min-h-screen bg-white p-8 font-sans text-sm text-gray-900 print:p-0">
+    <div className="doc-light min-h-screen bg-white p-8 font-sans text-sm text-gray-900 print:p-0">
       <div className="mb-4 flex items-center justify-between print:hidden">
         <h1 className="text-xl font-bold">가격변동이력 — 인쇄 / PDF</h1>
         <div className="flex gap-2">

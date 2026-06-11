@@ -201,6 +201,24 @@ html.theme-dark .text-red-600,
 html.theme-dark .text-red-700 { color: #ff6b61 !important; }
 /* 진한 뱃지/활성 필터칩(bg-gray-900 text-white)은 다크에서 표면과 또렷이 구분 */
 html.theme-dark .bg-gray-900 { background-color: #48484a !important; }
+
+/* 문서(미리보기/인쇄/PDF) — .doc-light 컨테이너는 다크 토글과 무관하게 항상 라이트.
+   거래명세서·픽리스트·재고출력 등 인쇄 대상은 화면 미리보기도 라이트로 강제. */
+html.theme-dark .doc-light { background-color: #fff !important; color: #111827 !important; }
+html.theme-dark .doc-light .bg-white { background-color: #fff !important; }
+html.theme-dark .doc-light .bg-gray-50 { background-color: #f9fafb !important; }
+html.theme-dark .doc-light .bg-gray-100 { background-color: #f3f4f6 !important; }
+html.theme-dark .doc-light .text-gray-900 { color: #111827 !important; }
+html.theme-dark .doc-light .text-gray-800 { color: #1f2937 !important; }
+html.theme-dark .doc-light .text-gray-700 { color: #374151 !important; }
+html.theme-dark .doc-light .text-gray-600 { color: #4b5563 !important; }
+html.theme-dark .doc-light .text-gray-500 { color: #6b7280 !important; }
+html.theme-dark .doc-light .text-gray-400 { color: #9ca3af !important; }
+html.theme-dark .doc-light .border-gray-100 { border-color: #f3f4f6 !important; }
+html.theme-dark .doc-light .border-gray-200 { border-color: #e5e7eb !important; }
+html.theme-dark .doc-light .border-gray-300 { border-color: #d1d5db !important; }
+html.theme-dark .doc-light .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
+html.theme-dark .doc-light .divide-gray-200 > :not([hidden]) ~ :not([hidden]) { border-color: #e5e7eb !important; }
 } /* @media screen — 인쇄는 다크 미적용(라이트 출력) */
 
 /* prefers-reduced-motion 존중 */
