@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useState } from 'react';
 import { ConversionHelp } from '@/components/prescription/conversion-help';
 import { RecommendModal } from '@/components/prescription/recommend-modal';
+import { ADD_FIT_ABOVE, ADD_FIT_BELOW } from '@/lib/prescription/multifocal-add-standard';
 import { formatDiopter, glassesToContactToric, roundQuarter } from '@/lib/prescription/convert';
 
 interface Variant {
@@ -177,11 +178,32 @@ export function MyPowerSelector({
       return;
     }
 
-    // 멀티포컬 제품 + ADD 보유: ADD 까지 일치하는 변형을 우선 매칭
-    const pool = hasAdd && productHasAdd
-      ? variants.filter((v) => v.addPower != null && Number(v.addPower) === p.addPower)
-      : variants;
-    const match = findExact(pool.length > 0 ? pool : variants, p.sphere, p.cylinder, p.axis);
+    // 멀티포컬 제품 + ADD 보유: 동결 표준(multifocal-add-standard)의 수치 밴드 [rx−0.25, rx+0.50]
+    // 안에서만 매칭하고, 낮은 ADD 우선(표준: 낮은등급 우선). 밴드 밖이면 조용한 오선택 대신 경고.
+    if (hasAdd && productHasAdd) {
+      const rx = p.addPower!;
+      const fitAdds = [...new Set(
+        variants
+          .filter((v) => v.addPower != null)
+          .map((v) => Number(v.addPower))
+          .filter((a) => a >= rx - ADD_FIT_BELOW && a <= rx + ADD_FIT_ABOVE),
+      )].sort((a, b) => a - b);
+      let match: ReturnType<typeof findExact> = null;
+      for (const av of fitAdds) {
+        match = findExact(variants.filter((v) => Number(v.addPower) === av), p.sphere, p.cylinder, p.axis);
+        if (match) break;
+      }
+      if (match) {
+        onSelect(match.variantId);
+        setStep('idle');
+        setMsg(`${c.fromGlasses ? '안경도수를 콘택트로 변환해 ' : '내 도수로 '}선택했습니다 · ${doseLabel(p)} (ADD ${formatDiopter(Number(match.addPower))} 적합)`);
+      } else {
+        setStep('warn');
+      }
+      return;
+    }
+
+    const match = findExact(variants, p.sphere, p.cylinder, p.axis);
     if (match) {
       onSelect(match.variantId);
       setStep('idle');
