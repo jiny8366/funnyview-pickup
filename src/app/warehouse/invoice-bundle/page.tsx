@@ -24,8 +24,20 @@ function BundleInner() {
   const ids = (sp.get('ids') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   // 출력 분리: invoice=거래명세서 / waybill=배송송장 (팩리스트는 거래명세서로 대치 — JINY 확정 2026-06-12)
   const mode: 'invoice' | 'waybill' = sp.get('mode') === 'waybill' ? 'waybill' : 'invoice';
+  // 자식창(검수 화면에서 window.open) UX: 로드 후 자동 인쇄 → 닫으면 부모(검수)가 그대로
+  const autoprint = sp.get('autoprint') === '1';
+  const [isChild, setIsChild] = useState(false);
   const [data, setData] = useState<Bundle | null>(null);
   const [err, setErr] = useState('');
+
+  useEffect(() => {
+    setIsChild(typeof window !== 'undefined' && !!window.opener);
+  }, []);
+  useEffect(() => {
+    if (!autoprint || !data) return;
+    const t = setTimeout(() => window.print(), 500); // 문서 렌더 후 인쇄 다이얼로그
+    return () => clearTimeout(t);
+  }, [autoprint, data]);
 
   useEffect(() => {
     if (ids.length === 0) { setErr('출력할 주문이 지정되지 않았습니다 (?ids=...)'); return; }
@@ -67,27 +79,44 @@ function BundleInner() {
         </div>
       </div>
 
-      {/* 다음 단계 안내 — 출력 탭이 막다른 화면이 되지 않게 (JINY 지적) */}
+      {/* 다음 단계 안내 — 출력 화면이 막다른 곳이 되지 않게 (JINY 확정 UX) */}
       <div className="flex flex-wrap items-center gap-2 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm text-blue-800 print:hidden">
-        <span>
-          다음 단계: <b>🖨 출력 → 박스에 동봉 → 검수 화면에서 ✅ 출고(배송) 처리</b>
-        </span>
-        <span className="ml-auto flex gap-2">
-          {ids.length === 1 && (
-            <a
-              href={`/warehouse/packing/${ids[0]}`}
-              className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+        {isChild ? (
+          <>
+            <span>
+              🖨 인쇄를 마쳤으면 <b>이 창을 닫으세요</b> — 검수 화면이 그대로 열려 있어 바로 <b>✅ 출고(배송) 처리</b>로 이어집니다.
+            </span>
+            <button
+              type="button"
+              onClick={() => window.close()}
+              className="press ml-auto rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
             >
-              → 이 주문 검수·출고 화면
-            </a>
-          )}
-          <a
-            href="/warehouse/picklist"
-            className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
-          >
-            → 배송준비 허브(픽리스트)
-          </a>
-        </span>
+              ✕ 창 닫기 (검수 화면으로)
+            </button>
+          </>
+        ) : (
+          <>
+            <span>
+              다음 단계: <b>🖨 출력 → 박스에 동봉 → 검수 화면에서 ✅ 출고(배송) 처리</b>
+            </span>
+            <span className="ml-auto flex gap-2">
+              {ids.length === 1 && (
+                <a
+                  href={`/warehouse/packing/${ids[0]}`}
+                  className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+                >
+                  → 이 주문 검수·출고 화면
+                </a>
+              )}
+              <a
+                href="/warehouse/picklist"
+                className="rounded-lg border border-blue-300 bg-white px-3 py-1.5 text-xs font-medium text-blue-700 hover:bg-blue-100"
+              >
+                → 배송준비 허브(픽리스트)
+              </a>
+            </span>
+          </>
+        )}
       </div>
 
       <div className="doc-light bundle-doc space-y-6">

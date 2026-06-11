@@ -234,30 +234,29 @@ export default function PackingPage() {
 
       {err && <p className="text-sm text-red-600">{err}</p>}
 
-      {/* 검수 확정 후 — 이 건의 거래명세서·송장 출력 (JINY 지시). 새 탭으로 열어 검수 상태 유지 */}
+      {/* 검수 확정 후 — 이 건의 거래명세서·송장을 자식창에서 인쇄 (JINY 확정 UX):
+          자식창 닫으면 이 검수 화면이 그대로라 바로 ✅출고(배송) 처리로 이어진다 */}
       {allMatched && !wrongStatus && (
         <div className="flex gap-2">
-          <a
-            href={`/warehouse/invoice-bundle?ids=${data.order.id}&mode=invoice`}
-            target="_blank"
-            rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => window.open(`/warehouse/invoice-bundle?ids=${data.order.id}&mode=invoice&autoprint=1`, 'fvdocprint', 'width=920,height=760')}
             className="tap flex-1 rounded-lg border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             🧾 거래명세서 출력
-          </a>
-          <a
-            href={`/warehouse/invoice-bundle?ids=${data.order.id}&mode=waybill`}
-            target="_blank"
-            rel="noreferrer"
+          </button>
+          <button
+            type="button"
+            onClick={() => window.open(`/warehouse/invoice-bundle?ids=${data.order.id}&mode=waybill&autoprint=1`, 'fvdocprint', 'width=920,height=760')}
             className="tap flex-1 rounded-lg border border-gray-200 bg-white py-2.5 text-center text-sm font-medium text-gray-700 hover:bg-gray-50"
           >
             🚚 송장 출력
-          </a>
+          </button>
         </div>
       )}
       {allMatched && !wrongStatus && (
         <p className="text-center text-[11px] text-gray-400">
-          출력물을 박스에 동봉한 뒤, 아래 <b>✅ 출고(배송) 처리</b>를 누르면 배송 단계로 넘어갑니다.
+          인쇄 창을 닫으면 이 화면이 그대로 — 동봉 후 아래 <b>✅ 출고(배송) 처리</b>를 누르세요.
         </p>
       )}
 
