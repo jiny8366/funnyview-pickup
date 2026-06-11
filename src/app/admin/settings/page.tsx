@@ -13,6 +13,12 @@ const SECTIONS: { title: string; desc: string; status: string; href?: string }[]
     href: '/admin/settings/business',
   },
   {
+    title: '매입처 관리',
+    desc: '입고 전표에서 선택하는 매입처(공급사) 등록 · 수정 · 비활성화',
+    status: 'ready',
+    href: '/admin/suppliers',
+  },
+  {
     title: '결제 PG',
     desc: 'Toss / Nice / PortOne 어댑터 설정 및 API 키 관리',
     status: 'pending',

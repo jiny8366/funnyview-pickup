@@ -4,38 +4,36 @@ import { Suspense, useCallback, useEffect, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Input } from '@/components/ui/input';
-import { formatLensSpec } from '@/lib/lens/format';
+import { IconSearch } from '@/components/ui/icons';
 
 function todayISO(): string {
   return new Date().toISOString().slice(0, 10);
 }
 
-interface LensRow {
+interface Supplier {
   id: string;
-  brand: string;
   name: string;
-  productCode: string;
-  lensType: string;
-  replacementCycle: string;
-  piecesPerBox: number;
 }
 
-interface VariantRow {
-  id: string;
-  sku: string;
-  sphere: string;
-  cylinder: string | null;
-  axis: number | null;
-  addPower: string | null;
-  isActive: boolean;
-  onHand: number;
-}
-
-interface LineItem {
+interface ScanLine {
   variantId: string;
+  lensId: string;
+  displayName: string;
+  sku: string;
+  currentStock: number;
   quantity: number;
-  unitCost: number;
+  unitCost: number; // 부가세 포함 KRW
+}
+
+interface LookupResponse {
+  parsed: { di: string | null; format: string };
+  match: {
+    variant: { id: string; sku: string };
+    lens: { id: string };
+    displayName: string;
+    inventory: { quantityOnHand: number } | null;
+    lastUnitCost: number;
+  } | null;
 }
 
 export default function InboundNewPage() {
@@ -48,129 +46,145 @@ export default function InboundNewPage() {
 
 function InboundNewInner() {
   const router = useRouter();
-  const searchRef = useRef<HTMLInputElement | null>(null);
+  const scanRef = useRef<HTMLInputElement | null>(null);
 
   // 전표 헤더
   const [inboundDate, setInboundDate] = useState(todayISO());
   const [invoiceRef, setInvoiceRef] = useState('');
-  const [note, setNote] = useState('');
-  const [commonCost, setCommonCost] = useState<number>(0);
+  const [supplierId, setSupplierId] = useState('');
+  const [suppliers, setSuppliers] = useState<Supplier[]>([]);
 
-  // 제품 선택
-  const [lensQ, setLensQ] = useState('');
-  const [lensResults, setLensResults] = useState<LensRow[]>([]);
-  const [selectedLens, setSelectedLens] = useState<LensRow | null>(null);
-  const [showDropdown, setShowDropdown] = useState(false);
-
-  // 도수 목록 + 라인 아이템
-  const [variants, setVariants] = useState<VariantRow[]>([]);
-  const [lines, setLines] = useState<Record<string, LineItem>>({}); // variantId → line
-  const [showInactive, setShowInactive] = useState(false);
+  // 스캔 라인
+  const [lines, setLines] = useState<ScanLine[]>([]);
+  const [raw, setRaw] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [scanError, setScanError] = useState<string | null>(null);
 
   // 제출
-  const [busy, setBusy] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
 
-  // 제품 검색
-  const searchLenses = useCallback(async (q: string) => {
-    if (!q.trim()) { setLensResults([]); return; }
-    const res = await fetch(`/api/warehouse/lenses?q=${encodeURIComponent(q)}`);
-    const j = await res.json();
-    setLensResults(j.lenses ?? []);
-    setShowDropdown(true);
+  // 매입처 로드 (활성만)
+  useEffect(() => {
+    fetch('/api/admin/suppliers')
+      .then((r) => (r.ok ? r.json() : { suppliers: [] }))
+      .then((d) => setSuppliers(d.suppliers ?? []))
+      .catch(() => setSuppliers([]));
   }, []);
 
   useEffect(() => {
-    const t = setTimeout(() => searchLenses(lensQ), 250);
-    return () => clearTimeout(t);
-  }, [lensQ, searchLenses]);
+    scanRef.current?.focus();
+  }, []);
 
-  // 제품 선택 시 도수 목록 로드
-  async function selectLens(lens: LensRow) {
-    setSelectedLens(lens);
-    setLensQ(`${lens.brand} — ${lens.name}`);
-    setShowDropdown(false);
-    setLines({});
-
-    const res = await fetch('/api/warehouse/lenses', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ lensId: lens.id }),
-    });
-    const j = await res.json();
-    setVariants(j.variants ?? []);
-  }
-
-  function setLine(variantId: string, field: 'quantity' | 'unitCost', value: number) {
-    setLines((prev) => ({
-      ...prev,
-      [variantId]: {
-        variantId,
-        quantity: field === 'quantity' ? value : (prev[variantId]?.quantity ?? 0),
-        unitCost: field === 'unitCost' ? value : (prev[variantId]?.unitCost ?? commonCost),
-      },
-    }));
-  }
-
-  function applyCommonCost() {
-    setLines((prev) => {
-      const next = { ...prev };
-      for (const id of Object.keys(next)) {
-        if (next[id].quantity > 0) {
-          next[id] = { ...next[id], unitCost: commonCost };
-        }
-      }
-      return next;
-    });
-  }
-
-  const activeItems = Object.values(lines).filter((l) => l.quantity > 0 && l.unitCost > 0);
-  const totalQty = activeItems.reduce((s, l) => s + l.quantity, 0);
-  const totalCost = activeItems.reduce((s, l) => s + l.quantity * l.unitCost, 0);
-
-  async function submit() {
-    if (!selectedLens || activeItems.length === 0) return;
-    setBusy(true);
-    setSubmitError(null);
-    try {
-      for (const item of activeItems) {
-        const res = await fetch('/api/warehouse/inbound', {
+  const handleScan = useCallback(
+    async (text: string) => {
+      const value = text.trim();
+      if (!value) return;
+      setBusy(true);
+      setScanError(null);
+      try {
+        const res = await fetch('/api/warehouse/inbound/lookup', {
           method: 'POST',
           headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({
-            variantId: item.variantId,
-            quantity: item.quantity,
-            unitCostIncVat: item.unitCost,
-            inboundDate,
-            invoiceRef: invoiceRef || null,
-            note: note || null,
-          }),
+          body: JSON.stringify({ raw: value }),
         });
-        if (!res.ok) {
-          const j = await res.json();
-          throw new Error(j.detail ?? j.error ?? '입고 실패');
+        const j: LookupResponse = await res.json();
+        if (!res.ok || !j.match) {
+          setScanError('매칭되는 SKU 가 없습니다. 바코드를 확인하세요.');
+          return;
         }
+        const m = j.match;
+        setLines((prev) => {
+          const idx = prev.findIndex((l) => l.variantId === m.variant.id);
+          if (idx >= 0) {
+            // 중복 스캔 → 수량 +1
+            const next = [...prev];
+            next[idx] = { ...next[idx], quantity: next[idx].quantity + 1 };
+            return next;
+          }
+          return [
+            {
+              variantId: m.variant.id,
+              lensId: m.lens.id,
+              displayName: m.displayName,
+              sku: m.variant.sku,
+              currentStock: m.inventory?.quantityOnHand ?? 0,
+              quantity: 1,
+              unitCost: m.lastUnitCost ?? 0,
+            },
+            ...prev,
+          ];
+        });
+        setRaw('');
+      } finally {
+        setBusy(false);
+        scanRef.current?.focus();
+      }
+    },
+    [],
+  );
+
+  function onSubmitScan(e: React.FormEvent) {
+    e.preventDefault();
+    handleScan(raw);
+  }
+
+  function updateLine(variantId: string, field: 'quantity' | 'unitCost', value: number) {
+    setLines((prev) =>
+      prev.map((l) => (l.variantId === variantId ? { ...l, [field]: value } : l)),
+    );
+  }
+
+  function removeLine(variantId: string) {
+    setLines((prev) => prev.filter((l) => l.variantId !== variantId));
+  }
+
+  const totalQty = lines.reduce((s, l) => s + l.quantity, 0);
+  const totalCost = lines.reduce((s, l) => s + l.quantity * l.unitCost, 0);
+  const hasZeroCost = lines.some((l) => l.unitCost <= 0);
+
+  async function submit() {
+    if (lines.length === 0) return;
+    setSubmitting(true);
+    setSubmitError(null);
+    try {
+      const res = await fetch('/api/warehouse/inbound', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          inboundDate,
+          invoiceRef: invoiceRef || null,
+          supplierId: supplierId || null,
+          lines: lines.map((l) => ({
+            variantId: l.variantId,
+            lensId: l.lensId,
+            quantity: l.quantity,
+            unitCostIncVat: l.unitCost,
+          })),
+        }),
+      });
+      if (!res.ok) {
+        const j = await res.json().catch(() => ({}));
+        throw new Error(j.detail ?? j.error ?? '입고 실패');
       }
       router.push('/warehouse/inbound/history');
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : '입고 실패');
     } finally {
-      setBusy(false);
+      setSubmitting(false);
     }
   }
-
-  const displayVariants = showInactive ? variants : variants.filter((v) => v.isActive);
 
   return (
     <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-xl font-semibold md:text-2xl">전표 입고 등록</h1>
+          <h1 className="text-xl font-semibold md:text-2xl">입고 등록 (바코드 스캔)</h1>
+          <p className="mt-1 text-sm text-gray-500">
+            바코드를 스캔하면 자동으로 목록에 추가됩니다. 동일 제품은 수량이 합산됩니다.
+          </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" onClick={() => router.push('/warehouse/inbound')}>
-            바코드 스캔
-          </Button>
           <Button variant="secondary" size="sm" onClick={() => router.push('/warehouse/inbound/history')}>
             이력 조회
           </Button>
@@ -196,6 +210,21 @@ function InboundNewInner() {
               />
             </div>
             <div>
+              <label className="mb-1 block text-xs font-medium text-gray-700">매입처</label>
+              <select
+                value={supplierId}
+                onChange={(e) => setSupplierId(e.target.value)}
+                className="input"
+              >
+                <option value="">선택 안 함</option>
+                {suppliers.map((s) => (
+                  <option key={s.id} value={s.id}>
+                    {s.name}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div>
               <label className="mb-1 block text-xs font-medium text-gray-700">전표번호 (선택)</label>
               <input
                 type="text"
@@ -205,224 +234,160 @@ function InboundNewInner() {
                 className="input"
               />
             </div>
-            <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700">메모 (선택)</label>
-              <input
-                type="text"
-                value={note}
-                onChange={(e) => setNote(e.target.value)}
-                placeholder="비고"
-                className="input"
-              />
-            </div>
           </div>
         </CardBody>
       </Card>
 
-      {/* 제품 선택 */}
+      {/* 스캔 입력 */}
+      <Card>
+        <CardBody>
+          <form onSubmit={onSubmitScan} className="flex gap-2">
+            <div className="relative flex-1">
+              <IconSearch
+                size={18}
+                className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+              />
+              <input
+                ref={scanRef}
+                value={raw}
+                onChange={(e) => setRaw(e.target.value)}
+                placeholder="바코드 스캔 또는 입력 후 Enter"
+                className="h-12 w-full rounded-lg border-2 border-brand-200 bg-white pl-10 pr-3 text-base font-mono text-gray-900 focus:border-brand-500 focus:outline-none focus:ring-2 focus:ring-brand-100"
+                autoComplete="off"
+                spellCheck={false}
+              />
+            </div>
+            <Button type="submit" size="lg" disabled={!raw || busy}>
+              {busy ? '조회 중...' : '추가'}
+            </Button>
+          </form>
+          {scanError && <p className="mt-3 text-sm text-red-600">⚠️ {scanError}</p>}
+        </CardBody>
+      </Card>
+
+      {/* 스캔 목록 */}
       <Card>
         <CardHeader>
           <div>
-            <CardTitle>제품 선택</CardTitle>
+            <CardTitle>입고 목록 ({lines.length})</CardTitle>
+            <CardDescription>
+              단가는 최근 매입 로트에서 자동 입력됩니다. 단가 변동 시 직접 수정하세요.
+            </CardDescription>
           </div>
         </CardHeader>
-        <CardBody>
-          <div className="relative">
-            <Input
-              ref={searchRef}
-              value={lensQ}
-              onChange={(e) => {
-                setLensQ(e.target.value);
-                setSelectedLens(null);
-                setVariants([]);
-              }}
-              onFocus={() => lensQ && setShowDropdown(true)}
-              onBlur={() => setTimeout(() => setShowDropdown(false), 150)}
-              placeholder="예: 아큐브 모이스트, ACU-AND1M-30P"
-              className="w-full"
-            />
-            {showDropdown && lensResults.length > 0 && (
-              <ul className="absolute z-20 mt-1 max-h-64 w-full overflow-y-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-                {lensResults.map((l) => (
-                  <li key={l.id}>
-                    <button
-                      type="button"
-                      className="flex w-full items-center gap-2 px-3 py-2 text-left hover:bg-gray-50"
-                      onMouseDown={() => selectLens(l)}
-                    >
-                      <span className="font-medium text-gray-900">{l.brand} — {l.name}</span>
-                      <span className="text-xs text-gray-400">{l.productCode}</span>
-                      <span className="ml-auto text-xs text-gray-400">{l.replacementCycle} / {l.piecesPerBox}매</span>
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        </CardBody>
-      </Card>
-
-      {/* 도수 목록 + 수량 입력 */}
-      {selectedLens && variants.length > 0 && (
-        <Card>
-          <CardHeader>
-            <div>
-              <CardTitle>{selectedLens.brand} — {selectedLens.name}</CardTitle>
-              <CardDescription>
-                {displayVariants.length}개 도수 표시 중 ({variants.filter((v) => v.isActive).length}개 활성)
-              </CardDescription>
-            </div>
-            <div className="flex items-center gap-3">
-              <label className="flex items-center gap-1.5 text-xs text-gray-600">
-                <input
-                  type="checkbox"
-                  checked={showInactive}
-                  onChange={(e) => setShowInactive(e.target.checked)}
-                  className="h-3.5 w-3.5"
-                />
-                비활성 포함
-              </label>
-            </div>
-          </CardHeader>
-
-          {/* 공통 단가 적용 */}
-          <div className="border-t border-gray-100 bg-gray-50 px-4 py-2.5">
-            <div className="flex flex-wrap items-end gap-3">
-              <div>
-                <label className="mb-1 block text-xs font-medium text-gray-700">
-                  공통 단가 (부가세 포함 KRW)
-                </label>
-                <input
-                  type="number"
-                  min={0}
-                  value={commonCost || ''}
-                  onChange={(e) => setCommonCost(Math.max(0, Number(e.target.value) || 0))}
-                  placeholder="예: 8500"
-                  className="h-9 w-36 rounded-md border border-gray-300 bg-white px-2 font-mono text-sm focus:outline-none focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-              <Button
-                size="sm"
-                variant="secondary"
-                disabled={commonCost <= 0}
-                onClick={applyCommonCost}
-              >
-                수량 입력된 행에 적용
-              </Button>
-              <p className="text-xs text-gray-500">
-                ⓘ 도수마다 단가가 다르면 아래 표에서 개별 수정하세요.
-              </p>
-            </div>
-          </div>
-
-          <CardBody className="p-0">
+        <CardBody className="p-0">
+          {lines.length === 0 ? (
+            <p className="px-4 py-8 text-center text-sm text-gray-500">
+              아직 스캔된 항목이 없습니다. 위 입력창에 바코드를 스캔하세요.
+            </p>
+          ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-sm">
                 <thead className="bg-gray-50 text-xs text-gray-500">
                   <tr>
-                    <th className="px-3 py-2 text-left">도수</th>
+                    <th className="px-3 py-2 text-left">제품</th>
                     <th className="px-3 py-2 text-left font-mono text-gray-400">SKU</th>
                     <th className="px-3 py-2 text-right">현재고</th>
-                    <th className="px-3 py-2 text-right">입고 수량 (팩)</th>
+                    <th className="px-3 py-2 text-right">수량 (팩)</th>
                     <th className="px-3 py-2 text-right">단가 (₩, VAT포함)</th>
                     <th className="px-3 py-2 text-right">소계</th>
+                    <th className="px-3 py-2 text-center">삭제</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {displayVariants.map((v) => {
-                    const line = lines[v.id];
-                    const qty = line?.quantity ?? 0;
-                    const cost = line?.unitCost ?? commonCost;
-                    const subtotal = qty * cost;
-
-                    return (
-                      <tr
-                        key={v.id}
-                        className={`${!v.isActive ? 'opacity-50' : ''} ${qty > 0 ? 'bg-blue-50/50' : ''}`}
-                      >
-                        <td className="px-3 py-2 font-medium text-gray-900">
-                          {formatLensSpec(v) || '기본'}
-                          {!v.isActive && (
-                            <span className="ml-1.5 rounded bg-gray-200 px-1 py-0.5 text-[10px] text-gray-500">
-                              비활성
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-3 py-2 font-mono text-xs text-gray-400">{v.sku}</td>
-                        <td className="px-3 py-2 text-right text-sm text-gray-600">{v.onHand}</td>
-                        <td className="px-3 py-2 text-right">
-                          <input
-                            type="number"
-                            min={0}
-                            step={1}
-                            value={qty || ''}
-                            onChange={(e) =>
-                              setLine(v.id, 'quantity', Math.max(0, Math.floor(Number(e.target.value) || 0)))
-                            }
-                            placeholder="0"
-                            className="h-8 w-20 rounded border border-gray-300 bg-white px-2 text-right font-mono text-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100"
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-right">
-                          <input
-                            type="number"
-                            min={0}
-                            value={cost || ''}
-                            onChange={(e) =>
-                              setLine(v.id, 'unitCost', Math.max(0, Number(e.target.value) || 0))
-                            }
-                            placeholder={commonCost ? String(commonCost) : '단가'}
-                            className={`h-8 w-24 rounded border bg-white px-2 text-right font-mono text-sm focus:outline-none focus:ring-1 ${
-                              qty > 0 && cost <= 0
-                                ? 'border-amber-400 focus:ring-amber-100'
-                                : 'border-gray-300 focus:border-blue-400 focus:ring-blue-100'
-                            }`}
-                          />
-                        </td>
-                        <td className="px-3 py-2 text-right text-sm text-gray-700">
-                          {subtotal > 0 ? subtotal.toLocaleString() + '원' : '—'}
-                        </td>
-                      </tr>
-                    );
-                  })}
-                </tbody>
-                {totalQty > 0 && (
-                  <tfoot className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
-                    <tr>
-                      <td colSpan={3} className="px-3 py-2 text-gray-700">합계</td>
-                      <td className="px-3 py-2 text-right">{totalQty.toLocaleString()}팩</td>
-                      <td />
-                      <td className="px-3 py-2 text-right">{totalCost.toLocaleString()}원</td>
+                  {lines.map((l) => (
+                    <tr key={l.variantId}>
+                      <td className="px-3 py-2 font-medium text-gray-900">{l.displayName}</td>
+                      <td className="px-3 py-2 font-mono text-xs text-gray-400">{l.sku}</td>
+                      <td className="px-3 py-2 text-right text-gray-600">{l.currentStock}</td>
+                      <td className="px-3 py-2 text-right">
+                        <input
+                          type="number"
+                          min={1}
+                          step={1}
+                          value={l.quantity || ''}
+                          onChange={(e) =>
+                            updateLine(
+                              l.variantId,
+                              'quantity',
+                              Math.max(1, Math.floor(Number(e.target.value) || 1)),
+                            )
+                          }
+                          className="h-8 w-20 rounded border border-gray-300 bg-white px-2 text-right font-mono text-sm focus:border-blue-400 focus:outline-none focus:ring-1 focus:ring-blue-100"
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <input
+                          type="number"
+                          min={0}
+                          value={l.unitCost || ''}
+                          onChange={(e) =>
+                            updateLine(
+                              l.variantId,
+                              'unitCost',
+                              Math.max(0, Number(e.target.value) || 0),
+                            )
+                          }
+                          placeholder="단가"
+                          className={`h-8 w-24 rounded border bg-white px-2 text-right font-mono text-sm focus:outline-none focus:ring-1 ${
+                            l.unitCost <= 0
+                              ? 'border-amber-400 focus:ring-amber-100'
+                              : 'border-gray-300 focus:border-blue-400 focus:ring-blue-100'
+                          }`}
+                        />
+                      </td>
+                      <td className="px-3 py-2 text-right text-gray-700">
+                        {l.quantity * l.unitCost > 0
+                          ? (l.quantity * l.unitCost).toLocaleString() + '원'
+                          : '—'}
+                      </td>
+                      <td className="px-3 py-2 text-center">
+                        <button
+                          type="button"
+                          onClick={() => removeLine(l.variantId)}
+                          className="text-xs text-gray-400 hover:text-red-600"
+                          aria-label="라인 삭제"
+                        >
+                          삭제
+                        </button>
+                      </td>
                     </tr>
-                  </tfoot>
-                )}
+                  ))}
+                </tbody>
+                <tfoot className="border-t-2 border-gray-200 bg-gray-50 font-semibold">
+                  <tr>
+                    <td colSpan={3} className="px-3 py-2 text-gray-700">합계</td>
+                    <td className="px-3 py-2 text-right">{totalQty.toLocaleString()}팩</td>
+                    <td />
+                    <td className="px-3 py-2 text-right">{totalCost.toLocaleString()}원</td>
+                    <td />
+                  </tr>
+                </tfoot>
               </table>
             </div>
-          </CardBody>
-        </Card>
-      )}
+          )}
+        </CardBody>
+      </Card>
 
       {/* 제출 영역 */}
-      {selectedLens && activeItems.length > 0 && (
+      {lines.length > 0 && (
         <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="text-sm text-blue-900">
-              <strong>{activeItems.length}개 도수</strong> · 총{' '}
+              <strong>{lines.length}개 품목</strong> · 총{' '}
               <strong>{totalQty.toLocaleString()}팩</strong> ·{' '}
               <strong>₩{totalCost.toLocaleString()}</strong> 입고 예정
             </div>
             <div className="flex items-center gap-3">
-              {submitError && (
-                <span className="text-sm text-red-600">⚠️ {submitError}</span>
-              )}
-              <Button onClick={submit} disabled={busy}>
-                {busy ? '등록 중...' : '전표 입고 등록'}
+              {submitError && <span className="text-sm text-red-600">⚠️ {submitError}</span>}
+              <Button onClick={submit} disabled={submitting}>
+                {submitting ? '등록 중...' : '입고 등록'}
               </Button>
             </div>
           </div>
-          {activeItems.some((l) => l.unitCost <= 0) && (
+          {hasZeroCost && (
             <p className="mt-2 text-xs text-amber-700">
-              ⚠️ 단가가 0원인 도수가 있습니다. 등록 전 단가를 확인하세요.
+              ⚠️ 단가가 0원인 품목이 있습니다. 등록 전 단가를 확인하세요.
             </p>
           )}
         </div>

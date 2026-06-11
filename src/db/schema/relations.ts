@@ -1,6 +1,11 @@
 import { relations } from 'drizzle-orm';
 import { customerPrescriptions, customers } from './customers';
-import { inventory, inventoryMovements } from './inventory';
+import {
+  inboundShipments,
+  inventory,
+  inventoryMovements,
+  suppliers,
+} from './inventory';
 import { lenses, lensBarcodes, lensVariants } from './lenses';
 import { notifications } from './notifications';
 import { userOauthAccounts } from './oauth';
@@ -108,6 +113,20 @@ export const inventoryMovementsRelations = relations(
     performer: one(users, {
       fields: [inventoryMovements.performedBy],
       references: [users.id],
+    }),
+  }),
+);
+
+export const suppliersRelations = relations(suppliers, ({ many }) => ({
+  inboundShipments: many(inboundShipments),
+}));
+
+export const inboundShipmentsRelations = relations(
+  inboundShipments,
+  ({ one }) => ({
+    supplier: one(suppliers, {
+      fields: [inboundShipments.supplierId],
+      references: [suppliers.id],
     }),
   }),
 );

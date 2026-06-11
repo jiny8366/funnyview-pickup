@@ -1,4 +1,5 @@
 import {
+  boolean,
   check,
   date,
   index,
@@ -13,6 +14,33 @@ import { sql } from 'drizzle-orm';
 import { inventoryMovementTypeEnum } from './enums';
 import { lenses, lensVariants } from './lenses';
 import { users } from './users';
+
+/**
+ * 매입처(공급사) 레지스트리 — 어드민에서 등록/관리.
+ * 입고 전표(inbound_shipments.supplierId)의 드롭다운 소스.
+ */
+export const suppliers = pgTable(
+  'suppliers',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    name: text('name').notNull(),
+    contact: text('contact'), // 담당자명
+    phone: text('phone'),
+    bizNo: text('business_number'), // 사업자등록번호
+    memo: text('memo'),
+    isActive: boolean('is_active').default(true).notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    nameIdx: index('suppliers_name_idx').on(t.name),
+    activeIdx: index('suppliers_active_idx').on(t.isActive),
+  }),
+);
 
 /**
  * 픽업서비스 업체(중앙 창고)의 SKU별 현재 재고.
@@ -64,7 +92,7 @@ export const inboundShipments = pgTable(
       .notNull()
       .references(() => lenses.id),
     inboundDate: date('inbound_date').notNull(), // 실물 입고일 (FIFO 순서 기준)
-    supplierId: uuid('supplier_id'), // 추후 suppliers 테이블 FK
+    supplierId: uuid('supplier_id').references(() => suppliers.id), // 매입처 FK (nullable)
     invoiceRef: text('invoice_ref'), // 세금계산서/거래명세서 번호
     note: text('note'),
     status: text('status').default('draft').notNull(), // 'draft' | 'confirmed'
@@ -190,3 +218,5 @@ export type InboundShipment = typeof inboundShipments.$inferSelect;
 export type NewInboundShipment = typeof inboundShipments.$inferInsert;
 export type InventoryLot = typeof inventoryLots.$inferSelect;
 export type NewInventoryLot = typeof inventoryLots.$inferInsert;
+export type Supplier = typeof suppliers.$inferSelect;
+export type NewSupplier = typeof suppliers.$inferInsert;

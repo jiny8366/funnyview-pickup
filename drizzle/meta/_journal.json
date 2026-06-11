@@ -190,6 +190,13 @@
       "when": 1780421219389,
       "tag": "0026_product_image_paths",
       "breakpoints": true
+    },
+    {
+      "idx": 27,
+      "version": "7",
+      "when": 1780500000000,
+      "tag": "0027_suppliers",
+      "breakpoints": true
     }
   ]
 }

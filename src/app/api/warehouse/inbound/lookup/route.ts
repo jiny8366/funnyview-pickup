@@ -1,7 +1,14 @@
 import { NextResponse } from 'next/server';
-import { eq, or } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { inventory, lenses, lensBarcodes, lensVariants } from '@/db/schema';
+import {
+  inboundShipments,
+  inventory,
+  inventoryLots,
+  lenses,
+  lensBarcodes,
+  lensVariants,
+} from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { parseBarcode } from '@/lib/barcode/parse';
 import { formatLensDisplayName } from '@/lib/lens/format';
@@ -78,6 +85,18 @@ export async function POST(req: Request) {
     .where(eq(inventory.variantId, matched.variant.id))
     .limit(1);
 
+  // 최근 입고 로트의 단가 (가장 최근 입고일 기준) — 입고 단가 자동입력용
+  const [lastLot] = await db
+    .select({ unitCostIncVat: inventoryLots.unitCostIncVat })
+    .from(inventoryLots)
+    .innerJoin(
+      inboundShipments,
+      eq(inventoryLots.shipmentId, inboundShipments.id),
+    )
+    .where(eq(inventoryLots.variantId, matched.variant.id))
+    .orderBy(desc(inboundShipments.inboundDate), desc(inventoryLots.createdAt))
+    .limit(1);
+
   return NextResponse.json({
     parsed,
     match: {
@@ -85,6 +104,7 @@ export async function POST(req: Request) {
       lens: matched.lens,
       displayName: formatLensDisplayName(matched.lens, matched.variant),
       inventory: invRow ?? null,
+      lastUnitCost: lastLot?.unitCostIncVat ?? 0,
     },
   });
 }
