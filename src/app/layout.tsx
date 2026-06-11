@@ -31,6 +31,15 @@ export default function RootLayout({
 }) {
   return (
     <html lang="ko">
+      <head>
+        {/* 운영 포털 다크 모드 무플래시 적용 — opsTheme=dark 면 페인트 전 클래스 부여(고객 origin은 미설정) */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{if(localStorage.getItem('opsTheme')==='dark')document.documentElement.classList.add('theme-dark')}catch(e){}",
+          }}
+        />
+      </head>
       <body className="min-h-screen antialiased">
         <ServiceWorkerRegister />
         {children}

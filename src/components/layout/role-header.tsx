@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { HeaderMenu, type MenuSection } from './header-menu';
+import { ThemeToggle } from './theme-toggle';
 
 type Role = 'customer' | 'warehouse' | 'store';
 
@@ -45,11 +46,15 @@ export function RoleHeader({
           <span className={labelClass}>· {meta.label}</span>
         </Link>
 
-        <HeaderMenu
-          sections={sections}
-          user={user ?? { label: meta.label }}
-          accent={meta.accent}
-        />
+        <div className="flex items-center gap-2">
+          {/* 운영 포털만 화면 모드(라이트/다크) 토글 — 고객은 Light 고정 */}
+          {role !== 'customer' && <ThemeToggle />}
+          <HeaderMenu
+            sections={sections}
+            user={user ?? { label: meta.label }}
+            accent={meta.accent}
+          />
+        </div>
       </div>
     </header>
   );

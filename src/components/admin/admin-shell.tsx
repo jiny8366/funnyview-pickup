@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { HeaderMenu, type MenuSection } from '@/components/layout/header-menu';
+import { ThemeToggle } from '@/components/layout/theme-toggle';
 import {
   IconBox,
   IconCart,
@@ -135,12 +136,15 @@ export function AdminShell({
             </span>
           </Link>
 
-          <HeaderMenu
-            sections={sections}
-            user={{ label: isMaster ? '🛡 마스터' : '관리자', sub: user?.phone ?? '' }}
-            userPermissions={permissions}
-            accent="red"
-          />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <HeaderMenu
+              sections={sections}
+              user={{ label: isMaster ? '🛡 마스터' : '관리자', sub: user?.phone ?? '' }}
+              userPermissions={permissions}
+              accent="red"
+            />
+          </div>
         </div>
       </header>
 
