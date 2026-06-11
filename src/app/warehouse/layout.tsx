@@ -20,7 +20,7 @@ export default function WarehouseLayout({
   return (
     <div className="min-h-screen bg-gray-50">
       <RoleHeader role="warehouse" nav={[...NAV]} />
-      <main className="mx-auto max-w-6xl px-4 py-5 pb-safe md:px-6 md:py-8">{children}</main>
+      <main className="animate-fade-in mx-auto max-w-6xl px-4 py-5 pb-safe md:px-6 md:py-8">{children}</main>
     </div>
   );
 }
