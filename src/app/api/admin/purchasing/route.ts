@@ -95,7 +95,9 @@ export async function GET(req: Request) {
           lensType: lenses.lensType,
           replacementCycle: lenses.replacementCycle,
           piecesPerBox: lenses.piecesPerBox,
-          variantCount: sql<number>`(SELECT COUNT(*) FROM lens_variants v WHERE v.lens_id = ${lenses.id} AND v.is_active = true)::int`,
+          // 주의: 단일 테이블 쿼리에선 drizzle 이 ${lenses.id} 를 비한정 "id"로 렌더링해
+          // 서브쿼리 내부에서 v.id 로 묶이는 버그 → 리터럴로 한정 (lenses.id)
+          variantCount: sql<number>`(SELECT COUNT(*) FROM lens_variants v WHERE v.lens_id = lenses.id AND v.is_active = true)::int`,
         })
         .from(lenses)
         .where(and(...conds))
@@ -221,7 +223,8 @@ export async function GET(req: Request) {
         .leftJoin(sold, eq(sold.variantId, lensVariants.id))
         .where(and(...conds))
         .orderBy(sql`COALESCE(${sold.qty},0) DESC`, lenses.brand, lenses.name, lensVariants.sphere)
-        .limit(1000),
+        // 도수표는 제품 전체 도수 필요 (토릭은 1,400+ 가능) — 그 외 모드는 1000 상한
+        .limit(variantsOf ? 3000 : 1000),
     );
 
     const out = rows.map((r) => {
