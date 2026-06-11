@@ -21,6 +21,13 @@ interface Row {
   axis: number | null;
   lensName: string;
   lensBrand: string;
+  supplierId: string | null;
+  supplierName: string | null;
+}
+
+interface Supplier {
+  id: string;
+  name: string;
 }
 
 const STATUS_LABEL: Record<string, string> = {
@@ -48,6 +55,15 @@ export default function UrgentPurchasesPage() {
   const [rows, setRows] = useState<Row[] | null>(null);
   const [filter, setFilter] = useState(FILTERS[0].key);
   const [busy, setBusy] = useState<string | null>(null);
+  const [supplierList, setSupplierList] = useState<Supplier[]>([]);
+
+  // 매입처 드롭다운 — 활성 매입처 목록 (입고 시 자동반영분을 여기서 수정 가능)
+  useEffect(() => {
+    fetch('/api/admin/suppliers')
+      .then((r) => r.json())
+      .then((j) => setSupplierList((j.suppliers ?? []).map((s: Supplier) => ({ id: s.id, name: s.name }))))
+      .catch(() => setSupplierList([]));
+  }, []);
 
   const load = useCallback(async () => {
     const res = await fetch('/api/admin/urgent-purchases?status=' + filter);
@@ -61,19 +77,20 @@ export default function UrgentPurchasesPage() {
     return () => clearInterval(t);
   }, [load]);
 
-  async function setStatus(id: string, status: string) {
+  async function patch(id: string, body: { status?: string; supplierId?: string | null }) {
     setBusy(id);
     try {
       await fetch('/api/admin/urgent-purchases', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ id, status }),
+        body: JSON.stringify({ id, ...body }),
       });
       await load();
     } finally {
       setBusy(null);
     }
   }
+  const setStatus = (id: string, status: string) => patch(id, { status });
 
   function spec(r: Row) {
     let s = `SPH ${r.sphere}`;
@@ -97,7 +114,7 @@ export default function UrgentPurchasesPage() {
             key={f.key}
             type="button"
             onClick={() => setFilter(f.key)}
-            className={`rounded-full px-3 py-1 text-xs font-medium ${
+            className={`press rounded-full px-3 py-1 text-xs font-medium ${
               filter === f.key ? 'bg-gray-900 text-white' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'
             }`}
           >
@@ -113,6 +130,7 @@ export default function UrgentPurchasesPage() {
               <th className="px-3 py-2 text-left">상태</th>
               <th className="px-3 py-2 text-left">제품 / 도수</th>
               <th className="px-3 py-2 text-right">부족수량</th>
+              <th className="px-3 py-2 text-left">매입처</th>
               <th className="px-3 py-2 text-left">원인 주문</th>
               <th className="px-3 py-2 text-left">등록일시</th>
               <th className="px-3 py-2 text-right">처리</th>
@@ -120,9 +138,9 @@ export default function UrgentPurchasesPage() {
           </thead>
           <tbody className="divide-y divide-gray-100">
             {rows === null ? (
-              <tr><td colSpan={6} className="px-3 py-6 text-center text-gray-400">불러오는 중...</td></tr>
+              <tr><td colSpan={7} className="px-3 py-6 text-center text-gray-400">불러오는 중...</td></tr>
             ) : rows.length === 0 ? (
-              <tr><td colSpan={6} className="px-3 py-10 text-center text-gray-400">해당 상태의 급매입 건이 없습니다</td></tr>
+              <tr><td colSpan={7} className="px-3 py-10 text-center text-gray-400">해당 상태의 급매입 건이 없습니다</td></tr>
             ) : (
               rows.map((r) => (
                 <tr key={r.id}>
@@ -137,6 +155,26 @@ export default function UrgentPurchasesPage() {
                     {r.note && <div className="text-xs text-gray-400">메모: {r.note}</div>}
                   </td>
                   <td className="px-3 py-2 text-right font-semibold text-red-700">{r.quantityShort}박스</td>
+                  <td className="px-3 py-2">
+                    {r.status === 'received' || r.status === 'cancelled' ? (
+                      <span className="text-xs text-gray-600">{r.supplierName ?? '—'}</span>
+                    ) : (
+                      <select
+                        value={r.supplierId ?? ''}
+                        disabled={busy === r.id}
+                        onChange={(e) => patch(r.id, { supplierId: e.target.value || null })}
+                        className="h-8 max-w-[140px] rounded-md border border-gray-200 bg-white px-1.5 text-xs"
+                      >
+                        <option value="">미지정</option>
+                        {supplierList.map((s) => (
+                          <option key={s.id} value={s.id}>{s.name}</option>
+                        ))}
+                        {r.supplierId && !supplierList.some((s) => s.id === r.supplierId) && (
+                          <option value={r.supplierId}>{r.supplierName ?? '(비활성 매입처)'}</option>
+                        )}
+                      </select>
+                    )}
+                  </td>
                   <td className="px-3 py-2">
                     <span className="font-mono text-xs">{r.orderNumber}</span>
                     <div className="text-[11px] text-gray-400">주문상태 {r.orderStatus}</div>
@@ -196,7 +234,7 @@ function ActionBtn({
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={`rounded border px-2 py-1 text-xs font-medium disabled:opacity-50 ${
+      className={`press rounded border px-2 py-1 text-xs font-medium disabled:opacity-50 ${
         danger
           ? 'border-red-200 bg-white text-red-600 hover:bg-red-50'
           : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'

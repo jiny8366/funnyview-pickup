@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { desc, eq, inArray } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { lensVariants, lenses, orders, urgentPurchases } from '@/db/schema';
+import { lensVariants, lenses, orders, suppliers, urgentPurchases } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { withDbRetry } from '@/lib/db/retry';
 
@@ -39,11 +39,14 @@ export async function GET(req: Request) {
         axis: lensVariants.axis,
         lensName: lenses.name,
         lensBrand: lenses.brand,
+        supplierId: urgentPurchases.supplierId,
+        supplierName: suppliers.name,
       })
       .from(urgentPurchases)
       .innerJoin(orders, eq(orders.id, urgentPurchases.orderId))
       .innerJoin(lensVariants, eq(lensVariants.id, urgentPurchases.variantId))
       .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
+      .leftJoin(suppliers, eq(suppliers.id, urgentPurchases.supplierId))
       .where(inArray(urgentPurchases.status, statuses))
       .orderBy(desc(urgentPurchases.createdAt)),
   );
@@ -53,10 +56,11 @@ export async function GET(req: Request) {
 
 const patchSchema = z.object({
   id: z.string().uuid(),
-  status: z.enum(['requested', 'ordered', 'received', 'cancelled']),
+  status: z.enum(['requested', 'ordered', 'received', 'cancelled']).optional(),
+  supplierId: z.string().uuid().nullable().optional(), // 매입처 지정/해제 (W1 토대 9f4ddb1)
 });
 
-/** 상태 변경: requested(대기)→ordered(발주)→received(입고완료, 재검수 가능)/cancelled */
+/** 상태 변경(requested→ordered→received/cancelled) 및/또는 매입처 변경 */
 export async function PATCH(req: Request) {
   const me = await getCurrentUser();
   if (!me || me.role !== 'admin') {
@@ -66,14 +70,20 @@ export async function PATCH(req: Request) {
   if (!parsed.success) {
     return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
   }
-  const { id, status } = parsed.data;
-  const resolved = status === 'received' || status === 'cancelled';
+  const { id, status, supplierId } = parsed.data;
+  if (status === undefined && supplierId === undefined) {
+    return NextResponse.json({ error: 'NO_CHANGE' }, { status: 400 });
+  }
+
+  const set: Record<string, unknown> = {};
+  if (status !== undefined) {
+    set.status = status;
+    set.resolvedAt = status === 'received' || status === 'cancelled' ? new Date() : null;
+  }
+  if (supplierId !== undefined) set.supplierId = supplierId;
 
   await withDbRetry(() =>
-    db
-      .update(urgentPurchases)
-      .set({ status, resolvedAt: resolved ? new Date() : null })
-      .where(eq(urgentPurchases.id, id)),
+    db.update(urgentPurchases).set(set).where(eq(urgentPurchases.id, id)),
   );
   return NextResponse.json({ ok: true });
 }
