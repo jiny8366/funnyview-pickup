@@ -166,9 +166,6 @@ function InboundNewInner() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-xl font-semibold md:text-2xl">전표 입고 등록</h1>
-          <p className="mt-1 text-sm text-gray-500">
-            제품을 선택하면 활성 도수 목록이 표시됩니다. 수량과 단가를 입력하고 일괄 등록하세요.
-          </p>
         </div>
         <div className="flex gap-2">
           <Button variant="secondary" size="sm" onClick={() => router.push('/warehouse/inbound')}>
@@ -185,7 +182,6 @@ function InboundNewInner() {
         <CardHeader>
           <div>
             <CardTitle>전표 정보</CardTitle>
-            <CardDescription>입고일, 전표번호, 메모를 입력하세요</CardDescription>
           </div>
         </CardHeader>
         <CardBody>
@@ -228,7 +224,6 @@ function InboundNewInner() {
         <CardHeader>
           <div>
             <CardTitle>제품 선택</CardTitle>
-            <CardDescription>브랜드, 제품명, 제품코드로 검색하세요</CardDescription>
           </div>
         </CardHeader>
         <CardBody>
