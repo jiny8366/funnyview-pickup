@@ -91,7 +91,7 @@ export async function GET(req: Request) {
     .groupBy(inventoryLots.variantId)
     .as('lot_agg');
 
-  const rows = await db
+  const rowsQuery = db
     .select({
       inventoryId: inventory.id,
       variantId: lensVariants.id,
@@ -133,6 +133,20 @@ export async function GET(req: Request) {
       sql` AND `,
     ))
     .orderBy(asc(lenses.brand), asc(lenses.name), asc(lensVariants.sphere));
+
+  // [임시 진단3 — #23] 본 쿼리의 생성 SQL 노출. 확인 후 제거.
+  if (url.searchParams.get('debug') === 'main') {
+    const built = (rowsQuery as unknown as { toSQL: () => { sql: string; params: unknown[] } }).toSQL();
+    let count = -1;
+    let err: string | null = null;
+    try {
+      count = (await rowsQuery).length;
+    } catch (e) {
+      err = (e as Error).message;
+    }
+    return NextResponse.json({ count, err, params: built.params, sql: built.sql });
+  }
+  const rows = await rowsQuery;
 
   // 엑셀(CSV) 다운로드 — UTF-8 BOM 으로 한글 엑셀 호환
   if (format === 'csv') {
