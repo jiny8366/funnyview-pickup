@@ -34,7 +34,7 @@ export async function GET(req: Request) {
 
 /**
  * POST /api/admin/suppliers — 매입처 생성. admin 전용.
- *   body: { name(필수), bizNo?, address?, businessAddress?, contact?, phone?, memo? }
+ *   body: { name(필수), bizNo?, postalCode?, address?, addressDetail?, contact?, phone?, memo? }
  */
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -61,8 +61,9 @@ export async function POST(req: Request) {
     .values({
       name,
       bizNo: str('bizNo'),
+      postalCode: str('postalCode'),
       address: str('address'),
-      businessAddress: str('businessAddress'),
+      addressDetail: str('addressDetail'),
       contact: str('contact'),
       phone: str('phone'),
       memo: str('memo'),

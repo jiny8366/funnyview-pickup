@@ -83,7 +83,7 @@ export default function CartPage() {
   }
 
   return (
-    <div className="min-h-screen bg-white pb-40 md:pb-0">
+    <div className="animate-fade-in min-h-screen bg-white pb-40 md:pb-0">
       {/* Header */}
       <SiteHeader />
 
