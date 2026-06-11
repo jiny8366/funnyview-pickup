@@ -84,7 +84,7 @@ function CustomerOrdersInner() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="animate-fade-in space-y-4">
       <h1 className="text-xl font-bold md:text-2xl">구매내역</h1>
 
       <div className="flex gap-1 overflow-x-auto rounded-2xl border border-gray-200 bg-white p-1">
