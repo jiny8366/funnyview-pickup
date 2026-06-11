@@ -4,6 +4,7 @@ import { db } from '@/db/client';
 import {
   groupProductCommissions,
   lenses,
+  storeProductCommissionHistory,
   storeProductCommissions,
   stores,
 } from '@/db/schema';
@@ -101,6 +102,23 @@ export async function POST(
     return NextResponse.json({ error: 'commissionRate invalid' }, { status: 400 });
   }
 
+  // 이전 값(있으면 update, 없으면 set) + 제품 스냅샷 조회 — 이력 기록용
+  const [existing] = await db
+    .select({ commissionRate: storeProductCommissions.commissionRate })
+    .from(storeProductCommissions)
+    .where(
+      and(
+        eq(storeProductCommissions.storeId, params.id),
+        eq(storeProductCommissions.lensId, lensId),
+      ),
+    )
+    .limit(1);
+  const [lens] = await db
+    .select({ brand: lenses.brand, name: lenses.name })
+    .from(lenses)
+    .where(eq(lenses.id, lensId))
+    .limit(1);
+
   const [row] = await db
     .insert(storeProductCommissions)
     .values({ storeId: params.id, lensId, commissionRate: rate })
@@ -109,6 +127,18 @@ export async function POST(
       set: { commissionRate: rate, updatedAt: new Date() },
     })
     .returning();
+
+  // 변경이력 기록 (스냅샷)
+  await db.insert(storeProductCommissionHistory).values({
+    storeId: params.id,
+    lensId,
+    brand: lens?.brand ?? null,
+    productName: lens?.name ?? null,
+    action: existing ? 'update' : 'set',
+    oldRate: existing?.commissionRate ?? null,
+    newRate: rate,
+    changedBy: user.id,
+  });
 
   return NextResponse.json({ ok: true, commission: row });
 }
@@ -137,6 +167,23 @@ export async function DELETE(
     return NextResponse.json({ error: 'lensId required' }, { status: 400 });
   }
 
+  // 삭제 전 값/스냅샷 조회 — 이력 기록용
+  const [existing] = await db
+    .select({ commissionRate: storeProductCommissions.commissionRate })
+    .from(storeProductCommissions)
+    .where(
+      and(
+        eq(storeProductCommissions.storeId, params.id),
+        eq(storeProductCommissions.lensId, lensId),
+      ),
+    )
+    .limit(1);
+  const [lens] = await db
+    .select({ brand: lenses.brand, name: lenses.name })
+    .from(lenses)
+    .where(eq(lenses.id, lensId))
+    .limit(1);
+
   await db
     .delete(storeProductCommissions)
     .where(
@@ -145,6 +192,20 @@ export async function DELETE(
         eq(storeProductCommissions.lensId, lensId),
       ),
     );
+
+  // 실제로 오버라이드가 있었던 경우에만 이력 기록
+  if (existing) {
+    await db.insert(storeProductCommissionHistory).values({
+      storeId: params.id,
+      lensId,
+      brand: lens?.brand ?? null,
+      productName: lens?.name ?? null,
+      action: 'delete',
+      oldRate: existing.commissionRate,
+      newRate: null,
+      changedBy: user.id,
+    });
+  }
 
   return NextResponse.json({ ok: true });
 }

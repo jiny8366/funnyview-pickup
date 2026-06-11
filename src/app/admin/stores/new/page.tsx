@@ -209,14 +209,6 @@ export default function NewStorePage() {
                 className={inputCls}
               />
             </Field>
-            <Field label="정렬 순서" hint="낮을수록 우선 노출 (0 이 가장 위)">
-              <input
-                type="number"
-                value={form.sortOrder}
-                onChange={(e) => update('sortOrder', Number(e.target.value))}
-                className={inputCls}
-              />
-            </Field>
           </Grid2>
         </Section>
 
@@ -240,7 +232,7 @@ export default function NewStorePage() {
 }
 
 const inputCls =
-  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none';
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none';
 
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (

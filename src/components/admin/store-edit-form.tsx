@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { Button } from '@/components/ui/button';
 import { AddressSearchButton } from '@/components/ui/address-search';
@@ -34,25 +34,8 @@ interface GroupRow {
   commissionRate: string;
 }
 
-interface LensRow {
-  id: string;
-  brand: string;
-  name: string;
-  productCode: string;
-}
-
-interface StoreProductCommission {
-  id: string;
-  lensId: string;
-  commissionRate: string;
-  brand: string;
-  name: string;
-  productCode: string;
-  inheritedGroupProductRate: string | null;
-}
-
 const inputCls =
-  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none';
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm focus:border-brand-500 focus:outline-none';
 
 export function StoreEditForm({ storeId }: { storeId: string }) {
   const router = useRouter();
@@ -110,7 +93,6 @@ export function StoreEditForm({ storeId }: { storeId: string }) {
           groupId: s.groupId ?? '',
           isActive: s.isActive,
         });
-        setGroupOverallRate(s.groupCommissionRate);
       } else {
         setError('매장을 찾을 수 없습니다.');
       }
@@ -121,8 +103,6 @@ export function StoreEditForm({ storeId }: { storeId: string }) {
       setLoading(false);
     }
   }
-
-  const [groupOverallRate, setGroupOverallRate] = useState<string | null>(null);
 
   useEffect(() => {
     loadStore();
@@ -180,7 +160,7 @@ export function StoreEditForm({ storeId }: { storeId: string }) {
         representativeName: form.representativeName,
         representativePhone: form.representativePhone,
         commissionRate: form.commissionRate || '0',
-        sortOrder: Number(form.sortOrder) || 0,
+        sortOrder: 0,
         groupId: form.groupId || null,
         isActive: form.isActive,
       }),
@@ -192,9 +172,6 @@ export function StoreEditForm({ storeId }: { storeId: string }) {
       return;
     }
     setSavedMsg('저장되었습니다.');
-    // 그룹 변경 시 상속 참고치 갱신을 위해 다시 로드
-    const g = groups.find((x) => x.id === form.groupId);
-    setGroupOverallRate(g?.commissionRate ?? null);
     router.refresh();
   }
 
@@ -209,8 +186,8 @@ export function StoreEditForm({ storeId }: { storeId: string }) {
   return (
     <PageWrap>
       <PageHeader
-        title={`가맹점 수정 — ${form.name || form.code}`}
-        description={`코드 ${form.code} (변경 불가). 기본 정보·운영 설정·제품별 수수료율을 관리합니다.`}
+        title={`픽업가맹점 — ${form.name || form.code}`}
+        description={`코드 ${form.code} (변경 불가).`}
         actions={
           <Link href="/admin/stores">
             <Button variant="secondary">목록으로</Button>
@@ -219,7 +196,22 @@ export function StoreEditForm({ storeId }: { storeId: string }) {
       />
 
       <form onSubmit={handleSubmit} className="space-y-6">
-        <Section title="기본 정보">
+        <Section
+          title="기본 정보"
+          headerRight={
+            <label className="flex items-center gap-2 text-sm font-medium text-gray-700">
+              <span className={form.isActive ? 'text-emerald-600' : 'text-gray-400'}>
+                {form.isActive ? '활성' : '비활성'}
+              </span>
+              <input
+                type="checkbox"
+                checked={form.isActive}
+                onChange={(e) => update('isActive', e.target.checked)}
+                className="h-4 w-4"
+              />
+            </label>
+          }
+        >
           <Grid2>
             <Field label="가맹점 코드" hint="변경 불가">
               <input
@@ -329,16 +321,6 @@ export function StoreEditForm({ storeId }: { storeId: string }) {
                 className={inputCls}
               />
             </Field>
-            <Field label="정렬 순서" hint="낮을수록 우선 노출 (0 이 가장 위)">
-              <input
-                type="number"
-                value={form.sortOrder}
-                onChange={(e) => update('sortOrder', Number(e.target.value))}
-                className={inputCls}
-              />
-            </Field>
-          </Grid2>
-          <Grid2>
             <Field label="소속 그룹" hint="그룹 전체율·그룹×제품율이 fallback 으로 적용">
               <select
                 value={form.groupId}
@@ -352,16 +334,6 @@ export function StoreEditForm({ storeId }: { storeId: string }) {
                   </option>
                 ))}
               </select>
-            </Field>
-            <Field label="활성 상태">
-              <label className="flex h-[38px] items-center gap-2 text-sm text-gray-700">
-                <input
-                  type="checkbox"
-                  checked={form.isActive}
-                  onChange={(e) => update('isActive', e.target.checked)}
-                />
-                활성 (체크 해제 시 비활성)
-              </label>
             </Field>
           </Grid2>
         </Section>
@@ -382,277 +354,25 @@ export function StoreEditForm({ storeId }: { storeId: string }) {
           </Button>
         </div>
       </form>
-
-      {/* 제품별 수수료율 (매장 override) */}
-      <div className="mt-8">
-        <StoreProductCommissions
-          storeId={storeId}
-          storeOverallRate={form.commissionRate}
-          groupOverallRate={groupOverallRate}
-        />
-      </div>
     </PageWrap>
   );
 }
 
-/** 매장 × 제품 수수료율 오버라이드 섹션. */
-function StoreProductCommissions({
-  storeId,
-  storeOverallRate,
-  groupOverallRate,
+function Section({
+  title,
+  headerRight,
+  children,
 }: {
-  storeId: string;
-  storeOverallRate: string;
-  groupOverallRate: string | null;
+  title: string;
+  headerRight?: React.ReactNode;
+  children: React.ReactNode;
 }) {
-  const [items, setItems] = useState<StoreProductCommission[]>([]);
-  const [lenses, setLenses] = useState<LensRow[]>([]);
-  const [query, setQuery] = useState('');
-  const [selectedLensId, setSelectedLensId] = useState('');
-  const [rate, setRate] = useState('');
-  const [busy, setBusy] = useState(false);
-  const [msg, setMsg] = useState<string | null>(null);
-
-  async function load() {
-    try {
-      const [cr, lr] = await Promise.all([
-        fetch(`/api/admin/stores/${storeId}/product-commissions`).then((r) => r.json()),
-        fetch('/api/admin/lenses').then((r) => r.json()),
-      ]);
-      setItems(cr.commissions ?? []);
-      setLenses(
-        (lr.lenses ?? []).map((l: LensRow) => ({
-          id: l.id,
-          brand: l.brand,
-          name: l.name,
-          productCode: l.productCode,
-        })),
-      );
-    } catch {
-      setMsg('불러오기 실패');
-    }
-  }
-
-  useEffect(() => {
-    load();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [storeId]);
-
-  const overriddenIds = useMemo(
-    () => new Set(items.map((i) => i.lensId)),
-    [items],
-  );
-
-  const filtered = useMemo(() => {
-    const q = query.trim().toLowerCase();
-    if (!q) return [];
-    return lenses
-      .filter(
-        (l) =>
-          l.brand.toLowerCase().includes(q) ||
-          l.name.toLowerCase().includes(q) ||
-          l.productCode.toLowerCase().includes(q),
-      )
-      .slice(0, 20);
-  }, [query, lenses]);
-
-  // 선택 제품의 상속(fallback) 참고치 — placeholder/힌트용
-  const inheritedHint = useMemo(() => {
-    const so = Number(storeOverallRate);
-    if (Number.isFinite(so) && so > 0) return `매장 전체 ${storeOverallRate}%`;
-    if (groupOverallRate != null && Number(groupOverallRate) > 0)
-      return `그룹 전체 ${groupOverallRate}%`;
-    return '0%';
-  }, [storeOverallRate, groupOverallRate]);
-
-  async function save() {
-    if (!selectedLensId) {
-      setMsg('제품을 선택하세요');
-      return;
-    }
-    if (rate.trim() === '' || Number.isNaN(Number(rate))) {
-      setMsg('수수료율을 입력하세요');
-      return;
-    }
-    setBusy(true);
-    setMsg(null);
-    try {
-      const res = await fetch(`/api/admin/stores/${storeId}/product-commissions`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ lensId: selectedLensId, commissionRate: rate.trim() }),
-      });
-      if (!res.ok) throw new Error();
-      setMsg('저장되었습니다');
-      setSelectedLensId('');
-      setQuery('');
-      setRate('');
-      await load();
-    } catch {
-      setMsg('저장 실패');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function remove(lensId: string) {
-    if (typeof window !== 'undefined' && !window.confirm('이 제품 오버라이드를 삭제할까요? 삭제하면 상속값이 적용됩니다.')) {
-      return;
-    }
-    setBusy(true);
-    setMsg(null);
-    try {
-      const res = await fetch(
-        `/api/admin/stores/${storeId}/product-commissions?lensId=${encodeURIComponent(lensId)}`,
-        { method: 'DELETE' },
-      );
-      if (!res.ok) throw new Error();
-      await load();
-    } catch {
-      setMsg('삭제 실패');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  function inheritedFor(item: StoreProductCommission): string {
-    if (item.inheritedGroupProductRate != null && Number(item.inheritedGroupProductRate) >= 0)
-      return `그룹×제품 ${item.inheritedGroupProductRate}%`;
-    return inheritedHint;
-  }
-
-  const selectedLens = lenses.find((l) => l.id === selectedLensId);
-
   return (
     <div className="rounded-2xl border border-gray-200 bg-white p-5">
-      <h2 className="mb-1 text-sm font-bold text-gray-900">제품별 수수료율 (매장 오버라이드)</h2>
-      <p className="mb-4 text-xs text-gray-500">
-        여기서 설정한 값이 해당 제품의 매장 정산율로 우선 적용됩니다(가장 구체적). 미설정 제품은 상속값(그룹×제품 → 매장 전체 → 그룹 전체)이 적용됩니다.
-      </p>
-
-      {/* 제품 검색 + 추가 */}
-      <div className="mb-4 grid gap-2 md:grid-cols-[1fr_140px_auto]">
-        <div className="relative">
-          <input
-            type="text"
-            value={selectedLens ? `${selectedLens.brand} ${selectedLens.name} (${selectedLens.productCode})` : query}
-            onChange={(e) => {
-              setSelectedLensId('');
-              setQuery(e.target.value);
-            }}
-            placeholder="제품 검색 (브랜드/제품명/코드)"
-            className={inputCls}
-          />
-          {!selectedLensId && filtered.length > 0 && (
-            <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
-              {filtered.map((l) => (
-                <li key={l.id}>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setSelectedLensId(l.id);
-                      setQuery('');
-                    }}
-                    disabled={overriddenIds.has(l.id)}
-                    className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-40"
-                  >
-                    <span>
-                      <span className="font-medium text-gray-900">{l.brand}</span>{' '}
-                      <span className="text-gray-700">{l.name}</span>{' '}
-                      <span className="font-mono text-xs text-gray-400">{l.productCode}</span>
-                    </span>
-                    {overriddenIds.has(l.id) && (
-                      <span className="text-xs text-gray-400">이미 설정됨</span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <input
-          type="number"
-          step="0.01"
-          value={rate}
-          onChange={(e) => setRate(e.target.value)}
-          placeholder={`상속: ${inheritedHint}`}
-          className={inputCls}
-        />
-        <Button type="button" onClick={save} disabled={busy || !selectedLensId}>
-          추가/저장
-        </Button>
+      <div className="mb-4 flex items-center justify-between">
+        <h2 className="text-sm font-bold text-gray-900">{title}</h2>
+        {headerRight}
       </div>
-      {msg && <p className="mb-3 text-sm text-gray-600">{msg}</p>}
-
-      {/* 목록 */}
-      {items.length === 0 ? (
-        <p className="px-1 py-4 text-sm text-gray-500">설정된 제품별 오버라이드가 없습니다.</p>
-      ) : (
-        <div className="overflow-x-auto rounded-lg border border-gray-200">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs text-gray-500">
-              <tr>
-                <th className="px-3 py-2 text-left">브랜드</th>
-                <th className="px-3 py-2 text-left">제품명</th>
-                <th className="px-3 py-2 text-left">코드</th>
-                <th className="px-3 py-2 text-right">매장 수수료율</th>
-                <th className="px-3 py-2 text-left">상속값(참고)</th>
-                <th className="px-3 py-2 text-right">작업</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {items.map((it) => (
-                <tr key={it.id}>
-                  <td className="px-3 py-2 font-medium text-gray-900">{it.brand}</td>
-                  <td className="px-3 py-2 text-gray-700">{it.name}</td>
-                  <td className="px-3 py-2 font-mono text-xs text-gray-400">{it.productCode}</td>
-                  <td className="px-3 py-2 text-right">
-                    <input
-                      type="number"
-                      step="0.01"
-                      defaultValue={it.commissionRate}
-                      onBlur={async (e) => {
-                        const v = e.target.value.trim();
-                        if (v === '' || v === it.commissionRate || Number.isNaN(Number(v))) return;
-                        setBusy(true);
-                        await fetch(`/api/admin/stores/${storeId}/product-commissions`, {
-                          method: 'POST',
-                          headers: { 'content-type': 'application/json' },
-                          body: JSON.stringify({ lensId: it.lensId, commissionRate: v }),
-                        });
-                        setBusy(false);
-                        await load();
-                      }}
-                      className="w-24 rounded border border-gray-200 px-2 py-1 text-right text-sm focus:border-brand-500 focus:outline-none"
-                    />
-                    <span className="ml-1 text-gray-400">%</span>
-                  </td>
-                  <td className="px-3 py-2 text-xs text-gray-400">{inheritedFor(it)}</td>
-                  <td className="px-3 py-2 text-right">
-                    <Button
-                      size="sm"
-                      variant="danger"
-                      type="button"
-                      onClick={() => remove(it.lensId)}
-                      disabled={busy}
-                    >
-                      삭제
-                    </Button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
-    </div>
-  );
-}
-
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div className="rounded-2xl border border-gray-200 bg-white p-5">
-      <h2 className="mb-4 text-sm font-bold text-gray-900">{title}</h2>
       <div className="space-y-4">{children}</div>
     </div>
   );

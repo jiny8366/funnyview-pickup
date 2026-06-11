@@ -225,6 +225,20 @@
       "when": 1780500400000,
       "tag": "0031_product_commissions",
       "breakpoints": true
+    },
+    {
+      "idx": 32,
+      "version": "7",
+      "when": 1780500500000,
+      "tag": "0032_store_accounts",
+      "breakpoints": true
+    },
+    {
+      "idx": 33,
+      "version": "7",
+      "when": 1780500600000,
+      "tag": "0033_commission_history",
+      "breakpoints": true
     }
   ]
 }

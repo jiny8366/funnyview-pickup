@@ -172,3 +172,40 @@ export const storeProductCommissions = pgTable(
 export type StoreProductCommission = typeof storeProductCommissions.$inferSelect;
 export type NewStoreProductCommission =
   typeof storeProductCommissions.$inferInsert;
+
+/**
+ * 매장 × 제품 수수료율 변경이력.
+ * set/update/delete 시점마다 한 행씩 기록(스냅샷). 제품이 이후 변경/삭제돼도
+ * 표시용 brand/productName 스냅샷으로 이력은 그대로 유지된다.
+ * changedBy 는 작업자(users.id, nullable — 시스템/유실 대비).
+ */
+export const storeProductCommissionHistory = pgTable(
+  'store_product_commission_history',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id),
+    lensId: uuid('lens_id').notNull(),
+    brand: text('brand'),
+    productName: text('product_name'),
+    action: text('action').notNull(), // 'set' | 'update' | 'delete'
+    oldRate: numeric('old_rate', { precision: 5, scale: 2 }),
+    newRate: numeric('new_rate', { precision: 5, scale: 2 }),
+    changedBy: uuid('changed_by'),
+    changedAt: timestamp('changed_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    storeChangedAtIdx: index('store_product_commission_history_store_changed_idx').on(
+      t.storeId,
+      t.changedAt.desc(),
+    ),
+  }),
+);
+
+export type StoreProductCommissionHistory =
+  typeof storeProductCommissionHistory.$inferSelect;
+export type NewStoreProductCommissionHistory =
+  typeof storeProductCommissionHistory.$inferInsert;
