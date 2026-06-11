@@ -82,17 +82,27 @@ export function MyPowerSelector({
         setNeedLogin(true);
         return;
       }
+      if (!res.ok) {
+        setMsg('도수 정보를 불러오지 못했습니다. 잠시 후 다시 시도해 주세요.');
+        return;
+      }
       const j = await res.json().catch(() => ({}));
-      const list: Presc[] = (j?.prescriptions ?? [])
-        .filter((p: { eyeSide: string }) => p.eyeSide === eyeSide)
-        .map((p: Record<string, unknown>) => ({
-          eyeSide: p.eyeSide as 'left' | 'right',
-          kind: String(p.kind ?? 'contact'),
-          sphere: Number(p.sphere),
-          cylinder: p.cylinder != null ? Number(p.cylinder) : null,
-          axis: p.axis != null ? Number(p.axis) : null,
-          addPower: p.addPower != null ? Number(p.addPower) : null,
-        }));
+      // API 는 그룹 형태 {recordedAt, kind, left:{sphere…}|null, right:{…}|null} (최신순).
+      // 현재 눈(eyeSide)의 데이터가 있는 그룹만 평면화해 사용한다.
+      type EyeData = { sphere: string | number; cylinder: string | number | null; axis: number | null; addPower: string | number | null };
+      const list: Presc[] = ((j?.prescriptions ?? []) as Array<Record<string, unknown>>)
+        .flatMap((g) => {
+          const eye = g[eyeSide] as EyeData | null | undefined;
+          if (!eye || eye.sphere == null) return [];
+          return [{
+            eyeSide,
+            kind: String(g.kind ?? 'contact'),
+            sphere: Number(eye.sphere),
+            cylinder: eye.cylinder != null ? Number(eye.cylinder) : null,
+            axis: eye.axis != null ? Number(eye.axis) : null,
+            addPower: eye.addPower != null ? Number(eye.addPower) : null,
+          }];
+        });
       if (list.length === 0) {
         setMsg('저장된 도수가 없습니다. 마이페이지에서 시력정보를 입력해 주세요.');
         return;
