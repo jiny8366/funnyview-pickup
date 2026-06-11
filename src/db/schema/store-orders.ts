@@ -4,6 +4,7 @@ import {
   pgTable,
   text,
   timestamp,
+  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 import { stores } from './stores';
@@ -47,6 +48,8 @@ export const storeOrders = pgTable(
       t.storeId,
       t.createdAt.desc(),
     ),
+    // 발주번호 동시생성 중복 방지 (0039)
+    orderNumberUnique: uniqueIndex('store_orders_order_number_unique').on(t.orderNumber),
   }),
 );
 

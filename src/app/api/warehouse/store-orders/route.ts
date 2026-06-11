@@ -4,6 +4,8 @@ import { db } from '@/db/client';
 import { storeOrderItems, storeOrders, stores } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { withDbRetry } from '@/lib/db/retry';
+import { InventoryError } from '@/lib/inventory-fifo';
+import { shipStoreOrder, StoreOrderShipError } from '@/lib/orders/store-order-ship';
 
 export const dynamic = 'force-dynamic';
 
@@ -85,6 +87,25 @@ export async function PATCH(req: Request) {
       { error: 'INVALID_TRANSITION', from: current.status, to: next },
       { status: 409 },
     );
+  }
+
+  // 배송 처리: FIFO 재고 차감 포함 원자 전이 (부족 시 롤백·409 — 입고/급매입 후 재시도)
+  if (next === 'shipped') {
+    try {
+      const r = await shipStoreOrder(id);
+      return NextResponse.json({ ok: true, ...r });
+    } catch (e) {
+      if (e instanceof InventoryError) {
+        return NextResponse.json(
+          { error: e.code, message: e.message, detail: e.detail },
+          { status: 409 },
+        );
+      }
+      if (e instanceof StoreOrderShipError) {
+        return NextResponse.json({ error: e.code, message: e.message }, { status: 409 });
+      }
+      throw e;
+    }
   }
 
   const [updated] = await db
