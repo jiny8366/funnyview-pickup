@@ -364,7 +364,7 @@ export default function PurchasingPage() {
                       </td>
                       <td className="px-3 py-2 text-right text-gray-600">{pr.variantCount}</td>
                       <td className="px-3 py-2 text-right text-xs text-amber-700">
-                        {doseLensId?.id === pr.id ? '선택됨 ▾' : '도수 보기 ›'}
+                        도수정보 ›
                       </td>
                     </tr>
                   ))}
@@ -374,7 +374,7 @@ export default function PurchasingPage() {
           )}
           {/* 2단계: 선택한 제품의 도수 리스트 — 하단 인라인 (안전재고량 관리와 동일 컨트롤, JINY) */}
           {doseLensId && (
-            <DoseListPanel
+            <DoseListModal
               product={doseLensId}
               onClose={() => setDoseLensId(null)}
               onApply={(items) => {
@@ -745,11 +745,11 @@ function OrderDetailModal({
 
 
 /**
- * 도수 리스트 패널 (JINY) — 제품명 리스트에서 선택하면 하단에 인라인으로 표시.
- * 체크해서 '발주리스트에 반영'(수량 0) — 수량은 발주리스트에서 확정한다 (수동발주).
+ * 도수정보 자식창 (JINY) — 제품군 리스트에서 제품 선택 시 모달로 표시.
+ * 도수를 체크해 '매입리스트에 포함'(수량 0) — 수량은 발주리스트에서 확정 (수동발주).
  * 토릭은 우측 상단 난시도수(CYL)·축(AX) 셀렉트로 좁혀 검색.
  */
-function DoseListPanel({
+function DoseListModal({
   product,
   onClose,
   onApply,
@@ -801,13 +801,16 @@ function DoseListPanel({
   }, [variants, picked]);
 
   return (
-    <div className="rounded-2xl border border-amber-200 bg-amber-50/20">
-      <div className="flex max-h-[60vh] flex-col overflow-hidden">
-        <header className="flex items-center justify-between border-b border-amber-100 px-5 py-3">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-pop"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
           <div>
-            <h2 className="text-sm font-bold text-gray-900">도수 리스트 — {product.brand} {product.name}</h2>
+            <h2 className="text-base font-bold text-gray-900">{product.brand} {product.name} — 도수정보</h2>
             <p className="mt-0.5 text-xs text-gray-500">
-              발주할 도수를 체크하고 반영하세요 — 수량은 발주리스트에서 입력·확정합니다.
+              매입할 도수를 체크해 포함하세요 — 수량은 발주리스트에서 입력·확정합니다.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -912,7 +915,7 @@ function DoseListPanel({
             onClick={() => onApply(pickedItems)}
             className="press rounded-lg bg-gray-900 px-4 py-2 text-xs font-bold text-white hover:bg-black disabled:opacity-50"
           >
-            ✅ 발주리스트에 반영 (수량 0)
+            ✅ 매입리스트에 포함 (수량 0)
           </button>
         </footer>
       </div>
