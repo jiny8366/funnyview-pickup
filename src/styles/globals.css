@@ -181,6 +181,25 @@ html.theme-dark textarea::placeholder { color: #6c6c70 !important; }
 html.theme-dark .hover\:bg-gray-50:hover { background-color: #2c2c2e !important; }
 html.theme-dark .hover\:bg-gray-100:hover { background-color: #3a3a3c !important; }
 
+/* 상태(시맨틱) 옅은 배경 — 다크 틴트로 */
+html.theme-dark .bg-emerald-50,
+html.theme-dark .bg-green-50 { background-color: rgba(48,209,88,0.16) !important; }
+html.theme-dark .bg-amber-50,
+html.theme-dark .bg-yellow-50 { background-color: rgba(255,159,10,0.16) !important; }
+html.theme-dark .bg-red-50 { background-color: rgba(255,69,58,0.16) !important; }
+html.theme-dark .bg-blue-50,
+html.theme-dark .bg-brand-50 { background-color: rgba(10,132,255,0.16) !important; }
+/* 상태 텍스트 — 다크에서 밝게 */
+html.theme-dark .text-emerald-700,
+html.theme-dark .text-emerald-800,
+html.theme-dark .text-green-700 { color: #5be59b !important; }
+html.theme-dark .text-amber-700,
+html.theme-dark .text-amber-800 { color: #ffd60a !important; }
+html.theme-dark .text-red-600,
+html.theme-dark .text-red-700 { color: #ff6b61 !important; }
+/* 진한 뱃지(bg-gray-900)는 다크 페이지에서 묻히지 않게 가시 표면으로 */
+html.theme-dark .bg-gray-900 { background-color: #2c2c2e !important; }
+
 /* prefers-reduced-motion 존중 */
 @media (prefers-reduced-motion: reduce) {
   *,
