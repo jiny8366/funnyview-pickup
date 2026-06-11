@@ -10,10 +10,10 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const VARIANT: Record<Variant, string> = {
-  primary: 'bg-brand-600 text-white hover:bg-brand-700 disabled:bg-brand-600/50',
+  primary: 'bg-brand-600 text-white shadow-card hover:bg-brand-700 hover:shadow-elevated disabled:bg-brand-600/50 disabled:shadow-none',
   secondary: 'bg-white border border-gray-300 text-gray-900 hover:bg-gray-50',
   ghost: 'bg-transparent text-gray-700 hover:bg-gray-100',
-  danger: 'bg-red-600 text-white hover:bg-red-700',
+  danger: 'bg-red-600 text-white shadow-card hover:bg-red-700',
 };
 
 const SIZE: Record<Size, string> = {
@@ -28,7 +28,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       <button
         ref={ref}
         className={cn(
-          'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition disabled:cursor-not-allowed',
+          'inline-flex items-center justify-center gap-2 rounded-lg font-medium transition-[transform,background-color,box-shadow,opacity] duration-150 ease-apple active:scale-[0.97] disabled:cursor-not-allowed disabled:active:scale-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-brand-100',
           VARIANT[variant],
           SIZE[size],
           className,

@@ -106,6 +106,28 @@ input:-webkit-autofill:active {
   .cafe-input-sm {
     @apply h-9 w-full rounded border border-gray-300 bg-white px-2.5 text-sm text-gray-900 transition focus:border-gray-500 focus:outline-none placeholder:text-gray-400;
   }
+
+  /* ── Apple 모션 유틸 (공통) ── */
+  /* 눌림 피드백: 버튼/주요 탭 — 살짝 줄었다 복귀 */
+  .press {
+    @apply transition-transform duration-150 ease-apple active:scale-[0.97];
+  }
+  /* 카드/리스트 항목 탭 피드백 — 더 미세하게 */
+  .tap {
+    @apply transition-transform duration-150 ease-apple active:scale-[0.99];
+  }
+}
+
+/* 스켈레톤 shimmer — pulse 보다 애플 감성 */
+.skeleton-shimmer {
+  background-image: linear-gradient(
+    90deg,
+    rgba(229, 231, 235, 0.65) 25%,
+    rgba(243, 244, 246, 0.95) 37%,
+    rgba(229, 231, 235, 0.65) 63%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.6s ease-in-out infinite;
 }
 
 /* prefers-reduced-motion 존중 */
