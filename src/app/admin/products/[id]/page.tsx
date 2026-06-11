@@ -62,6 +62,7 @@ export default async function EditProductPage({
           supplyDiscountPercent: row.supplyDiscountPercent ?? 0,
           recommendedRetailPrice: row.recommendedRetailPrice ?? '',
           imageUrl: row.imageUrl ?? '',
+          videoUrl: row.videoUrl ?? '',
           baseCurve: row.baseCurve ?? '',
           diameter: row.diameter ?? '',
           waterContent: row.waterContent ?? '',

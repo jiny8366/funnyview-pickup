@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ProductFilterBar } from '@/components/product/product-filter-bar';
+import { ProductMedia } from '@/components/product/product-media';
 import { StoreVariantPicker, powerLabel, type PickerVariant } from './variant-picker';
 
 interface CatalogItem {
@@ -14,6 +15,7 @@ interface CatalogItem {
   replacementCycle: string;
   piecesPerBox: number;
   imageUrl: string | null;
+  videoUrl: string | null;
   colorName: string | null;
   colorHex: string | null;
   colorPreviewUrl: string | null;
@@ -510,24 +512,16 @@ function ProductCard({
   qtyInCart: number;
   onAdd: () => void;
 }) {
-  const imageSrc = item.imageUrl ?? `/api/lens-image/${item.productCode}`;
   const cycle = CYCLE_LABEL[item.replacementCycle] ?? item.replacementCycle;
 
   return (
     <div className="flex flex-col overflow-hidden rounded-xl border border-gray-200 bg-white">
-      <div className="aspect-square overflow-hidden bg-gray-50">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageSrc}
-          alt={item.name}
-          className="h-full w-full object-contain p-2"
-          loading="lazy"
-          onError={(e) => {
-            const el = e.currentTarget;
-            if (el.dataset.fb) return;
-            el.dataset.fb = '1';
-            el.src = `/api/lens-image/${item.productCode}`;
-          }}
+      <div className="aspect-square overflow-hidden bg-gray-50 p-2">
+        <ProductMedia
+          imageUrl={item.imageUrl}
+          videoUrl={item.videoUrl}
+          productCode={item.productCode}
+          name={item.name}
         />
       </div>
       <div className="flex flex-1 flex-col p-3">
@@ -609,23 +603,16 @@ function ProductRow({
   qtyInCart: number;
   onAdd: () => void;
 }) {
-  const imageSrc = item.imageUrl ?? `/api/lens-image/${item.productCode}`;
   const cycle = CYCLE_LABEL[item.replacementCycle] ?? item.replacementCycle;
   return (
     <div className="flex items-center gap-3 px-3 py-2.5">
-      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-gray-50">
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={imageSrc}
-          alt={item.name}
-          className="h-full w-full object-contain p-1"
-          loading="lazy"
-          onError={(e) => {
-            const el = e.currentTarget;
-            if (el.dataset.fb) return;
-            el.dataset.fb = '1';
-            el.src = `/api/lens-image/${item.productCode}`;
-          }}
+      <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-gray-50 p-1">
+        <ProductMedia
+          imageUrl={item.imageUrl}
+          videoUrl={item.videoUrl}
+          productCode={item.productCode}
+          name={item.name}
+          rounded
         />
       </div>
       <div className="min-w-0 flex-1">

@@ -48,6 +48,7 @@ export async function PATCH(
     // 가격 정적 컬럼 (standardCost/standardSupplyPrice/recommendedRetailPrice/discount*) 은
     // createPriceEntryAndSyncCache 가 처리 — 시작일 ≤ now 일 때만 캐시 갱신
     'imageUrl',
+    'videoUrl',
     'description',
     'baseCurve',
     'diameter',
@@ -79,6 +80,9 @@ export async function PATCH(
         allowed[k] = v == null ? null : Number(v);
       } else if (k === 'oxygenDkt') {
         allowed[k] = v == null || v === '' ? null : Number(v);
+      } else if (k === 'videoUrl' || k === 'imageUrl') {
+        // 빈 문자열 → NULL (미디어 미설정)
+        allowed[k] = v ? v : null;
       } else if (['baseCurve', 'diameter', 'waterContent', 'sphereMin', 'sphereMax'].includes(k)) {
         // numeric 컬럼 — '54%','8.6mm' 등에서 숫자만 추출(잘못된 값으로 인한 500 방지)
         allowed[k] = numericStr(v);

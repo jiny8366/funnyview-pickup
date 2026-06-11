@@ -73,6 +73,7 @@ interface FormState {
   retailStartsAt: string;
   retailEndsAt: string;
   imageUrl: string;
+  videoUrl: string;
   baseCurve: string;
   diameter: string;
   waterContent: string;
@@ -118,6 +119,7 @@ const EMPTY: FormState = {
   retailStartsAt: '',
   retailEndsAt: '',
   imageUrl: '',
+  videoUrl: '',
   baseCurve: '',
   diameter: '',
   waterContent: '',
@@ -764,6 +766,19 @@ export function ProductForm({
               enableZoom
             />
           </Field>
+          <div className="mt-5">
+            <Field label="대표 영상 (선택)">
+              <input
+                value={form.videoUrl}
+                onChange={(e) => update('videoUrl', e.target.value)}
+                placeholder="https://youtu.be/... 또는 /uploads/lenses/video.mp4"
+                className="input"
+              />
+              <p className="mt-1 text-[11px] text-gray-400">
+                YouTube/Vimeo 링크 또는 업로드한 동영상 경로
+              </p>
+            </Field>
+          </div>
           <div className="mt-5 grid gap-4 md:grid-cols-2">
             <Field label="컬러명 (카드 표시)">
               <input

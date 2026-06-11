@@ -5,14 +5,18 @@ import { getStorage } from '@/lib/storage';
 export const dynamic = 'force-dynamic';
 export const runtime = 'nodejs';
 
-const MAX_BYTES = 5 * 1024 * 1024; // 5MB
+const MAX_BYTES = 5 * 1024 * 1024; // 5MB (이미지)
+const MAX_VIDEO_BYTES = 50 * 1024 * 1024; // 50MB (짧은 대표 영상)
 const ALLOWED = new Set([
   'image/png',
   'image/jpeg',
   'image/webp',
   'image/gif',
   'image/svg+xml',
+  'video/mp4',
+  'video/webm',
 ]);
+const VIDEO_TYPES = new Set(['video/mp4', 'video/webm']);
 
 export async function POST(req: Request) {
   const user = await getCurrentUser();
@@ -34,7 +38,8 @@ export async function POST(req: Request) {
   if (!ALLOWED.has(file.type)) {
     return NextResponse.json({ error: 'UNSUPPORTED_TYPE' }, { status: 415 });
   }
-  if (file.size > MAX_BYTES) {
+  const sizeLimit = VIDEO_TYPES.has(file.type) ? MAX_VIDEO_BYTES : MAX_BYTES;
+  if (file.size > sizeLimit) {
     return NextResponse.json({ error: 'FILE_TOO_LARGE' }, { status: 413 });
   }
 

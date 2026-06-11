@@ -260,6 +260,13 @@
       "when": 1780500900000,
       "tag": "0038_store_order_variant",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1780501000000,
+      "tag": "0040_lens_video",
+      "breakpoints": true
     }
   ]
 }

@@ -92,6 +92,7 @@ export interface StoreCatalogItem {
   replacementCycle: string;
   piecesPerBox: number;
   imageUrl: string | null;
+  videoUrl: string | null;
   colorName: string | null;
   colorHex: string | null;
   colorPreviewUrl: string | null;
@@ -124,6 +125,7 @@ export async function getStoreCatalog(storeId: string): Promise<StoreCatalogItem
       replacementCycle: lenses.replacementCycle,
       piecesPerBox: lenses.piecesPerBox,
       imageUrl: lenses.imageUrl,
+      videoUrl: lenses.videoUrl,
       colorName: lenses.colorName,
       colorHex: lenses.colorHex,
       colorPreviewUrl: lenses.colorPreviewUrl,
@@ -165,6 +167,7 @@ export async function getStoreCatalog(storeId: string): Promise<StoreCatalogItem
     replacementCycle: r.replacementCycle,
     piecesPerBox: r.piecesPerBox,
     imageUrl: r.imageUrl,
+    videoUrl: r.videoUrl,
     colorName: r.colorName,
     colorHex: r.colorHex,
     colorPreviewUrl: r.colorPreviewUrl,

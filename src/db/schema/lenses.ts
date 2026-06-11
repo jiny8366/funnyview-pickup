@@ -76,6 +76,7 @@ export const lenses = pgTable(
     udiSyncedAt: timestamp('udi_synced_at', { withTimezone: true }), // 마지막 UDI 적재 시각
 
     imageUrl: text('image_url'),
+    videoUrl: text('video_url'), // 대표 영상 (YouTube/Vimeo 링크 또는 self-hosted 경로)
     description: text('description'),
 
     // 카페24 스타일 상품 카드 표시

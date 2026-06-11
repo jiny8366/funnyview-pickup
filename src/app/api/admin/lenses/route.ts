@@ -56,6 +56,7 @@ export async function POST(req: Request) {
     retailStartsAt,
     retailEndsAt,
     imageUrl,
+    videoUrl,
     description,
     baseCurve,
     diameter,
@@ -113,6 +114,7 @@ export async function POST(req: Request) {
       // standardCost/standardSupplyPrice/recommendedRetailPrice/discount* 은
       // createPriceEntryAndSyncCache 에서 처리 — 시작일 ≤ now 일 때만 캐시 갱신
       imageUrl: imageUrl || null,
+      videoUrl: videoUrl || null,
       description: description ?? null,
       baseCurve: numericStr(baseCurve),
       diameter: numericStr(diameter),

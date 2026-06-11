@@ -1,4 +1,7 @@
+import { existsSync } from 'node:fs';
+import path from 'node:path';
 import { eq } from 'drizzle-orm';
+import { NextResponse } from 'next/server';
 import { db } from '@/db/client';
 import { lenses } from '@/db/schema';
 
@@ -134,10 +137,41 @@ function generateSvg(lens: {
 </svg>`;
 }
 
+/** 확장자 무관 실제 정적 파일 탐색 우선순위. */
+const IMAGE_EXTENSIONS = ['jpg', 'jpeg', 'png', 'webp', 'gif', 'avif'] as const;
+
+/**
+ * public/products/{CODE}.{ext} 중 실제 존재하는 파일을 우선순위대로 찾는다.
+ * imageUrl 이 NULL 이어도 파일이 (어떤 확장자로든) 있으면 해당 정적 경로로 308 redirect.
+ * fs 를 못 쓰는 런타임이면 null 을 반환하고 SVG 플레이스홀더로 폴백.
+ */
+function resolveStaticImagePath(productCode: string): string | null {
+  // productCode 에 경로 탈출 문자가 들어오면 무시 (보안)
+  if (!/^[A-Za-z0-9_-]+$/.test(productCode)) return null;
+  try {
+    const dir = path.join(process.cwd(), 'public', 'products');
+    for (const ext of IMAGE_EXTENSIONS) {
+      const filePath = path.join(dir, `${productCode}.${ext}`);
+      if (existsSync(filePath)) {
+        return `/products/${productCode}.${ext}`;
+      }
+    }
+  } catch {
+    // fs 사용 불가 런타임 — SVG 폴백으로 진행
+  }
+  return null;
+}
+
 export async function GET(
-  _req: Request,
+  req: Request,
   { params }: { params: { productCode: string } },
 ) {
+  // 1) 실제 정적 파일(확장자 무관) 우선 — 있으면 308 redirect
+  const staticPath = resolveStaticImagePath(params.productCode);
+  if (staticPath) {
+    return NextResponse.redirect(new URL(staticPath, req.url), 308);
+  }
+
   try {
     const [row] = await db
       .select({
