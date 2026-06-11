@@ -31,6 +31,10 @@ export interface DispatchInput {
  * 실패해도 비즈니스 로직(주문 등)에는 영향 없음.
  */
 export async function dispatchNotification(input: DispatchInput) {
+  // 시뮬레이션/대량 시드 시 알림 전면 억제 (가짜 계정 SMS/카카오 폭주·실사용자 스팸 방지).
+  // 평상시 미설정이라 무영향. scripts/sim-* 에서 SIM_SUPPRESS_NOTIFY=1 로 실행.
+  if (process.env.SIM_SUPPRESS_NOTIFY === '1') return;
+
   const tpl = renderTemplate(input.kind, input.context);
   const sender = getActiveSender();
 
