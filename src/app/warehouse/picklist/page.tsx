@@ -138,7 +138,7 @@ export default function WarehousePicklistPage() {
 
   // 출고(배송)는 이제 패킹 검수 화면(/warehouse/packing/[id])에서 스캔 검수 후 진행한다.
 
-  // 선택 주문 묶음으로 가맹점별 문서 출력 (거래명세서/팩리스트/송장) — 목록·미리보기 양쪽에서 항상 접근 가능
+  // 선택 주문 묶음으로 가맹점별 문서 출력 (거래명세서/송장) — 목록·미리보기 양쪽에서 항상 접근 가능
   const ids = Array.from(selected).join(',');
   const docLinks = selected.size > 0 && (
     <>
@@ -148,12 +148,7 @@ export default function WarehousePicklistPage() {
       >
         🧾 거래명세서 ({selected.size})
       </Link>
-      <Link
-        href={`/warehouse/invoice-bundle?ids=${ids}&mode=packlist`}
-        className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-      >
-        📦 팩리스트 ({selected.size})
-      </Link>
+      {/* 팩리스트 제거(JINY 확정) — 박스 동봉은 거래명세서로 대치 */}
       <Link
         href={`/warehouse/invoice-bundle?ids=${ids}&mode=waybill`}
         className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
@@ -181,7 +176,7 @@ export default function WarehousePicklistPage() {
         <div>
           <h1 className="text-2xl font-bold">배송준비중 — 픽리스트</h1>
           <p className="mt-1 text-xs text-gray-500">
-            픽리스트/팩리스트/거래명세서/송장 출력 후 <b>검수→배송</b>. 단계: 주문접수 → <b>픽리스트 출력(배송준비)</b> → 검수 → 배송중.
+            픽리스트/거래명세서/송장 출력 후 <b>검수→배송</b>. 단계: 주문접수 → <b>픽리스트 출력(배송준비)</b> → 검수 → 배송중.
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
@@ -203,7 +198,7 @@ export default function WarehousePicklistPage() {
               <Button onClick={printPage} className="bg-emerald-600 hover:bg-emerald-700">
                 🖨 인쇄 / PDF 저장
               </Button>
-              {/* 미리보기 후에도 거래명세서/팩리스트/송장 액션 유지 (작업 흐름 끊기지 않게) */}
+              {/* 미리보기 후에도 거래명세서/송장 액션 유지 (작업 흐름 끊기지 않게) */}
               {docLinks}
             </>
           )}

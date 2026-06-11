@@ -255,6 +255,11 @@ export default function PackingPage() {
           </a>
         </div>
       )}
+      {allMatched && !wrongStatus && (
+        <p className="text-center text-[11px] text-gray-400">
+          출력물을 박스에 동봉한 뒤, 아래 <b>✅ 출고(배송) 처리</b>를 누르면 배송 단계로 넘어갑니다.
+        </p>
+      )}
 
       <Button onClick={ship} disabled={!canShip || busy} className="w-full bg-emerald-600 hover:bg-emerald-700">
         {busy ? '출고 처리 중…' : canShip ? '✅ 검수 완료 — 출고(배송) 처리' : '전 품목 스캔 후 출고 가능'}
