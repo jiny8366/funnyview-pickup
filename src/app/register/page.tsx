@@ -290,15 +290,7 @@ export default function RegisterPage() {
             </Row>
             <Row label="생년월일" required>
               <div>
-                <input
-                  type="date"
-                  aria-label="생년월일"
-                  value={f.birthDate}
-                  onChange={(e) => update('birthDate', e.target.value)}
-                  required
-                  max={new Date().toISOString().slice(0, 10)}
-                  className="cafe-input-sm max-w-sm"
-                />
+                <BirthDateSelect value={f.birthDate} onChange={(v) => update('birthDate', v)} />
                 <p className="mt-1 text-xs text-gray-500">콘택트렌즈 구매 연령 확인에 사용됩니다.</p>
               </div>
             </Row>
@@ -562,6 +554,56 @@ function TermsAgreement({
           </label>
         </div>
       </div>
+    </div>
+  );
+}
+
+/**
+ * 생년월일 전용 입력 — 년(내림차순)/월/일 셀렉트.
+ * type=date 는 수십 년 전 연도 탐색이 불편해 가입 폼 관행대로 셀렉트 3개 사용.
+ */
+function BirthDateSelect({ value, onChange }: { value: string; onChange: (v: string) => void }) {
+  const init = value ? value.split('-') : ['', '', ''];
+  const [y, setY] = useState(init[0] ?? '');
+  const [m, setM] = useState(init[1] ? String(Number(init[1])) : '');
+  const [d, setD] = useState(init[2] ? String(Number(init[2])) : '');
+
+  const thisYear = new Date().getFullYear();
+  const years = Array.from({ length: thisYear - 1920 + 1 }, (_, i) => thisYear - i);
+  const months = Array.from({ length: 12 }, (_, i) => i + 1);
+  const maxDay = y && m ? new Date(Number(y), Number(m), 0).getDate() : 31;
+  const days = Array.from({ length: maxDay }, (_, i) => i + 1);
+
+  function emit(ny: string, nm: string, nd: string) {
+    setY(ny); setM(nm); setD(nd);
+    if (ny && nm && nd) {
+      const max = new Date(Number(ny), Number(nm), 0).getDate();
+      const day = Math.min(Number(nd), max);
+      if (String(day) !== nd) setD(String(day)); // 월 변경으로 일수 축소 시 보정
+      onChange(`${ny}-${String(nm).padStart(2, '0')}-${String(day).padStart(2, '0')}`);
+    } else {
+      onChange('');
+    }
+  }
+
+  const cls = 'h-10 rounded-md border border-gray-300 bg-white px-2 text-sm';
+  return (
+    <div className="flex items-center gap-1.5">
+      <select aria-label="출생 연도" value={y} onChange={(e) => emit(e.target.value, m, d)} className={cls}>
+        <option value="">년도</option>
+        {years.map((v) => <option key={v} value={v}>{v}</option>)}
+      </select>
+      <span className="text-xs text-gray-400">년</span>
+      <select aria-label="월" value={m} onChange={(e) => emit(y, e.target.value, d)} className={cls}>
+        <option value="">월</option>
+        {months.map((v) => <option key={v} value={v}>{v}</option>)}
+      </select>
+      <span className="text-xs text-gray-400">월</span>
+      <select aria-label="일" value={d} onChange={(e) => emit(y, m, e.target.value)} className={cls}>
+        <option value="">일</option>
+        {days.map((v) => <option key={v} value={v}>{v}</option>)}
+      </select>
+      <span className="text-xs text-gray-400">일</span>
     </div>
   );
 }
