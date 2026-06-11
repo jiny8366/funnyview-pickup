@@ -163,8 +163,15 @@ export function StoreGroupsManager() {
     [checked],
   );
 
-  async function assign(groupId: string | null) {
-    if (checkedIds.length === 0) {
+  // JINY 확정 UX: 미배정 리스트(포함하면 사라짐) / 선택 그룹의 소속 리스트(선택해 제외)
+  const unassigned = useMemo(() => stores.filter((s) => !s.groupId), [stores]);
+  const members = useMemo(
+    () => (assignGroupId ? stores.filter((s) => s.groupId === assignGroupId) : []),
+    [stores, assignGroupId],
+  );
+
+  async function assignIds(ids: string[], groupId: string | null) {
+    if (ids.length === 0) {
       setMsg('매장을 선택하세요');
       return;
     }
@@ -174,13 +181,13 @@ export function StoreGroupsManager() {
       const res = await fetch('/api/admin/stores', {
         method: 'PATCH',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ storeIds: checkedIds, groupId }),
+        body: JSON.stringify({ storeIds: ids, groupId }),
       });
       if (!res.ok) throw new Error();
       setMsg(
         groupId
-          ? `${checkedIds.length}개 매장을 그룹에 포함했습니다`
-          : `${checkedIds.length}개 매장의 그룹을 해제했습니다`,
+          ? `${ids.length}개 매장을 그룹에 포함했습니다`
+          : `${ids.length}개 매장을 그룹에서 제외했습니다`,
       );
       setChecked({});
       await load();
@@ -191,18 +198,15 @@ export function StoreGroupsManager() {
     }
   }
 
-  const groupName = (id: string | null) =>
-    id ? (groups.find((g) => g.id === id)?.name ?? '—') : '—';
+  const checkedIn = (list: StoreRow[]) => list.filter((s) => checked[s.id]).map((s) => s.id);
 
-  const allChecked = stores.length > 0 && stores.every((s) => checked[s.id]);
-  function toggleAll() {
-    if (allChecked) {
-      setChecked({});
-    } else {
-      const next: Record<string, boolean> = {};
-      for (const s of stores) next[s.id] = true;
-      setChecked(next);
-    }
+  function toggleAllIn(list: StoreRow[]) {
+    const all = list.length > 0 && list.every((s) => checked[s.id]);
+    setChecked((p) => {
+      const next = { ...p };
+      for (const s of list) next[s.id] = !all;
+      return next;
+    });
   }
 
   return (
@@ -321,87 +325,155 @@ export function StoreGroupsManager() {
         </CardBody>
       </Card>
 
-      {/* 그룹 배정 — 가맹점 리스트에서 선택 */}
+      {/* 그룹 배정 — ①미배정 리스트(포함하면 사라짐) ②선택 그룹 소속 리스트(선택해 제외) */}
       <Card>
         <CardHeader>
-          <CardTitle>그룹 배정 (가맹점 선택)</CardTitle>
+          <CardTitle>그룹 배정</CardTitle>
         </CardHeader>
         <CardBody>
-          <div className="mb-3 flex flex-wrap items-center gap-2">
+          <div className="mb-4 flex flex-wrap items-center gap-2">
+            <span className="text-sm text-gray-600">대상 그룹</span>
             <select
               value={assignGroupId}
-              onChange={(e) => setAssignGroupId(e.target.value)}
+              onChange={(e) => {
+                setAssignGroupId(e.target.value);
+                setChecked({});
+              }}
               className="h-9 rounded-lg border border-gray-300 bg-white px-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-brand-100"
             >
               <option value="">그룹 선택…</option>
               {groups.map((g) => (
                 <option key={g.id} value={g.id}>
-                  {g.name}
+                  {g.name} ({g.memberCount})
                 </option>
               ))}
             </select>
-            <Button
-              size="sm"
-              onClick={() => assign(assignGroupId)}
-              disabled={saving || !assignGroupId || checkedIds.length === 0}
-            >
-              그룹에 포함
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              onClick={() => assign(null)}
-              disabled={saving || checkedIds.length === 0}
-            >
-              그룹 해제
-            </Button>
-            <span className="text-sm text-gray-500">선택 {checkedIds.length}개</span>
+            {msg && <p className="text-sm text-gray-600">{msg}</p>}
           </div>
 
           {loading ? (
             <p className="px-1 py-4 text-sm text-gray-500">불러오는 중…</p>
-          ) : stores.length === 0 ? (
-            <p className="px-1 py-4 text-sm text-gray-500">등록된 가맹점이 없습니다.</p>
           ) : (
-            <div className="overflow-x-auto rounded-lg border border-gray-200">
-              <table className="w-full text-sm">
-                <thead className="bg-gray-50 text-xs text-gray-500">
-                  <tr>
-                    <th className="px-3 py-2 text-left">
-                      <input type="checkbox" checked={allChecked} onChange={toggleAll} />
-                    </th>
-                    <th className="px-3 py-2 text-left">가맹점명</th>
-                    <th className="px-3 py-2 text-left">코드</th>
-                    <th className="px-3 py-2 text-right">자체 수수료율</th>
-                    <th className="px-3 py-2 text-left">현재 그룹</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-gray-100">
-                  {stores.map((s) => (
-                    <tr key={s.id} className={`${s.isActive ? '' : 'opacity-50'} ${checked[s.id] ? 'bg-blue-50/40' : ''}`}>
-                      <td className="px-3 py-2">
-                        <input
-                          type="checkbox"
-                          checked={!!checked[s.id]}
-                          onChange={(e) =>
-                            setChecked((p) => ({ ...p, [s.id]: e.target.checked }))
-                          }
-                        />
-                      </td>
-                      <td className="px-3 py-2 font-medium text-gray-900">{s.name}</td>
-                      <td className="px-3 py-2 font-mono text-xs text-gray-500">{s.code}</td>
-                      <td className="px-3 py-2 text-right text-gray-700">
-                        {s.commissionRate && Number(s.commissionRate) > 0 ? `${s.commissionRate}%` : '—'}
-                      </td>
-                      <td className="px-3 py-2 text-gray-600">{groupName(s.groupId)}</td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="grid gap-4 lg:grid-cols-2">
+              {/* 미배정 가맹점 — 포함하면 이 리스트에서 사라짐 */}
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    그룹 미배정 가맹점 ({unassigned.length})
+                  </h3>
+                  <Button
+                    size="sm"
+                    onClick={() => assignIds(checkedIn(unassigned), assignGroupId)}
+                    disabled={saving || !assignGroupId || checkedIn(unassigned).length === 0}
+                  >
+                    선택 {checkedIn(unassigned).length}개 → 그룹에 포함
+                  </Button>
+                </div>
+                <StoreCheckTable
+                  list={unassigned}
+                  checked={checked}
+                  setChecked={setChecked}
+                  onToggleAll={() => toggleAllIn(unassigned)}
+                  emptyText="미배정 가맹점이 없습니다 — 전부 그룹에 소속되어 있습니다."
+                />
+              </div>
+
+              {/* 선택 그룹 소속 가맹점 — 선택해 제외 */}
+              <div>
+                <div className="mb-2 flex items-center justify-between">
+                  <h3 className="text-sm font-semibold text-gray-800">
+                    {assignGroupId
+                      ? `'${groups.find((g) => g.id === assignGroupId)?.name ?? ''}' 소속 가맹점 (${members.length})`
+                      : '소속 가맹점 — 그룹을 선택하세요'}
+                  </h3>
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => assignIds(checkedIn(members), null)}
+                    disabled={saving || !assignGroupId || checkedIn(members).length === 0}
+                  >
+                    선택 {checkedIn(members).length}개 → 그룹에서 제외
+                  </Button>
+                </div>
+                {assignGroupId ? (
+                  <StoreCheckTable
+                    list={members}
+                    checked={checked}
+                    setChecked={setChecked}
+                    onToggleAll={() => toggleAllIn(members)}
+                    emptyText="이 그룹에 소속된 가맹점이 없습니다."
+                  />
+                ) : (
+                  <p className="rounded-lg border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-400">
+                    위에서 그룹을 선택하면 소속 가맹점이 표시됩니다.
+                  </p>
+                )}
+              </div>
             </div>
           )}
         </CardBody>
       </Card>
+    </div>
+  );
+}
+
+/** 체크박스 가맹점 테이블 — 미배정/소속 리스트 공용. */
+function StoreCheckTable({
+  list,
+  checked,
+  setChecked,
+  onToggleAll,
+  emptyText,
+}: {
+  list: StoreRow[];
+  checked: Record<string, boolean>;
+  setChecked: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+  onToggleAll: () => void;
+  emptyText: string;
+}) {
+  if (list.length === 0) {
+    return (
+      <p className="rounded-lg border border-dashed border-gray-300 px-4 py-8 text-center text-sm text-gray-400">
+        {emptyText}
+      </p>
+    );
+  }
+  const all = list.every((s) => checked[s.id]);
+  return (
+    <div className="max-h-80 overflow-auto rounded-lg border border-gray-200">
+      <table className="w-full text-sm">
+        <thead className="sticky top-0 bg-gray-50 text-xs text-gray-500">
+          <tr>
+            <th className="px-3 py-2 text-left">
+              <input type="checkbox" checked={all} onChange={onToggleAll} />
+            </th>
+            <th className="px-3 py-2 text-left">가맹점명</th>
+            <th className="px-3 py-2 text-left">코드</th>
+            <th className="px-3 py-2 text-right">자체 수수료율</th>
+          </tr>
+        </thead>
+        <tbody className="divide-y divide-gray-100">
+          {list.map((s) => (
+            <tr
+              key={s.id}
+              className={`${s.isActive ? '' : 'opacity-50'} ${checked[s.id] ? 'bg-blue-50/40' : ''}`}
+            >
+              <td className="px-3 py-2">
+                <input
+                  type="checkbox"
+                  checked={!!checked[s.id]}
+                  onChange={(e) => setChecked((p) => ({ ...p, [s.id]: e.target.checked }))}
+                />
+              </td>
+              <td className="px-3 py-2 font-medium text-gray-900">{s.name}</td>
+              <td className="px-3 py-2 font-mono text-xs text-gray-500">{s.code}</td>
+              <td className="px-3 py-2 text-right text-gray-700">
+                {s.commissionRate && Number(s.commissionRate) > 0 ? `${s.commissionRate}%` : '—'}
+              </td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }
