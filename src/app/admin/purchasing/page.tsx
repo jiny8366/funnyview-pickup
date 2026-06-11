@@ -25,6 +25,8 @@ interface Candidate {
   reasonLow: boolean;
   suggested: number;
   alreadyOrdered?: boolean;
+  /** 도수정보 자식창에서 직접 담은 품목 — 사유 '임의발주' 표시 (JINY) */
+  manual?: boolean;
 }
 
 const TYPE_OPTIONS = [
@@ -165,7 +167,7 @@ export default function PurchasingPage() {
     setCands((prev) => {
       const base = prev ?? [];
       const have = new Map(base.map((c) => [c.variantId, c]));
-      const added = items.filter((i) => !have.has(i.cand.variantId)).map((i) => i.cand);
+      const added = items.filter((i) => !have.has(i.cand.variantId)).map((i) => ({ ...i.cand, manual: true }));
       return [...added, ...base];
     });
     setQty((q2) => {
@@ -446,10 +448,13 @@ export default function PurchasingPage() {
                     <td className="px-3 py-2 text-xs text-gray-700">{doseLabel(c)}</td>
                     <td className="px-3 py-2">
                       <div className="flex gap-1">
-                        {c.reasonSold && (
+                        {c.manual && (
+                          <span className="rounded bg-purple-50 px-1.5 py-0.5 text-[10px] font-medium text-purple-700">임의발주</span>
+                        )}
+                        {!c.manual && c.reasonSold && (
                           <span className="rounded bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700">출고분</span>
                         )}
-                        {c.reasonLow && (
+                        {!c.manual && c.reasonLow && (
                           <span className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700">안전재고 미달</span>
                         )}
                         {c.alreadyOrdered && (
