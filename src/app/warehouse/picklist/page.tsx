@@ -2,6 +2,7 @@
 
 import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { formatLensDisplayName } from '@/lib/lens/format';
 import { formatDateTime } from '@/lib/utils/format';
@@ -75,6 +76,7 @@ function groupByStore<T extends { storeName: string }>(list: T[]): [string, T[]]
 }
 
 export default function WarehousePicklistPage() {
+  const router = useRouter();
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [picklist, setPicklist] = useState<PicklistData | null>(null);
@@ -159,8 +161,21 @@ export default function WarehousePicklistPage() {
         });
         if (r.ok) ok++;
       }
-      setPackMsg(`📦 ${ok}건 팩킹확정 — 고객·픽업가맹점에 '주문접수' 안내가 발송되었습니다.`);
-      setTimeout(() => setPackMsg(null), 6000);
+      // 팩킹확정 후 다음 팩킹(검수) 단계로 바로 이동 (JINY 확정):
+      //  - 선택이 한 가맹점이면 그 가맹점 묶음 팩킹으로, 단일 주문이면 단건 검수로
+      //  - 여러 가맹점이 섞였으면 목록에 남아 가맹점별 팩킹 버튼으로 진행 안내
+      const sel = orders.filter((x) => selected.has(x.id));
+      const storeIds = [...new Set(sel.map((x) => x.storeId))];
+      if (ok > 0 && storeIds.length === 1) {
+        router.push(sel.length === 1 ? `/warehouse/packing/${sel[0].id}` : `/warehouse/packing/store/${storeIds[0]}`);
+        return;
+      }
+      setPackMsg(
+        ok > 0
+          ? `📦 ${ok}건 팩킹확정(주문접수 안내 발송) — 가맹점이 여러 곳입니다. 아래 🏪 가맹점별 [팩킹·확정] 버튼으로 이어가세요.`
+          : '팩킹확정에 실패했습니다. 다시 시도해 주세요.',
+      );
+      setTimeout(() => setPackMsg(null), 8000);
       await loadOrders();
     } finally {
       setPacking(false);
@@ -169,25 +184,7 @@ export default function WarehousePicklistPage() {
 
   // 출고(배송)는 이제 패킹 검수 화면(/warehouse/packing/[id])에서 스캔 검수 후 진행한다.
 
-  // 선택 주문 묶음으로 가맹점별 문서 출력 (거래명세서/송장) — 목록·미리보기 양쪽에서 항상 접근 가능
-  const ids = Array.from(selected).join(',');
-  const docLinks = selected.size > 0 && (
-    <>
-      <Link
-        href={`/warehouse/invoice-bundle?ids=${ids}&mode=invoice`}
-        className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-      >
-        🧾 거래명세서 ({selected.size})
-      </Link>
-      {/* 팩리스트 제거(JINY 확정) — 박스 동봉은 거래명세서로 대치 */}
-      <Link
-        href={`/warehouse/invoice-bundle?ids=${ids}&mode=waybill`}
-        className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-      >
-        🚚 송장 ({selected.size})
-      </Link>
-    </>
-  );
+  // 거래명세서/송장 출력은 픽리스트가 아닌 다음 단계(팩킹 검수 확정 후)에서 — 상단은 미리보기·인쇄만 (JINY 확정)
 
   return (
     <div className="space-y-6">
@@ -219,17 +216,16 @@ export default function WarehousePicklistPage() {
         <div className="flex flex-wrap gap-2">
           {!picklist ? (
             <>
-              {/* 체크 항목 일괄 팩킹확정 → 다음단계 + 주문접수 표시 (리스트 상단, JINY 확정) */}
-              <Button onClick={confirmPacking} disabled={pendingSelected.length === 0 || packing} className="bg-blue-600 hover:bg-blue-700">
-                {packing ? '확정 중…' : `📦 팩킹확정 (${pendingSelected.length})`}
-              </Button>
+              {/* 상단 = 픽리스트 미리보기·인쇄 + 팩킹확정만 (JINY 확정 — 명세서/송장은 검수 확정 후) */}
               <Button onClick={() => generate(false)} variant="secondary" disabled={selected.size === 0}>
                 👁 미리보기 ({selected.size})
               </Button>
               <Button onClick={() => generate(true)} disabled={selected.size === 0} className="bg-emerald-600 hover:bg-emerald-700">
                 🖨 인쇄 ({selected.size})
               </Button>
-              {docLinks}
+              <Button onClick={confirmPacking} disabled={pendingSelected.length === 0 || packing} className="bg-blue-600 hover:bg-blue-700">
+                {packing ? '확정 중…' : `📦 팩킹확정 → 다음단계 (${pendingSelected.length})`}
+              </Button>
             </>
           ) : (
             <>
@@ -239,8 +235,6 @@ export default function WarehousePicklistPage() {
               <Button onClick={printPage} className="bg-emerald-600 hover:bg-emerald-700">
                 🖨 인쇄 / PDF 저장
               </Button>
-              {/* 미리보기 후에도 거래명세서/송장 액션 유지 (작업 흐름 끊기지 않게) */}
-              {docLinks}
             </>
           )}
         </div>
