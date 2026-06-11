@@ -25,8 +25,9 @@ export const suppliers = pgTable(
     id: uuid('id').primaryKey().defaultRandom(),
     name: text('name').notNull(),
     bizNo: text('business_number'), // 사업자등록번호
-    address: text('address'), // 주소
-    businessAddress: text('business_address'), // 사업장주소
+    postalCode: text('postal_code'), // 우편번호
+    address: text('address'), // 기본주소
+    addressDetail: text('address_detail'), // 상세주소
     contact: text('contact'), // 담당자명
     phone: text('phone'), // 담당자 연락처
     memo: text('memo'), // 비고
