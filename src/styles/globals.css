@@ -134,7 +134,9 @@ input:-webkit-autofill:active {
    운영 포털(관리자·픽업서비스·가맹점) 다크 모드 — html.theme-dark 스코프.
    고객 화면은 Light 고정(토글 미제공·opsTheme 미설정이라 영향 없음).
    공통 팔레트 유틸을 스코프 오버라이드 → 컴포넌트 대량수정 없이 적용(1차).
+   ⚠️ @media screen 으로 감싸 인쇄(print)는 항상 라이트 — 거래명세서/픽리스트 검정배경 방지.
    ────────────────────────────────────────────────────────────── */
+@media screen {
 html.theme-dark {
   color-scheme: dark;
   --background: 0 0 0;
@@ -197,8 +199,9 @@ html.theme-dark .text-amber-700,
 html.theme-dark .text-amber-800 { color: #ffd60a !important; }
 html.theme-dark .text-red-600,
 html.theme-dark .text-red-700 { color: #ff6b61 !important; }
-/* 진한 뱃지(bg-gray-900)는 다크 페이지에서 묻히지 않게 가시 표면으로 */
-html.theme-dark .bg-gray-900 { background-color: #2c2c2e !important; }
+/* 진한 뱃지/활성 필터칩(bg-gray-900 text-white)은 다크에서 표면과 또렷이 구분 */
+html.theme-dark .bg-gray-900 { background-color: #48484a !important; }
+} /* @media screen — 인쇄는 다크 미적용(라이트 출력) */
 
 /* prefers-reduced-motion 존중 */
 @media (prefers-reduced-motion: reduce) {
