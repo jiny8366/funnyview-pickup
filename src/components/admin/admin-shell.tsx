@@ -130,7 +130,7 @@ export function AdminShell({
               FV
             </span>
             <span className="truncate text-base font-semibold md:text-lg">
-              Funnyview Pickup
+              Funnyview Reservation
               <span className="ml-1 hidden text-sm font-medium text-red-600 md:inline">· 관리자</span>
             </span>
           </Link>

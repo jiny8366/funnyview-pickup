@@ -40,7 +40,7 @@ export default async function PriceHistoryPrintPage({
       </div>
 
       <div className="mb-3 hidden print:block">
-        <h1 className="text-xl font-bold">Funnyview Pickup — 가격변동이력</h1>
+        <h1 className="text-xl font-bold">Funnyview Reservation — 가격변동이력</h1>
         <p className="mt-1 text-xs text-gray-600">
           출력 일시: {new Date().toLocaleString('ko-KR')} · 총 {rows.length}건
         </p>

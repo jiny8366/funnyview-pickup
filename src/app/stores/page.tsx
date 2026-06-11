@@ -5,7 +5,7 @@ import { StoresFinder } from './stores-finder';
 export const dynamic = 'force-dynamic';
 
 export const metadata = {
-  title: '픽업 매장 찾기 — Funnyview Pickup',
+  title: '픽업 매장 찾기 — 퍼니뷰 예약시스템',
   description: '주변 픽업 가맹점을 찾아보세요. 콘택트렌즈 주문 후 가까운 매장에서 픽업할 수 있습니다.',
 };
 

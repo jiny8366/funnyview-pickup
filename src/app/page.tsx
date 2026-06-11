@@ -271,7 +271,7 @@ function Footer() {
       <div className="mx-auto max-w-5xl px-4 py-10 md:px-6">
         <div className="flex flex-col gap-8 md:flex-row md:items-start md:justify-between">
           <div>
-            <p className="text-base font-black tracking-tight text-gray-900">Funnyview Pickup</p>
+            <p className="text-base font-black tracking-tight text-gray-900">Funnyview Reservation</p>
             <p className="mt-2 max-w-xs text-xs leading-relaxed text-gray-500">
               정품 콘택트렌즈를 온라인으로 주문하고, 가까운 안경원에서 안경사 상담 후 받는 픽업 서비스.
             </p>

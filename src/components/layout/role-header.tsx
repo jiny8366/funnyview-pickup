@@ -40,7 +40,7 @@ export function RoleHeader({
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 md:px-6 md:py-4">
         <Link href="/" className="flex items-baseline gap-1.5 truncate">
           <span className="truncate text-base font-semibold md:text-lg">
-            Funnyview Pickup
+            Funnyview Reservation
           </span>
           <span className={labelClass}>· {meta.label}</span>
         </Link>

@@ -4,14 +4,14 @@ import '@/styles/globals.css';
 
 export const metadata: Metadata = {
   title: {
-    default: 'Funnyview Pickup',
-    template: '%s | Funnyview Pickup',
+    default: '퍼니뷰 예약시스템',
+    template: '%s | 퍼니뷰 예약시스템',
   },
-  description: '콘택트렌즈 픽업서비스 - 주문하고 가까운 가맹점에서 픽업하세요',
+  description: '콘택트렌즈 예약 서비스 - 주문하고 가까운 가맹점에서 픽업하세요',
   manifest: '/manifest.webmanifest',
   appleWebApp: {
     capable: true,
-    title: 'Funnyview Pickup',
+    title: '퍼니뷰 예약',
     statusBarStyle: 'default',
   },
 };

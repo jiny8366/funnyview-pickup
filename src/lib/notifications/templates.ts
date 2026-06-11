@@ -48,7 +48,7 @@ export function renderTemplate(
     case 'order_received':
       return {
         title: '신규 주문',
-        body: `[Funnyview Pickup] 신규 주문 ${orderNo} 이(가) 접수되었습니다.`,
+        body: `[퍼니뷰 예약] 신규 주문 ${orderNo} 이(가) 접수되었습니다.`,
         kakaoTemplateId: process.env.KAKAO_TPL_ORDER_RECEIVED,
         kakaoVariables: { '#{orderNumber}': orderNo, '#{customerName}': name },
       };
@@ -93,7 +93,7 @@ export function renderTemplate(
     case 'low_stock':
       return {
         title: '저재고 알람',
-        body: `[Funnyview Pickup] ${ctx.variantLabel ?? 'SKU'} 가용재고 ${ctx.availableQty ?? 0} — 입고가 필요합니다.`,
+        body: `[퍼니뷰 예약] ${ctx.variantLabel ?? 'SKU'} 가용재고 ${ctx.availableQty ?? 0} — 입고가 필요합니다.`,
       };
     case 'order_cancelled':
       return {

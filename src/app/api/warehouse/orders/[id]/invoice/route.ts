@@ -102,7 +102,7 @@ export async function GET(
     },
     issuer: {
       company: biz?.companyName ?? '(주)퍼니뷰',
-      service: biz?.serviceName ?? 'Funnyview Pickup',
+      service: biz?.serviceName ?? 'Funnyview Reservation',
       bizNo: biz?.bizNo ?? '',
       address: biz?.address ?? '',
       phone: biz?.phone ?? '',
