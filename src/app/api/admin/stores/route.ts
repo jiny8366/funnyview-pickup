@@ -17,6 +17,7 @@ interface CreateBody {
   longitude?: string | number;
   businessNumber?: string;
   representativeName?: string;
+  representativePhone?: string;
   commissionRate?: string | number;
   sortOrder?: number;
 }
@@ -83,6 +84,7 @@ export async function POST(req: Request) {
       longitude: body.longitude ? String(body.longitude) : null,
       businessNumber: body.businessNumber?.trim() || null,
       representativeName: body.representativeName?.trim() || null,
+      representativePhone: body.representativePhone?.trim() || null,
       commissionRate: body.commissionRate ? String(body.commissionRate) : '0',
       sortOrder: body.sortOrder ?? 0,
     })

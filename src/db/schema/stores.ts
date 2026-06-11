@@ -41,6 +41,7 @@ export const stores = pgTable(
     // 사업자 정보 (거래전표용)
     businessNumber: text('business_number'),
     representativeName: text('representative_name'),
+    representativePhone: text('representative_phone'), // 대표 휴대전화(사업자 연락처)
 
     // 정산 수수료율 (%) — 픽업가맹점에 지급하는 수수료율
     commissionRate: numeric('commission_rate', { precision: 5, scale: 2 })
