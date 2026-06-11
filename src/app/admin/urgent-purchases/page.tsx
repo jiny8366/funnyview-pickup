@@ -709,7 +709,8 @@ function FinishedView({ rows }: { rows: Row[] }) {
 /* ----- 발주서 문서 (미리보기 compact + 인쇄 풀) ----- */
 function PurchaseOrderDoc({ po, compact }: { po: PurchaseOrder; compact?: boolean }) {
   return (
-    <div className={compact ? 'space-y-4' : 'space-y-8 p-2'}>
+    // .doc-light: 운영 다크 토글과 무관하게 문서는 항상 라이트(팀 규약, M1 e70f4aa)
+    <div className={`doc-light ${compact ? 'space-y-4 bg-white p-2' : 'space-y-8 p-2'}`}>
       {po.groups.map((g, gi) => (
         <section key={g.supplier.id ?? `none-${gi}`} className="break-inside-avoid">
           {!compact && <h2 className="mb-2 text-center text-xl font-bold">발 주 서</h2>}
