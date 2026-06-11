@@ -223,7 +223,7 @@ export default function ProductDetailPage() {
   const outOfStock = hasVariants && product.variants.every((v) => v.available <= 0);
 
   return (
-    <div className="min-h-screen bg-white pb-32 md:pb-0">
+    <div className="animate-fade-in min-h-screen bg-white pb-32 md:pb-0">
       <ShopHeader productCode={productCode} />
 
       {/* Breadcrumb */}

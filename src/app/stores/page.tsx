@@ -13,7 +13,7 @@ export default function PublicStoresPage() {
   return (
     <>
       <SiteHeader />
-      <main className="mx-auto w-full max-w-5xl px-4 py-6 md:py-10">
+      <main className="animate-fade-in mx-auto w-full max-w-5xl px-4 py-6 md:py-10">
       <Breadcrumb items={[{ href: '/', label: '홈' }, { label: '매장 찾기' }]} />
 
       <header className="mt-4">
