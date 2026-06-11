@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { HeaderMenu, type MenuSection } from '@/components/layout/header-menu';
 import { ThemeToggle } from '@/components/layout/theme-toggle';
 import {
@@ -127,9 +128,7 @@ export function AdminShell({
       >
         <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 md:px-8 md:py-4">
           <Link href="/admin/dashboard" className="flex items-center gap-2 truncate">
-            <span className="grid h-8 w-8 place-items-center rounded-lg bg-gray-900 text-xs font-bold text-white">
-              FV
-            </span>
+            <Image src="/brand/mark.png" alt="" width={32} height={32} priority className="h-8 w-8 shrink-0 object-contain" />
             <span className="truncate text-base font-semibold md:text-lg">
               퍼니뷰 예약시스템
               <span className="ml-1 hidden text-sm font-medium text-red-600 md:inline">· 관리자</span>

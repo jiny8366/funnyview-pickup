@@ -14,6 +14,20 @@ export const metadata: Metadata = {
     title: '퍼니뷰 예약시스템',
     statusBarStyle: 'default',
   },
+  openGraph: {
+    title: '퍼니뷰 예약시스템',
+    description: '주문하고 가까운 가맹점에서 픽업하세요',
+    siteName: '퍼니뷰 예약시스템',
+    type: 'website',
+    locale: 'ko_KR',
+    images: [{ url: '/og.png', width: 1200, height: 630 }],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: '퍼니뷰 예약시스템',
+    description: '주문하고 가까운 가맹점에서 픽업하세요',
+    images: ['/og.png'],
+  },
 };
 
 export const viewport: Viewport = {

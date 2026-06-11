@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { HeaderMenu, type MenuSection } from './header-menu';
 import { ThemeToggle } from './theme-toggle';
 
@@ -39,7 +40,8 @@ export function RoleHeader({
       style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-2 px-4 py-3 md:px-6 md:py-4">
-        <Link href="/" className="flex items-baseline gap-1.5 truncate">
+        <Link href="/" className="flex items-center gap-1.5 truncate">
+          <Image src="/brand/mark.png" alt="" width={28} height={28} priority className="h-7 w-7 shrink-0 object-contain" />
           <span className="truncate text-base font-semibold md:text-lg">
             퍼니뷰 예약시스템
           </span>

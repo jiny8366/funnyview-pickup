@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { ShopHeaderNav } from '@/components/shop/shop-header-nav';
 
 /**
@@ -10,7 +11,8 @@ export function SiteHeader() {
   return (
     <header className="sticky top-0 z-30 border-b border-gray-100 bg-white/95 backdrop-blur-sm" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-4 py-3 md:px-6">
-        <Link href="/" className="truncate text-base font-bold tracking-tight text-gray-900 hover:opacity-70 transition-opacity md:text-lg">
+        <Link href="/" className="flex items-center gap-1.5 truncate text-base font-bold tracking-tight text-gray-900 hover:opacity-70 transition-opacity md:text-lg">
+          <Image src="/brand/mark.png" alt="" width={28} height={28} priority className="h-7 w-7 shrink-0 object-contain" />
           퍼니뷰 예약시스템
         </Link>
         <nav className="flex items-center gap-1.5 text-sm text-gray-600 md:gap-4">
