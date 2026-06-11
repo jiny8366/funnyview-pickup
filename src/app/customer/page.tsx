@@ -139,13 +139,7 @@ export default function CustomerMyPage() {
                 full
               />
               {profile.referrerCode && (
-                <Info
-                  label="내 추천코드 (공유용·자동발급)"
-                  value={profile.referrerCode}
-                  mono
-                  full
-                  hint="친구에게 이 코드를 공유하면 추천 혜택이 적용됩니다. 모든 회원에게 가입 시 자동 발급되며, 아래 '추천인'(가입 때 입력)과는 별개입니다."
-                />
+                <ReferralCodeInfo code={profile.referrerCode} />
               )}
               {profile.referredByCode && (
                 <Info label="추천인 (가입 시 입력)" value={profile.referredByCode} mono />
@@ -263,6 +257,52 @@ export default function CustomerMyPage() {
           </ul>
         )}
       </section>
+    </div>
+  );
+}
+
+/** 내 추천코드 — 클릭 한 번으로 복사해 친구에게 전달 (JINY 지시). */
+function ReferralCodeInfo({ code }: { code: string }) {
+  const [copied, setCopied] = useState(false);
+
+  async function copy() {
+    try {
+      await navigator.clipboard.writeText(code);
+    } catch {
+      // 구형 브라우저/비보안 컨텍스트 폴백
+      const ta = document.createElement('textarea');
+      ta.value = code;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+    }
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+  }
+
+  return (
+    <div className="sm:col-span-2">
+      <dt className="text-[10px] font-medium uppercase tracking-wider text-gray-400">
+        내 추천코드 (공유용·자동발급)
+      </dt>
+      <dd className="mt-0.5 flex items-center gap-2">
+        <span className="font-mono text-sm font-semibold text-gray-900">{code}</span>
+        <button
+          type="button"
+          onClick={copy}
+          className={`rounded-md border px-2 py-1 text-xs font-medium transition ${
+            copied
+              ? 'border-emerald-300 bg-emerald-50 text-emerald-700'
+              : 'border-gray-300 bg-white text-gray-700 hover:bg-gray-50'
+          }`}
+        >
+          {copied ? '✓ 복사됨' : '📋 복사'}
+        </button>
+      </dd>
+      <p className="mt-1 text-xs text-gray-400">
+        친구에게 이 코드를 공유하면 추천 혜택이 적용됩니다. 가입 시 자동 발급되며, 가입 때 입력하는 &lsquo;추천인&rsquo;과는 별개입니다.
+      </p>
     </div>
   );
 }
