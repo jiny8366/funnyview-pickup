@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
-import { inArray } from 'drizzle-orm';
+import { and, inArray } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { lensVariants } from '@/db/schema';
+import { lensVariants, urgentPurchases } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { createInboundShipment } from '@/lib/inventory-fifo';
 
@@ -134,6 +134,20 @@ export async function POST(req: Request) {
         });
         shipments.push(r.shipment);
         lots.push(...r.lots);
+      }
+
+      // 입고/매입 시 선택한 매입처를, 동일 도수의 미해결 급매입(대기·발주)에 자동 반영.
+      // 리스트에서 이후 매입처 수정도 가능(어드민 급매입 화면).
+      if (supplierId) {
+        await tx
+          .update(urgentPurchases)
+          .set({ supplierId })
+          .where(
+            and(
+              inArray(urgentPurchases.variantId, variantIds),
+              inArray(urgentPurchases.status, ['requested', 'ordered']),
+            ),
+          );
       }
       return { shipments, lots };
     });

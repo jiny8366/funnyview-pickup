@@ -2,6 +2,7 @@ import { integer, pgTable, text, timestamp, uuid } from 'drizzle-orm/pg-core';
 import { lensVariants } from './lenses';
 import { orders } from './orders';
 import { users } from './users';
+import { suppliers } from './inventory';
 
 /**
  * 급매입 리스트 — 패킹 검수 중 실물 부족 발생 시 등록 (JINY 확정 플로우).
@@ -18,6 +19,8 @@ export const urgentPurchases = pgTable('urgent_purchases', {
     .references(() => lensVariants.id),
   quantityShort: integer('quantity_short').notNull(), // 부족 수량(박스)
   status: text('status').notNull().default('requested'), // requested|ordered|received|cancelled
+  // 매입처: 입고/매입 시 선택한 거래처가 자동 반영되고, 리스트에서 수정 가능
+  supplierId: uuid('supplier_id').references(() => suppliers.id),
   note: text('note'),
   createdBy: uuid('created_by').references(() => users.id),
   createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
