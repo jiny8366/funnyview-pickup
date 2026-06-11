@@ -101,7 +101,8 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
       <div className="mt-1 flex items-baseline justify-between px-0.5">
         <span className="text-xs text-gray-400">{cycle}</span>
         <div className="flex items-baseline gap-2">
-          {product.variantCount && product.variantCount > 1 && (
+          {/* 주의: `count && ...` 형태는 count=0 일 때 숫자 0 이 그대로 렌더됨 — 불리언 가드 필수 */}
+          {(product.variantCount ?? 0) > 1 && (
             <span className="text-[10px] font-medium text-pink-500">
               +{product.variantCount}컬러
             </span>
