@@ -11,7 +11,7 @@ import { notifications } from './notifications';
 import { userOauthAccounts } from './oauth';
 import { orders, orderItems, orderStatusHistory } from './orders';
 import { payments } from './payments';
-import { stores } from './stores';
+import { stores, storeGroups } from './stores';
 import { users } from './users';
 
 export const usersRelations = relations(users, ({ one, many }) => ({
@@ -62,10 +62,18 @@ export const customerPrescriptionsRelations = relations(
   }),
 );
 
-export const storesRelations = relations(stores, ({ many }) => ({
+export const storesRelations = relations(stores, ({ one, many }) => ({
   staff: many(users),
   orders: many(orders),
   payments: many(payments),
+  group: one(storeGroups, {
+    fields: [stores.groupId],
+    references: [storeGroups.id],
+  }),
+}));
+
+export const storeGroupsRelations = relations(storeGroups, ({ many }) => ({
+  stores: many(stores),
 }));
 
 export const lensesRelations = relations(lenses, ({ many }) => ({

@@ -5,11 +5,11 @@ import { useRouter } from 'next/navigation';
 import { useState } from 'react';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { Button } from '@/components/ui/button';
+import { AddressSearchButton } from '@/components/ui/address-search';
 
 export default function NewStorePage() {
   const router = useRouter();
   const [form, setForm] = useState({
-    code: '',
     name: '',
     phone: '',
     addressLine1: '',
@@ -19,21 +19,50 @@ export default function NewStorePage() {
     longitude: '',
     businessNumber: '',
     representativeName: '',
+    representativePhone: '',
     commissionRate: '10',
     sortOrder: 0,
   });
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [geoMsg, setGeoMsg] = useState<string | null>(null);
 
   function update<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((f) => ({ ...f, [key]: value }));
+  }
+
+  // 주소 선택 시: 우편번호·기본주소 채우고 좌표를 주소기반으로 자동 지오코딩
+  async function onAddressComplete(zonecode: string, address: string) {
+    setForm((f) => ({ ...f, postalCode: zonecode, addressLine1: address }));
+    setGeoMsg('좌표 조회 중…');
+    try {
+      const res = await fetch('/api/admin/geocode', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ address }),
+      });
+      if (!res.ok) {
+        setGeoMsg('좌표 자동조회 실패 — 저장은 가능합니다(지도 표시 시 주소 fallback).');
+        return;
+      }
+      const geo = await res.json();
+      setForm((f) => ({
+        ...f,
+        latitude: geo.latitude != null ? String(geo.latitude) : '',
+        longitude: geo.longitude != null ? String(geo.longitude) : '',
+        postalCode: geo.postalCode || zonecode,
+      }));
+      setGeoMsg(`좌표 자동입력됨 (${geo.latitude}, ${geo.longitude})`);
+    } catch {
+      setGeoMsg('좌표 자동조회 실패 — 저장은 가능합니다.');
+    }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     setError(null);
     if (!form.name.trim() || !form.phone.trim() || !form.addressLine1.trim()) {
-      setError('이름, 전화번호, 주소는 필수입니다.');
+      setError('가맹점명, 대표 전화, 주소는 필수입니다.');
       return;
     }
     setSubmitting(true);
@@ -41,7 +70,7 @@ export default function NewStorePage() {
       method: 'POST',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify({
-        code: form.code.trim() || undefined,
+        // code 미전송 → 서버가 ST-NNNN 자동 부여
         name: form.name,
         phone: form.phone,
         addressLine1: form.addressLine1,
@@ -51,6 +80,7 @@ export default function NewStorePage() {
         longitude: form.longitude || undefined,
         businessNumber: form.businessNumber || undefined,
         representativeName: form.representativeName || undefined,
+        representativePhone: form.representativePhone || undefined,
         commissionRate: form.commissionRate || '0',
         sortOrder: Number(form.sortOrder) || 0,
       }),
@@ -69,7 +99,7 @@ export default function NewStorePage() {
     <PageWrap>
       <PageHeader
         title="픽업가맹점 등록"
-        description="신규 가맹점 정보를 입력합니다. 좌표는 비워두어도 OK (지도 표시 시 주소로 fallback)."
+        description="가맹점 코드는 자동 부여(ST-NNNN)되고, 좌표는 주소를 선택하면 자동 입력됩니다."
         actions={
           <Link href="/admin/stores">
             <Button variant="secondary">목록으로</Button>
@@ -80,15 +110,6 @@ export default function NewStorePage() {
       <form onSubmit={handleSubmit} className="space-y-6">
         <Section title="기본 정보">
           <Grid2>
-            <Field label="가맹점 코드" hint="비워두면 ST-NNNN 자동 부여">
-              <input
-                type="text"
-                value={form.code}
-                onChange={(e) => update('code', e.target.value)}
-                placeholder="ST-0010"
-                className={inputCls}
-              />
-            </Field>
             <Field label="가맹점명" required>
               <input
                 type="text"
@@ -99,10 +120,7 @@ export default function NewStorePage() {
                 required
               />
             </Field>
-          </Grid2>
-
-          <Grid2>
-            <Field label="전화번호" required>
+            <Field label="대표 전화" required hint="매장 대표번호">
               <input
                 type="tel"
                 value={form.phone}
@@ -112,64 +130,9 @@ export default function NewStorePage() {
                 required
               />
             </Field>
-            <Field label="우편번호">
-              <input
-                type="text"
-                value={form.postalCode}
-                onChange={(e) => update('postalCode', e.target.value)}
-                placeholder="06234"
-                className={inputCls}
-              />
-            </Field>
           </Grid2>
 
-          <Field label="주소" required>
-            <input
-              type="text"
-              value={form.addressLine1}
-              onChange={(e) => update('addressLine1', e.target.value)}
-              placeholder="서울 강남구 테헤란로 100"
-              className={inputCls}
-              required
-            />
-          </Field>
-          <Field label="상세 주소">
-            <input
-              type="text"
-              value={form.addressLine2}
-              onChange={(e) => update('addressLine2', e.target.value)}
-              placeholder="3층 301호"
-              className={inputCls}
-            />
-          </Field>
-        </Section>
-
-        <Section title="좌표 (선택)">
-          <Grid2>
-            <Field label="위도 (latitude)">
-              <input
-                type="text"
-                inputMode="decimal"
-                value={form.latitude}
-                onChange={(e) => update('latitude', e.target.value)}
-                placeholder="37.5006"
-                className={inputCls}
-              />
-            </Field>
-            <Field label="경도 (longitude)">
-              <input
-                type="text"
-                inputMode="decimal"
-                value={form.longitude}
-                onChange={(e) => update('longitude', e.target.value)}
-                placeholder="127.0364"
-                className={inputCls}
-              />
-            </Field>
-          </Grid2>
-        </Section>
-
-        <Section title="사업자 정보 (정산 거래전표용)">
+          {/* 사업자 정보 — 기본 정보에 통합 */}
           <Grid2>
             <Field label="사업자번호">
               <input
@@ -189,6 +152,50 @@ export default function NewStorePage() {
               />
             </Field>
           </Grid2>
+          <Field label="대표 휴대전화" hint="사업자(대표) 휴대전화번호">
+            <input
+              type="tel"
+              value={form.representativePhone}
+              onChange={(e) => update('representativePhone', e.target.value)}
+              placeholder="010-0000-0000"
+              className={inputCls}
+            />
+          </Field>
+
+          {/* 주소 — 고객 회원가입과 동일한 우편번호 검색 + 좌표 자동입력 */}
+          <Field label="주소" required>
+            <div className="space-y-2">
+              <div className="flex items-center gap-2">
+                <input
+                  type="text"
+                  value={form.postalCode}
+                  placeholder="우편번호"
+                  readOnly
+                  className={`${inputCls} w-32 bg-gray-50`}
+                />
+                <AddressSearchButton
+                  onComplete={({ zonecode, address }) => onAddressComplete(zonecode, address)}
+                  className="h-9 shrink-0 rounded-lg border border-gray-300 bg-gray-100 px-3 text-sm font-medium text-gray-700 hover:bg-gray-200"
+                />
+              </div>
+              <input
+                type="text"
+                value={form.addressLine1}
+                placeholder="기본주소 (주소 검색)"
+                readOnly
+                className={`${inputCls} bg-gray-50`}
+                required
+              />
+              <input
+                type="text"
+                value={form.addressLine2}
+                onChange={(e) => update('addressLine2', e.target.value)}
+                placeholder="상세 주소 (3층 301호 등)"
+                className={inputCls}
+              />
+              {geoMsg && <p className="text-xs text-gray-500">📍 {geoMsg}</p>}
+            </div>
+          </Field>
         </Section>
 
         <Section title="운영 설정">
