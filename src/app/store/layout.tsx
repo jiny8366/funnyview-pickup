@@ -1,3 +1,6 @@
+import { eq } from 'drizzle-orm';
+import { db } from '@/db/client';
+import { stores } from '@/db/schema';
 import { RoleHeader } from '@/components/layout/role-header';
 import { getCurrentUser } from '@/lib/auth/current-user';
 
@@ -21,9 +24,21 @@ export default async function StoreLayout({
   // 계정 관리는 대표자(owner)에게만 노출 — 담당 안경사(optician)는 미노출
   const nav =
     me?.storeRole === 'owner' ? [...NAV, { href: '/store/accounts', label: '계정 관리' }] : NAV;
+
+  // 헤더 '픽업가맹점' 옆 상호 표시 — 소속 매장명 조회 (관리자는 소속 없음 → 미표시)
+  let storeName: string | undefined;
+  if (me?.storeId) {
+    const [s] = await db
+      .select({ name: stores.name })
+      .from(stores)
+      .where(eq(stores.id, me.storeId))
+      .limit(1);
+    storeName = s?.name;
+  }
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <RoleHeader role="store" nav={nav} />
+      <RoleHeader role="store" nav={nav} storeName={storeName} />
       <main className="mx-auto max-w-6xl px-4 py-5 pb-safe md:px-6 md:py-8">{children}</main>
     </div>
   );

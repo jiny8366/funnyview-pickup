@@ -19,10 +19,13 @@ export function RoleHeader({
   role,
   nav,
   user,
+  storeName,
 }: {
   role: Role;
   nav: { href: string; label: string }[];
   user?: { label: string; sub?: string };
+  /** 픽업가맹점 포털 — 역할 라벨 옆에 표시할 매장 상호(소속 매장 식별). */
+  storeName?: string;
 }) {
   const meta = ROLE_META[role];
   const sections: MenuSection[] = [{ items: nav }];
@@ -46,6 +49,9 @@ export function RoleHeader({
             퍼니뷰 예약시스템
           </span>
           <span className={labelClass}>· {meta.label}</span>
+          {storeName && (
+            <span className="truncate text-sm font-semibold text-amber-700">· {storeName}</span>
+          )}
         </Link>
 
         <div className="flex items-center gap-2">
