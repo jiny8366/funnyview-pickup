@@ -55,8 +55,10 @@ export async function POST(
     return NextResponse.json({ error: '좌/우 중 하나 이상 입력하세요.' }, { status: 400 });
   }
   // 가맹점 수정 → 상호 스냅샷 기록 (고객 마이페이지 도수이력에 '누가 수정했는지' 노출 — JINY 확정)
+  // replaceAt 무시: 가맹점 수정은 기존 기록을 덮지 않고 항상 새 이력으로 누적 — 원본 보존 + 수정 날짜 표시
   await savePrescription(params.id, {
     ...parsed.data,
+    replaceAt: null,
     changedByStore: { id: store.id, name: store.name },
   });
   return NextResponse.json({ ok: true });

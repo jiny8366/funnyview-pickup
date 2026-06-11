@@ -53,7 +53,8 @@ interface ReorderLine {
   eyeSide: 'left' | 'right' | 'both';
   quantity: number;
   variantId: string;
-  variants: VariantOpt[] | null; // null = 로딩 전
+  variants: VariantOpt[] | null; // null = 로딩 전, [] = 도수 변경 불가(원 도수 고정)
+  doseText: string; // 원 주문 도수 — variants 없을 때 고정 표시용
 }
 
 function doseLabel(v: { sphere: string | null; cylinder: string | null; axis: number | null; addPower: string | null }) {
@@ -231,7 +232,9 @@ function ReorderModal({
       eyeSide: it.eyeSide,
       quantity: it.quantity,
       variantId: it.variantId,
-      variants: null,
+      // 렌즈 마스터 연결이 끊긴 항목은 도수 변경 불가 — 원 variant 고정
+      variants: it.lensId ? null : [],
+      doseText: doseLabel(it),
     })),
   );
   const [saving, setSaving] = useState(false);
@@ -243,12 +246,29 @@ function ReorderModal({
     lensIds.forEach((lensId) => {
       fetch(`/api/store/lenses/${lensId}/variants`)
         .then((r) => (r.ok ? r.json() : { variants: [] }))
-        .then((j) =>
+        .then((j) => {
+          const variants: VariantOpt[] = j.variants ?? [];
           setLines((prev) =>
-            prev.map((l) => (l.lensId === lensId ? { ...l, variants: j.variants ?? [] } : l)),
-          ),
-        )
-        .catch(() => {});
+            prev.map((l) => {
+              if (l.lensId !== lensId) return l;
+              // 원 도수가 비활성/삭제로 목록에 없으면 재고 있는 첫 도수로 교체 —
+              // select 표시와 실제 주문 도수가 어긋나는 것 방지
+              const exists = variants.some((v) => v.variantId === l.variantId);
+              const fallback = variants.find((v) => v.available > 0) ?? variants[0];
+              return {
+                ...l,
+                variants,
+                variantId: exists ? l.variantId : (fallback?.variantId ?? l.variantId),
+              };
+            }),
+          );
+        })
+        .catch(() => {
+          // 로드 실패 시 도수 변경 불가로 전환 (원 variant 고정 주문은 가능)
+          setLines((prev) =>
+            prev.map((l) => (l.lensId === lensId ? { ...l, variants: [] } : l)),
+          );
+        });
     });
   }, [order]);
 
@@ -327,6 +347,10 @@ function ReorderModal({
               <div className="mt-2 flex flex-wrap items-center gap-2">
                 {l.variants === null ? (
                   <span className="text-xs text-gray-400">도수 목록 불러오는 중...</span>
+                ) : l.variants.length === 0 ? (
+                  <span className="flex-1 rounded-lg bg-gray-50 px-2 py-1.5 text-xs text-gray-600">
+                    {l.doseText} (도수 변경 불가 — 원 주문 도수로 주문)
+                  </span>
                 ) : (
                   <select
                     value={l.variantId}
