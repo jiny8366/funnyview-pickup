@@ -10,7 +10,7 @@ import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 
 export const dynamic = 'force-dynamic';
 
-/** 계정 관리 — 어드민/픽업업체/픽업가맹점 드롭다운 + (가맹점) 그룹·상호 검색. */
+/** 계정 관리 — 퍼니뷰 관리자/픽업관리/픽업가맹점 드롭다운 + (가맹점) 그룹·상호 검색. */
 export default async function AdminStaffPage() {
   await requirePermissionOrRedirect('staff_read');
 
@@ -63,7 +63,7 @@ export default async function AdminStaffPage() {
     <PageWrap>
       <PageHeader
         title="계정 관리"
-        description="어드민 · 픽업업체 · 픽업가맹점 계정을 구분 선택하여 관리합니다."
+        description="퍼니뷰 관리자 · 픽업관리 · 픽업가맹점 계정을 구분 선택하여 관리합니다."
         actions={
           <Link
             href="/admin/staff/new"

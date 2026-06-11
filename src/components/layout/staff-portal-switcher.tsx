@@ -14,14 +14,14 @@ interface PortalOption {
 const PORTALS: PortalOption[] = [
   {
     kind: 'admin',
-    label: '관리자',
+    label: '퍼니뷰 관리자',
     path: '/login/admin',
     emoji: '🛠️',
     color: 'text-red-700',
   },
   {
     kind: 'staff',
-    label: '픽업스탭',
+    label: '픽업관리',
     path: '/login/warehouse',
     emoji: '📦',
     color: 'text-emerald-700',
@@ -74,7 +74,7 @@ export function StaffPortalSwitcher() {
         aria-label="직원 로그인"
         aria-expanded={open}
         className="grid h-9 w-9 place-items-center rounded-md bg-red-600 text-white shadow-sm transition hover:bg-red-700"
-        title="직원 로그인 (관리자 / 픽업스탭 / 픽업가맹점)"
+        title="직원 로그인 (퍼니뷰 관리자 / 픽업관리 / 픽업가맹점)"
       >
         <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
           <rect x="3" y="11" width="18" height="11" rx="2" />

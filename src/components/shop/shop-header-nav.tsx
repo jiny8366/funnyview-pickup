@@ -57,7 +57,7 @@ function buildSections(user: MeUser | null): MenuSection[] {
         title: '🛡 운영 콘솔',
         items: [
           { href: portalUrl('admin', '/admin/dashboard'), label: '관리자 콘솔', external: true },
-          { href: portalUrl('staff', '/warehouse'),       label: '픽업서비스 콘솔', external: true },
+          { href: portalUrl('staff', '/warehouse'),       label: '픽업관리 콘솔', external: true },
           { href: portalUrl('store', '/store'),           label: '픽업가맹점 콘솔', external: true },
         ],
       },
@@ -68,7 +68,7 @@ function buildSections(user: MeUser | null): MenuSection[] {
   if (user.role === 'warehouse_staff') {
     return [
       shop,
-      { title: '운영', items: [{ href: portalUrl('staff', '/warehouse'), label: '픽업서비스 콘솔로 →', external: true }] },
+      { title: '운영', items: [{ href: portalUrl('staff', '/warehouse'), label: '픽업관리 콘솔로 →', external: true }] },
     ];
   }
 
@@ -105,9 +105,9 @@ export function ShopHeaderNav() {
     ? user.isMaster
       ? '🛡 마스터'
       : user.role === 'admin'
-        ? '관리자'
+        ? '퍼니뷰 관리자'
         : user.role === 'warehouse_staff'
-          ? '픽업서비스'
+          ? '픽업관리'
           : user.role === 'store_staff'
             ? '픽업가맹점'
             : '고객'

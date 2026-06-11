@@ -19,17 +19,17 @@ export interface AccountRow {
 }
 
 const ROLE_LABEL: Record<string, string> = {
-  admin: '관리자',
-  warehouse_staff: '픽업서비스 업체',
+  admin: '퍼니뷰 관리자',
+  warehouse_staff: '픽업관리',
   store_staff: '픽업가맹점',
 };
 
 // 드롭다운: 전체(기본) → 픽업업체 / 픽업가맹점 / 어드민 (JINY 지시)
 const ROLE_OPTIONS = [
   { value: 'all', label: '전체' },
-  { value: 'warehouse_staff', label: '픽업업체' },
+  { value: 'warehouse_staff', label: '픽업관리' },
   { value: 'store_staff', label: '픽업가맹점' },
-  { value: 'admin', label: '어드민' },
+  { value: 'admin', label: '퍼니뷰 관리자' },
 ];
 
 function roleColor(role: string) {

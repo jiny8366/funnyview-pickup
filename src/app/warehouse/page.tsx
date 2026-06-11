@@ -40,7 +40,7 @@ export default function WarehouseDashboardPage() {
   return (
     <div className="space-y-6">
       <section>
-        <h1 className="text-2xl font-bold">픽업서비스 업체 대시보드</h1>
+        <h1 className="text-2xl font-bold">픽업관리 대시보드</h1>
         <p className="mt-1 text-sm text-gray-500">
           신규 주문 알림 · 픽리스트 출력 · 패킹 및 출고 처리
         </p>

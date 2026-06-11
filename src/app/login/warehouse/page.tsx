@@ -48,7 +48,7 @@ function WarehouseLoginInner() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <div className="space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
         <header>
-          <h1 className="text-xl font-bold">픽업서비스 업체 로그인</h1>
+          <h1 className="text-xl font-bold">픽업관리 로그인</h1>
           <p className="mt-1 text-sm text-emerald-700">Warehouse Portal</p>
         </header>
 

@@ -51,8 +51,8 @@ interface FormState {
 }
 
 const ROLE_OPTIONS: Array<{ value: StaffRole; label: string; help: string }> = [
-  { value: 'admin', label: '관리자', help: '모든 portal 접근 가능 (디버깅/대행 포함)' },
-  { value: 'warehouse_staff', label: '픽업서비스 업체', help: '입고/출고 픽리스트 처리' },
+  { value: 'admin', label: '퍼니뷰 관리자', help: '모든 portal 접근 가능 (디버깅/대행 포함)' },
+  { value: 'warehouse_staff', label: '픽업관리', help: '입고/출고 픽리스트 처리' },
   { value: 'store_staff', label: '픽업가맹점', help: '소속 매장 픽업 수령 처리 — 가맹점 선택 필수' },
 ];
 

@@ -102,13 +102,13 @@ export function AdminShell({
               },
               {
                 href: portalUrl('admin', host),
-                label: '관리자',
+                label: '퍼니뷰 관리자',
                 icon: <IconSettings size={16} />,
                 external: true,
               },
               {
                 href: portalUrl('staff', host),
-                label: '픽업담당자',
+                label: '픽업관리',
                 icon: <IconCart size={16} />,
                 external: true,
               },
@@ -134,8 +134,7 @@ export function AdminShell({
           <Link href="/admin/dashboard" className="flex items-center gap-2 truncate">
             <Image src="/brand/mark.png" alt="" width={32} height={32} priority className="h-8 w-8 shrink-0 object-contain" />
             <span className="truncate text-base font-semibold md:text-lg">
-              퍼니뷰 예약시스템
-              <span className="ml-1 hidden text-sm font-medium text-red-600 md:inline">· 관리자</span>
+              퍼니뷰 <span className="text-red-600">관리자</span>
             </span>
           </Link>
 
@@ -143,7 +142,7 @@ export function AdminShell({
             <ThemeToggle />
             <HeaderMenu
               sections={sections}
-              user={{ label: isMaster ? '🛡 마스터' : '관리자', sub: user?.phone ?? '' }}
+              user={{ label: isMaster ? '🛡 마스터' : '퍼니뷰 관리자', sub: user?.phone ?? '' }}
               userPermissions={permissions}
               accent="red"
             />

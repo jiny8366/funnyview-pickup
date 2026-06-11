@@ -50,7 +50,7 @@ export default function StoreIncomingPage() {
     <div className="space-y-4">
       <h1 className="text-xl font-bold md:text-2xl">입고 / 배송 중</h1>
       <p className="text-sm text-gray-500">
-        픽업서비스 업체에서 출고된 주문. <b>입고 처리</b> 시 고객에게 <b>매장 도착 알림</b>이 자동 발송되고,
+        픽업관리에서 출고된 주문. <b>입고 처리</b> 시 고객에게 <b>매장 도착 알림</b>이 자동 발송되고,
         픽업 준비가 끝나면 <b>픽업준비 알림</b>을 보냅니다.
       </p>
 

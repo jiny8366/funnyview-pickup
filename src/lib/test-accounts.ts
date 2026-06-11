@@ -21,7 +21,7 @@ export const UNIFIED_TEST_ACCOUNT: TestAccount = {
   phone: 'jiny8366',
   password: '2282',
   label: '통합 테스트 계정',
-  hint: '모든 portal (관리자/픽업스탭/픽업가맹점/고객) 진입 가능',
+  hint: '모든 portal (퍼니뷰 관리자/픽업관리/픽업가맹점/고객) 진입 가능',
   primary: true,
 };
 
@@ -31,7 +31,7 @@ export const TEST_ACCOUNTS: Record<'admin' | 'warehouse' | 'store' | 'customer',
     {
       phone: '01000000000',
       password: PW,
-      label: '관리자 (역할별 계정)',
+      label: '퍼니뷰 관리자 (역할별 계정)',
       hint: '전체 운영 + CMS + 정산',
     },
   ],
@@ -40,7 +40,7 @@ export const TEST_ACCOUNTS: Record<'admin' | 'warehouse' | 'store' | 'customer',
     {
       phone: '01000000001',
       password: PW,
-      label: '픽업서비스 업체 직원',
+      label: '픽업관리 직원',
       hint: '주문 처리 + 출고 + 재고 + 입고 스캔',
     },
   ],

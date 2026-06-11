@@ -48,7 +48,7 @@ function AdminLoginInner() {
     <main className="mx-auto flex min-h-screen max-w-md flex-col justify-center px-6">
       <div className="space-y-6 rounded-2xl border border-gray-200 bg-white p-8 shadow-sm">
         <header>
-          <h1 className="text-xl font-bold">관리자 로그인</h1>
+          <h1 className="text-xl font-bold">퍼니뷰 관리자 로그인</h1>
           <p className="mt-1 text-sm text-gray-500">퍼니뷰 예약시스템 Admin</p>
         </header>
         <form onSubmit={onSubmit} className="space-y-4">

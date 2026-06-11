@@ -21,7 +21,7 @@ export default async function NewStaffPage() {
     <PageWrap>
       <PageHeader
         title="새 계정 등록"
-        description="관리자 · 픽업서비스 업체 · 픽업가맹점 직원 계정을 등록합니다."
+        description="퍼니뷰 관리자 · 픽업관리 · 픽업가맹점 직원 계정을 등록합니다."
         actions={
           <Link
             href="/admin/staff"

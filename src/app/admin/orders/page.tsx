@@ -18,7 +18,7 @@ export default async function AdminOrdersPage() {
       <EmptyState
         icon={<IconCart size={28} />}
         title="주문 통합 뷰는 다음 단계에서 활성화됩니다"
-        description="현재는 픽업서비스 업체 화면(/warehouse/orders)과 가맹점 화면(/store/pickup)에서 단계별 주문을 처리할 수 있습니다."
+        description="현재는 픽업관리 화면(/warehouse/orders)과 가맹점 화면(/store/pickup)에서 단계별 주문을 처리할 수 있습니다."
         action={
           <div className="flex flex-wrap gap-2">
             <Link

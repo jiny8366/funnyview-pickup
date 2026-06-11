@@ -7,7 +7,7 @@ type Role = 'customer' | 'warehouse' | 'store';
 
 const ROLE_META: Record<Role, { label: string; accent: 'brand' | 'emerald' | 'amber' }> = {
   customer: { label: '고객', accent: 'brand' },
-  warehouse: { label: '픽업서비스 업체', accent: 'emerald' },
+  warehouse: { label: '픽업관리', accent: 'emerald' },
   store: { label: '픽업가맹점', accent: 'amber' },
 };
 
