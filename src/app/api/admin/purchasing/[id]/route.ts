@@ -112,13 +112,22 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
   });
 }
 
-/** 상태 변경 — received(입고완료) / cancelled */
+/**
+ * 상태 변경 — draft→ordered(발주확정)/cancelled, ordered→received(입고완료)/cancelled.
+ */
+const TRANSITIONS: Record<string, string[]> = {
+  draft: ['ordered', 'cancelled'],
+  ordered: ['received', 'cancelled'],
+  received: [],
+  cancelled: [],
+};
+
 export async function PATCH(req: Request, { params }: { params: { id: string } }) {
   const me = await requireAdmin();
   if (!me) return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
 
   const body = (await req.json().catch(() => ({}))) as { status?: string };
-  if (body.status !== 'received' && body.status !== 'cancelled') {
+  if (body.status !== 'ordered' && body.status !== 'received' && body.status !== 'cancelled') {
     return NextResponse.json({ error: 'INVALID_STATUS' }, { status: 400 });
   }
 
@@ -126,8 +135,8 @@ export async function PATCH(req: Request, { params }: { params: { id: string } }
     db.select({ status: supplierOrders.status }).from(supplierOrders).where(eq(supplierOrders.id, params.id)).limit(1),
   );
   if (!cur) return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
-  if (cur.status !== 'ordered') {
-    return NextResponse.json({ error: 'INVALID_TRANSITION', from: cur.status }, { status: 409 });
+  if (!(TRANSITIONS[cur.status] ?? []).includes(body.status)) {
+    return NextResponse.json({ error: 'INVALID_TRANSITION', from: cur.status, to: body.status }, { status: 409 });
   }
 
   const [updated] = await db

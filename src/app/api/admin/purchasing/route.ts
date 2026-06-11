@@ -155,6 +155,13 @@ export async function GET(req: Request) {
           axis: lensVariants.axis,
           addPower: lensVariants.addPower,
           standardCost: sql<number>`COALESCE(${lenses.cost}, 0)`,
+          // 최근 매입단가 — 가장 최근 확정 입고 로트의 단가 (없으면 0 → 표준매입가 폴백은 클라이언트)
+          lastCost: sql<number>`COALESCE((
+            SELECT l.unit_cost_inc_vat FROM inventory_lots l
+            JOIN inbound_shipments s2 ON s2.id = l.shipment_id
+            WHERE l.variant_id = ${lensVariants.id} AND s2.status = 'confirmed'
+            ORDER BY s2.inbound_date DESC, l.created_at DESC LIMIT 1
+          ), 0)`,
           onHand: sql<number>`COALESCE(${inventory.quantityOnHand}, 0)`,
           reserved: sql<number>`COALESCE(${inventory.quantityReserved}, 0)`,
           safetyStock: sql<number>`COALESCE(${inventory.safetyStock}, 0)`,
@@ -203,7 +210,10 @@ const createSchema = z.object({
     .min(1),
 });
 
-/** 발주리스트 생성 → 즉시 '발주완료(ordered)' 상태 */
+/**
+ * 발주리스트 생성 → '작성(draft)' 상태.
+ * 목록에서 클릭 → 자식창(미리보기/인쇄/엑셀)에서 '발주확정' 시 ordered 로 전이 (JINY).
+ */
 export async function POST(req: Request) {
   const me = await requireAdmin();
   if (!me) return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
@@ -254,7 +264,7 @@ export async function POST(req: Request) {
           .values({
             orderNumber,
             supplierId: parsed.data.supplierId,
-            status: 'ordered',
+            status: 'draft',
             totalCost,
             note: parsed.data.note,
             createdBy: me.id,

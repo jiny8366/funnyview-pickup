@@ -1,6 +1,5 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { ProductFilterBar } from '@/components/product/product-filter-bar';
@@ -17,6 +16,7 @@ interface Candidate {
   axis: number | null;
   addPower: string | null;
   standardCost: number;
+  lastCost: number;
   onHand: number;
   available: number;
   safetyStock: number;
@@ -44,7 +44,7 @@ function toggleInSet<T>(set: Set<T>, val: T, setter: (s: Set<T>) => void) {
 interface OrderRow {
   id: string;
   orderNumber: string;
-  status: 'ordered' | 'received' | 'cancelled';
+  status: 'draft' | 'ordered' | 'received' | 'cancelled';
   totalCost: number;
   createdAt: string;
   receivedAt: string | null;
@@ -59,6 +59,7 @@ interface Supplier {
 }
 
 const STATUS_LABEL: Record<OrderRow['status'], { label: string; cls: string }> = {
+  draft: { label: '작성', cls: 'bg-amber-100 text-amber-700' },
   ordered: { label: '발주완료', cls: 'bg-blue-100 text-blue-700' },
   received: { label: '입고완료', cls: 'bg-emerald-100 text-emerald-700' },
   cancelled: { label: '취소', cls: 'bg-gray-200 text-gray-600' },
@@ -91,6 +92,7 @@ export default function PurchasingPage() {
   const [creating, setCreating] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [detailId, setDetailId] = useState<string | null>(null);
 
   // 제품 검색 추가 (JINY) — 표준 검색으로 임의 제품을 발주 후보에 추가
   const [searchOpen, setSearchOpen] = useState(false);
@@ -148,7 +150,7 @@ export default function PurchasingPage() {
         });
         setCost((c2) => {
           const next = new Map(c2);
-          added.forEach((c) => next.set(c.variantId, c.standardCost));
+          added.forEach((c) => next.set(c.variantId, c.lastCost > 0 ? c.lastCost : c.standardCost));
           return next;
         });
         setChecked((ch) => {
@@ -192,7 +194,7 @@ export default function PurchasingPage() {
       setCands(list);
       setSupplierScoped(Boolean(j.supplierScoped));
       setQty(new Map(list.map((c) => [c.variantId, c.suggested])));
-      setCost(new Map(list.map((c) => [c.variantId, c.standardCost])));
+      setCost(new Map(list.map((c) => [c.variantId, c.lastCost > 0 ? c.lastCost : c.standardCost])));
       setChecked(new Set(list.map((c) => c.variantId)));
     } finally {
       setLoading(false);
@@ -205,6 +207,13 @@ export default function PurchasingPage() {
     for (const id of checked) sum += (qty.get(id) ?? 0) * (cost.get(id) ?? 0);
     return sum;
   }, [checked, qty, cost]);
+
+  // 발주량 합계 (체크된 도수의 팩 수 합) — 하단 합계 표시 (JINY)
+  const totalQtySum = useMemo(() => {
+    let sum = 0;
+    for (const id of checked) sum += qty.get(id) ?? 0;
+    return sum;
+  }, [checked, qty]);
 
   async function createOrder() {
     if (!supplierId) {
@@ -231,17 +240,18 @@ export default function PurchasingPage() {
         setErr(j.message ?? j.error ?? '발주 생성에 실패했습니다.');
         return;
       }
-      setMsg(`발주서 ${j.orderNumber} 생성 완료 (발주완료). 미리보기에서 인쇄·PDF·엑셀이 가능합니다.`);
+      setMsg(`발주서 ${j.orderNumber} 생성 완료(작성 상태) — 검토 후 '발주확정'을 눌러 확정하세요.`);
       setTimeout(() => setMsg(null), 6000);
       setCands(null);
       loadOrders();
+      setDetailId(j.orderId);
     } finally {
       setCreating(false);
     }
   }
 
-  async function setStatus(id: string, status: 'received' | 'cancelled') {
-    const label = status === 'received' ? '입고완료' : '취소';
+  async function setStatus(id: string, status: 'ordered' | 'received' | 'cancelled') {
+    const label = status === 'ordered' ? '발주확정' : status === 'received' ? '입고완료' : '취소';
     if (!window.confirm(`이 발주서를 ${label} 처리할까요?`)) return;
     const res = await fetch(`/api/admin/purchasing/${id}`, {
       method: 'PATCH',
@@ -334,13 +344,15 @@ export default function PurchasingPage() {
                   {/* '출고분' — 발주(매입)된 출고분은 다음 후보에서 제외되므로 기간 표기 불필요 (JINY) */}
                   <th className="px-3 py-2 text-right">출고분</th>
                   <th className="px-3 py-2 text-right">발주수량</th>
-                  <th className="px-3 py-2 text-right">예상단가</th>
+                  {/* 단가 기본값 = 최근 매입된 입고 로트 단가 (JINY) */}
+                  <th className="px-3 py-2 text-right">단가</th>
+                  <th className="px-3 py-2 text-right">합계</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {cands.length === 0 && (
                   <tr>
-                    <td colSpan={9} className="px-3 py-10 text-center text-gray-400">
+                    <td colSpan={10} className="px-3 py-10 text-center text-gray-400">
                       보충이 필요한 품목이 없습니다 (발주완료에 잡힌 품목은 제외됩니다).
                     </td>
                   </tr>
@@ -411,6 +423,9 @@ export default function PurchasingPage() {
                         className="w-20 rounded border border-gray-200 px-1.5 py-1 text-right text-sm"
                       />
                     </td>
+                    <td className="px-3 py-2 text-right text-gray-700">
+                      {((qty.get(c.variantId) ?? 0) * (cost.get(c.variantId) ?? 0)).toLocaleString()}
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -419,7 +434,8 @@ export default function PurchasingPage() {
           {cands.length > 0 && (
             <div className="flex flex-wrap items-center justify-between gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3">
               <span className="text-sm text-gray-600">
-                선택 {selectedCount}개 도수 · 예상 매입금액 <b>{totalCost.toLocaleString()}원</b>
+                선택 {selectedCount}종 · 발주량 합계 <b>{totalQtySum.toLocaleString()}팩</b> · 합계금액{' '}
+                <b>{totalCost.toLocaleString()}원</b>
               </span>
               <Button onClick={createOrder} disabled={creating || selectedCount === 0 || !supplierId}>
                 {creating ? '생성 중…' : '📝 발주리스트 생성 (발주완료)'}
@@ -455,7 +471,12 @@ export default function PurchasingPage() {
               {orders?.map((o) => {
                 const s = STATUS_LABEL[o.status] ?? { label: o.status, cls: 'bg-gray-100 text-gray-600' };
                 return (
-                  <tr key={o.id}>
+                  <tr
+                    key={o.id}
+                    onClick={() => setDetailId(o.id)}
+                    className="cursor-pointer hover:bg-gray-50"
+                    title="클릭하면 발주서 자식창이 열립니다"
+                  >
                     <td className="px-3 py-2 font-mono text-xs">{o.orderNumber}</td>
                     <td className="px-3 py-2">{o.supplierName ?? '—'}</td>
                     <td className="px-3 py-2">
@@ -466,40 +487,7 @@ export default function PurchasingPage() {
                     </td>
                     <td className="px-3 py-2 text-right">{o.totalCost.toLocaleString()}원</td>
                     <td className="px-3 py-2 text-xs text-gray-500">{new Date(o.createdAt).toLocaleDateString('ko-KR')}</td>
-                    <td className="px-3 py-2">
-                      <div className="flex items-center justify-end gap-1">
-                        <Link
-                          href={`/admin/purchasing/${o.id}/print`}
-                          className="rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-                        >
-                          미리보기·인쇄
-                        </Link>
-                        <a
-                          href={`/api/admin/purchasing/${o.id}?format=csv`}
-                          className="rounded-lg border border-gray-200 px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-                        >
-                          엑셀
-                        </a>
-                        {o.status === 'ordered' && (
-                          <>
-                            <button
-                              type="button"
-                              onClick={() => setStatus(o.id, 'received')}
-                              className="rounded-lg border border-emerald-200 bg-emerald-50 px-2 py-1 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
-                            >
-                              입고완료
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => setStatus(o.id, 'cancelled')}
-                              className="rounded-lg border border-red-200 bg-red-50 px-2 py-1 text-xs text-red-600 hover:bg-red-100"
-                            >
-                              취소
-                            </button>
-                          </>
-                        )}
-                      </div>
-                    </td>
+                    <td className="px-3 py-2 text-right text-xs text-gray-400">클릭하여 상세 ›</td>
                   </tr>
                 );
               })}
@@ -507,6 +495,186 @@ export default function PurchasingPage() {
           </table>
         </div>
       </section>
+
+      {detailId && (
+        <OrderDetailModal
+          id={detailId}
+          onClose={() => setDetailId(null)}
+          onAction={(status) => {
+            setStatus(detailId, status);
+            setDetailId(null);
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+interface DetailItem {
+  id: string;
+  brand: string | null;
+  productName: string | null;
+  sku: string | null;
+  sphere: string | null;
+  cylinder: string | null;
+  axis: number | null;
+  addPower: string | null;
+  quantity: number;
+  unitCost: number;
+}
+
+/**
+ * 발주서 자식창 (JINY) — 미리보기 / 인쇄 / 엑셀다운로드 / 발주확정.
+ * draft: 발주확정·취소 · ordered: 입고완료·취소.
+ */
+function OrderDetailModal({
+  id,
+  onClose,
+  onAction,
+}: {
+  id: string;
+  onClose: () => void;
+  onAction: (status: 'ordered' | 'received' | 'cancelled') => void;
+}) {
+  const [data, setData] = useState<{
+    order: OrderRow & { supplierName: string | null; note: string | null };
+    items: DetailItem[];
+  } | null>(null);
+
+  useEffect(() => {
+    fetch(`/api/admin/purchasing/${id}`)
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setData(j))
+      .catch(() => {});
+  }, [id]);
+
+  const o = data?.order;
+  const s = o ? STATUS_LABEL[o.status] ?? { label: o.status, cls: 'bg-gray-100 text-gray-600' } : null;
+  const totalQty = data?.items.reduce((sum, it) => sum + it.quantity, 0) ?? 0;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div
+        className="flex max-h-[88vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl bg-white shadow-pop"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <header className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">
+              발주서 {o?.orderNumber ?? ''}{' '}
+              {s && <span className={`ml-1 rounded px-1.5 py-0.5 text-[11px] font-semibold ${s.cls}`}>{s.label}</span>}
+            </h2>
+            {o && (
+              <p className="mt-0.5 text-xs text-gray-500">
+                매입처 {o.supplierName ?? '—'} · 발주일 {new Date(o.createdAt).toLocaleDateString('ko-KR')}
+              </p>
+            )}
+          </div>
+          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full text-gray-400 hover:bg-gray-100" aria-label="닫기">
+            ✕
+          </button>
+        </header>
+
+        {/* 미리보기 (품목) */}
+        <div className="flex-1 overflow-y-auto px-5 py-3">
+          {!data ? (
+            <p className="py-8 text-center text-sm text-gray-400">불러오는 중...</p>
+          ) : (
+            <table className="w-full text-xs">
+              <thead className="text-left text-[11px] uppercase text-gray-400">
+                <tr>
+                  <th className="py-1.5 pr-2">제품</th>
+                  <th className="py-1.5 pr-2">도수</th>
+                  <th className="py-1.5 pr-2 text-right">수량</th>
+                  <th className="py-1.5 pr-2 text-right">단가</th>
+                  <th className="py-1.5 text-right">합계</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-50">
+                {data.items.map((it) => (
+                  <tr key={it.id}>
+                    <td className="py-1.5 pr-2">
+                      <span className="font-medium text-gray-900">{it.brand} {it.productName}</span>
+                      <span className="ml-1 font-mono text-[10px] text-gray-400">{it.sku}</span>
+                    </td>
+                    <td className="py-1.5 pr-2 text-gray-600">
+                      {doseLabel({ sphere: it.sphere ?? '', cylinder: it.cylinder, axis: it.axis, addPower: it.addPower })}
+                    </td>
+                    <td className="py-1.5 pr-2 text-right">{it.quantity}</td>
+                    <td className="py-1.5 pr-2 text-right">{it.unitCost.toLocaleString()}</td>
+                    <td className="py-1.5 text-right">{(it.quantity * it.unitCost).toLocaleString()}</td>
+                  </tr>
+                ))}
+              </tbody>
+              <tfoot>
+                <tr className="border-t border-gray-200 font-semibold">
+                  <td colSpan={2} className="py-2 pr-2">합계 ({data.items.length}종)</td>
+                  <td className="py-2 pr-2 text-right">{totalQty}팩</td>
+                  <td />
+                  <td className="py-2 text-right">{(o?.totalCost ?? 0).toLocaleString()}원</td>
+                </tr>
+              </tfoot>
+            </table>
+          )}
+        </div>
+
+        <footer className="flex flex-wrap items-center justify-between gap-2 border-t border-gray-100 px-5 py-3">
+          <div className="flex gap-2">
+            <a
+              href={`/admin/purchasing/${id}/print`}
+              target="_blank"
+              rel="noreferrer"
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              🖨 미리보기·인쇄 (PDF)
+            </a>
+            <a
+              href={`/api/admin/purchasing/${id}?format=csv`}
+              className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+            >
+              ⬇ 엑셀다운로드
+            </a>
+          </div>
+          <div className="flex gap-2">
+            {o?.status === 'draft' && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onAction('cancelled')}
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-600 hover:bg-red-100"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onAction('ordered')}
+                  className="press rounded-lg bg-gray-900 px-4 py-1.5 text-xs font-bold text-white hover:bg-black"
+                >
+                  ✅ 발주확정
+                </button>
+              </>
+            )}
+            {o?.status === 'ordered' && (
+              <>
+                <button
+                  type="button"
+                  onClick={() => onAction('cancelled')}
+                  className="rounded-lg border border-red-200 bg-red-50 px-3 py-1.5 text-xs text-red-600 hover:bg-red-100"
+                >
+                  취소
+                </button>
+                <button
+                  type="button"
+                  onClick={() => onAction('received')}
+                  className="rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100"
+                >
+                  입고완료
+                </button>
+              </>
+            )}
+          </div>
+        </footer>
+      </div>
     </div>
   );
 }
