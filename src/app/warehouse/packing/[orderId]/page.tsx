@@ -103,6 +103,21 @@ export default function PackingPage() {
     setErr(`출고 실패: ${j.message ?? j.error ?? res.status}${res.status === 409 ? ' (서버 수량 재검증 불일치)' : ''}`);
   }
 
+  /** 전품목 확정(스캔 생략) — 실물 품목·수량을 직접 확인한 경우 스캔 없이 일괄 확정 (JINY 지시). */
+  function confirmAllWithoutScan() {
+    if (!data || data.order.status !== 'picking') return;
+    if (!window.confirm('바코드 스캔 없이 전 품목을 확정합니다.\n실물 품목·수량을 직접 확인하셨습니까?')) return;
+    const next: Record<string, number> = {};
+    const vmap: Record<string, string> = {};
+    for (const [sku, r] of Object.entries(required)) {
+      next[sku] = r.qty;
+      vmap[sku] = r.variantId;
+    }
+    setScanned(next);
+    setVariantBySku(vmap);
+    addLog(true, '✓ 전품목 확정(스캔 생략) — 출고 처리할 수 있습니다');
+  }
+
   // 실물 부족 → 급매입 리스트 등록 (JINY 확정 플로우: 주문은 처리 중 유지, 입고 후 재검수→배송)
   const shortages = Object.entries(required)
     .map(([sku, r]) => ({ sku, variantId: r.variantId, label: r.label, short: r.qty - (scanned[sku] ?? 0) }))
@@ -184,9 +199,18 @@ export default function PackingPage() {
 
       {/* 진행 현황 */}
       <div className="rounded-2xl border border-gray-200 bg-white p-4">
-        <div className="mb-2 flex items-center justify-between">
+        <div className="mb-2 flex items-center justify-between gap-2">
           <span className="text-sm font-semibold">검수 진행 {totalScanned}/{totalRequired} 팩</span>
-          {allMatched && <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">전 품목 일치 ✓</span>}
+          {allMatched ? (
+            <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">전 품목 일치 ✓</span>
+          ) : (
+            !wrongStatus && (
+              /* 스캔 없이 실물 확인으로 일괄 확정 → 출고 진행 (JINY 지시) */
+              <Button variant="secondary" size="sm" onClick={confirmAllWithoutScan}>
+                ✓ 전품목 확정 (스캔 생략)
+              </Button>
+            )
+          )}
         </div>
         <ul className="divide-y divide-gray-100">
           {Object.entries(required).map(([sku, r]) => {
