@@ -483,7 +483,7 @@ function PaymentDialog({
   return (
     <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 md:items-center md:p-4">
       <div
-        className="w-full max-w-md bg-white p-6 shadow-xl md:rounded-2xl"
+        className="w-full max-w-md animate-slide-up bg-white p-6 shadow-pop md:animate-scale-in md:rounded-2xl"
         style={{
           borderTopLeftRadius: '1rem',
           borderTopRightRadius: '1rem',
