@@ -24,6 +24,15 @@ interface Row {
   method: 'statistical' | 'simple' | 'none';
 }
 
+interface ProductHit {
+  id: string;
+  brand: string;
+  name: string;
+  replacementCycle: string;
+  piecesPerBox: number;
+  variantCount: number;
+}
+
 interface Params {
   serviceZ: number;
   leadTimeDays: number;
@@ -91,27 +100,58 @@ export default function SafetyStockPage() {
 
   const hasFilter = Boolean(q.trim() || brands.size || types.size || cycles.size || packs.size);
 
+  // 검색 → 제품명 리스트 → 선택 → 하단 도수 리스트 (JINY)
+  const [products, setProducts] = useState<ProductHit[] | null>(null);
+  const [selectedProduct, setSelectedProduct] = useState<ProductHit | null>(null);
+
   async function load(all: boolean) {
     if (!all && !hasFilter) return;
     setLoading(true);
     setMode(all ? 'all' : 'search');
     setErr(null);
     try {
-      const sp = new URLSearchParams();
-      if (all) sp.set('all', '1');
-      else {
+      if (all) {
+        setProducts(null);
+        setSelectedProduct(null);
+        const res = await fetch('/api/admin/safety-stock?all=1');
+        const j = await res.json();
+        setRows(j.rows ?? []);
+        setParams(j.params ?? null);
+      } else {
+        // 1단계: 제품명 리스트
+        const sp = new URLSearchParams({ products: '1' });
         if (q.trim()) sp.set('q', q.trim());
         if (brands.size > 0) sp.set('brand', [...brands].join(','));
         if (types.size > 0) sp.set('type', [...types].join(','));
         if (cycles.size > 0) sp.set('cycle', [...cycles].join(','));
         if (packs.size > 0) sp.set('pack', [...packs].join(','));
+        const res = await fetch('/api/admin/purchasing?' + sp.toString());
+        const j = await res.json();
+        setProducts(j.products ?? []);
+        setSelectedProduct(null);
+        setRows(null);
+        if ((j.products ?? []).length === 0) setErr('검색 결과가 없습니다.');
       }
-      const res = await fetch(`/api/admin/safety-stock?${sp.toString()}`);
+    } catch {
+      setErr('조회에 실패했습니다.');
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // 2단계: 제품 선택 → 하단에 그 제품의 도수 리스트
+  async function selectProduct(p: ProductHit) {
+    setSelectedProduct(p);
+    setLoading(true);
+    setMode('search');
+    setErr(null);
+    try {
+      const res = await fetch(`/api/admin/safety-stock?lensId=${p.id}`);
       const j = await res.json();
       setRows(j.rows ?? []);
       setParams(j.params ?? null);
     } catch {
-      setErr('조회에 실패했습니다.');
+      setErr('도수 조회에 실패했습니다.');
     } finally {
       setLoading(false);
     }
@@ -192,10 +232,52 @@ export default function SafetyStockPage() {
 
       {err && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{err}</p>}
 
-      {!rows ? (
-        <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center text-sm text-gray-400">
-          제품을 검색하거나 <b>전체 품목 안전재고 권고</b>를 눌러 시작하세요.
+      {/* 1단계: 제품명 리스트 — 선택하면 하단에 도수 리스트 (JINY) */}
+      {products && products.length > 0 && (
+        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+          <table className="w-full text-sm">
+            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+              <tr>
+                <th className="px-3 py-2 text-left">제품</th>
+                <th className="px-3 py-2 text-left">주기 · 팩</th>
+                <th className="px-3 py-2 text-right">도수 수</th>
+                <th className="px-3 py-2 text-right" />
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {products.map((p) => (
+                <tr
+                  key={p.id}
+                  onClick={() => selectProduct(p)}
+                  className={`cursor-pointer ${selectedProduct?.id === p.id ? 'bg-amber-50/70' : 'hover:bg-gray-50'}`}
+                >
+                  <td className="px-3 py-2 font-medium text-gray-900">{p.brand} {p.name}</td>
+                  <td className="px-3 py-2 text-xs text-gray-500">
+                    {CYCLE_LABEL[p.replacementCycle] ?? p.replacementCycle} · {p.piecesPerBox}P
+                  </td>
+                  <td className="px-3 py-2 text-right text-gray-600">{p.variantCount}</td>
+                  <td className="px-3 py-2 text-right text-xs text-amber-700">
+                    {selectedProduct?.id === p.id ? '선택됨 ▾' : '도수 보기 ›'}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
         </div>
+      )}
+
+      {selectedProduct && rows && (
+        <p className="text-xs text-gray-500">
+          ▾ <b>{selectedProduct.brand} {selectedProduct.name}</b> 의 도수별 현재고/안전재고/권고
+        </p>
+      )}
+
+      {!rows ? (
+        products ? null : (
+          <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center text-sm text-gray-400">
+            제품을 검색하거나 <b>전체 품목 안전재고 권고</b>를 눌러 시작하세요.
+          </div>
+        )
       ) : rows.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-gray-300 bg-white p-12 text-center text-sm text-gray-400">
           {mode === 'all' ? '판매이력·재고가 있는 도수가 없습니다.' : '검색 결과가 없습니다.'}

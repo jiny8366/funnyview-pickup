@@ -48,6 +48,8 @@ export async function GET(req: Request) {
 
   const q = url.searchParams.get('q')?.trim();
   const all = url.searchParams.get('all') === '1';
+  // 제품명 리스트에서 선택한 제품의 도수 전체 조회 (JINY — 검색→제품 선택→하단 도수 리스트)
+  const lensId = url.searchParams.get('lensId');
   // 표준 칩 필터 (콤마 구분 복수). 주의: pack 은 빈 토큰을 Number 변환 전에 제거 (보드 #23 버그 클래스)
   const brandList = (url.searchParams.get('brand') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const typeList = (url.searchParams.get('type') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
@@ -59,7 +61,7 @@ export async function GET(req: Request) {
     .map(Number)
     .filter((n) => Number.isFinite(n));
   const hasFilter = Boolean(q || brandList.length || typeList.length || cycleList.length || packList.length);
-  if (!hasFilter && !all) return NextResponse.json({ rows: [], params: SAFETY_STOCK_PARAMS });
+  if (!hasFilter && !all && !lensId) return NextResponse.json({ rows: [], params: SAFETY_STOCK_PARAMS });
 
   // 관측창 내 일별 수요 집계 — 시스템 출고(outbound: 고객 배송 + B2B 발주)
   // + 과거 판매데이터(historical_sales, 엑셀 업로드 — JINY) 합산. σ 계산용 Σq² 포함.
@@ -112,6 +114,7 @@ export async function GET(req: Request) {
   const totalQtyExpr = sql<number>`COALESCE(${demand.totalQty}, 0) + COALESCE(${histDemand.totalQty}, 0)`;
 
   const conds = [eq(lensVariants.isActive, true), sql`${lenses.deletedAt} IS NULL`];
+  if (lensId) conds.push(eq(lenses.id, lensId));
   if (q) {
     const pat = `%${q}%`;
     const search = or(ilike(lenses.name, pat), ilike(lenses.brand, pat), ilike(lensVariants.sku, pat));
@@ -159,7 +162,7 @@ export async function GET(req: Request) {
         lenses.name,
         lensVariants.sphere,
       )
-      .limit(all ? 500 : 2000),
+      .limit(all ? 500 : lensId ? 3000 : 2000),
   );
 
   const out = rows.map((r) => {

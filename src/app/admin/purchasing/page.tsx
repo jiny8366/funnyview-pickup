@@ -353,31 +353,37 @@ export default function PurchasingPage() {
                 </thead>
                 <tbody className="divide-y divide-gray-100">
                   {productResults.map((pr) => (
-                    <tr key={pr.id} onClick={() => setDoseLensId(pr)} className="cursor-pointer hover:bg-amber-50/40">
+                    <tr
+                      key={pr.id}
+                      onClick={() => setDoseLensId(doseLensId?.id === pr.id ? null : pr)}
+                      className={`cursor-pointer ${doseLensId?.id === pr.id ? 'bg-amber-50/70' : 'hover:bg-amber-50/40'}`}
+                    >
                       <td className="px-3 py-2 font-medium text-gray-900">{pr.brand} {pr.name}</td>
                       <td className="px-3 py-2 text-xs text-gray-500">
                         {CYCLE_LABEL[pr.replacementCycle] ?? pr.replacementCycle} · {pr.piecesPerBox}P
                       </td>
                       <td className="px-3 py-2 text-right text-gray-600">{pr.variantCount}</td>
-                      <td className="px-3 py-2 text-right text-xs text-amber-700">도수표 열기 ›</td>
+                      <td className="px-3 py-2 text-right text-xs text-amber-700">
+                        {doseLensId?.id === pr.id ? '선택됨 ▾' : '도수 보기 ›'}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
               </table>
             </div>
           )}
+          {/* 2단계: 선택한 제품의 도수 리스트 — 하단 인라인 (안전재고량 관리와 동일 컨트롤, JINY) */}
+          {doseLensId && (
+            <DoseListPanel
+              product={doseLensId}
+              onClose={() => setDoseLensId(null)}
+              onApply={(items) => {
+                mergeIntoCands(items);
+                setDoseLensId(null);
+              }}
+            />
+          )}
         </div>
-      )}
-
-      {doseLensId && (
-        <DoseGridModal
-          product={doseLensId}
-          onClose={() => setDoseLensId(null)}
-          onApply={(items) => {
-            mergeIntoCands(items);
-            setDoseLensId(null);
-          }}
-        />
       )}
 
       {/* 후보 테이블 */}
@@ -739,11 +745,11 @@ function OrderDetailModal({
 
 
 /**
- * 도수 리스트 모달 (JINY) — 제품의 도수를 리스트로 띄우고 체크해서
- * '발주리스트에 반영'(수량 0) — 수량은 발주리스트에서 확정한다 (수동발주).
+ * 도수 리스트 패널 (JINY) — 제품명 리스트에서 선택하면 하단에 인라인으로 표시.
+ * 체크해서 '발주리스트에 반영'(수량 0) — 수량은 발주리스트에서 확정한다 (수동발주).
  * 토릭은 우측 상단 난시도수(CYL)·축(AX) 셀렉트로 좁혀 검색.
  */
-function DoseGridModal({
+function DoseListPanel({
   product,
   onClose,
   onApply,
@@ -795,14 +801,11 @@ function DoseGridModal({
   }, [variants, picked]);
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
-      <div
-        className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-pop"
-        onClick={(e) => e.stopPropagation()}
-      >
-        <header className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+    <div className="rounded-2xl border border-amber-200 bg-amber-50/20">
+      <div className="flex max-h-[60vh] flex-col overflow-hidden">
+        <header className="flex items-center justify-between border-b border-amber-100 px-5 py-3">
           <div>
-            <h2 className="text-base font-bold text-gray-900">도수표 — {product.brand} {product.name}</h2>
+            <h2 className="text-sm font-bold text-gray-900">도수 리스트 — {product.brand} {product.name}</h2>
             <p className="mt-0.5 text-xs text-gray-500">
               발주할 도수를 체크하고 반영하세요 — 수량은 발주리스트에서 입력·확정합니다.
             </p>
