@@ -5,6 +5,7 @@ import { useParams, useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 
 interface Item {
+  variantId: string;
   lensName: string;
   lensBrand: string;
   sku: string;
@@ -48,9 +49,9 @@ export default function PackingPage() {
 
   // SKU 별 주문 수량 합산(같은 제품 좌/우 합산 — 패킹은 박스 단위)
   const required = useMemo(() => {
-    const m: Record<string, { qty: number; label: string; sub: string }> = {};
+    const m: Record<string, { qty: number; label: string; sub: string; variantId: string }> = {};
     for (const it of data?.items ?? []) {
-      const cur = m[it.sku] ?? { qty: 0, label: `${it.lensName}`, sub: `${it.lensBrand} · ${it.sku}` };
+      const cur = m[it.sku] ?? { qty: 0, label: `${it.lensName}`, sub: `${it.lensBrand} · ${it.sku}`, variantId: it.variantId };
       cur.qty += it.quantity;
       m[it.sku] = cur;
     }
@@ -98,6 +99,37 @@ export default function PackingPage() {
     if (res.ok) { router.push('/warehouse/shipments'); return; }
     const j = await res.json().catch(() => ({}));
     setErr(`출고 실패: ${j.message ?? j.error ?? res.status}${res.status === 409 ? ' (서버 수량 재검증 불일치)' : ''}`);
+  }
+
+  // 실물 부족 → 급매입 리스트 등록 (JINY 확정 플로우: 주문은 처리 중 유지, 입고 후 재검수→배송)
+  const shortages = Object.entries(required)
+    .map(([sku, r]) => ({ sku, variantId: r.variantId, label: r.label, short: r.qty - (scanned[sku] ?? 0) }))
+    .filter((s) => s.short > 0);
+
+  async function registerUrgent() {
+    if (!data || shortages.length === 0) return;
+    const lines = shortages.map((s) => `· ${s.label} ${s.short}박스`).join('\n');
+    if (!window.confirm(`수량 부족 물량을 급매입 리스트에 반영하시겠습니까?\n\n${lines}\n\n주문은 '처리 중'으로 유지되며, 입고 후 재검수하여 배송처리합니다.`)) return;
+    setBusy(true);
+    try {
+      const res = await fetch('/api/warehouse/urgent-purchases', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          orderId: data.order.id,
+          items: shortages.map((s) => ({ variantId: s.variantId, quantityShort: s.short })),
+          note: `패킹검수 부족 (${data.order.orderNumber})`,
+        }),
+      });
+      const j = await res.json().catch(() => ({}));
+      if (res.ok) {
+        addLog(true, `📦 급매입 ${j.registered}건 등록${j.skippedDuplicates ? ` (중복 ${j.skippedDuplicates}건 제외)` : ''} — 어드민 > 급매입 리스트에서 처리됩니다`);
+      } else {
+        addLog(false, `급매입 등록 실패: ${j.message ?? j.error ?? res.status}`);
+      }
+    } finally {
+      setBusy(false);
+    }
   }
 
   if (err && !data) return <div className="p-6 text-sm text-red-600">{err}</div>;
@@ -179,6 +211,17 @@ export default function PackingPage() {
       <Button onClick={ship} disabled={!canShip || busy} className="w-full bg-emerald-600 hover:bg-emerald-700">
         {busy ? '출고 처리 중…' : canShip ? '✅ 검수 완료 — 출고(배송) 처리' : '전 품목 스캔 후 출고 가능'}
       </Button>
+
+      {!wrongStatus && !allMatched && shortages.length > 0 && (
+        <button
+          type="button"
+          onClick={registerUrgent}
+          disabled={busy}
+          className="w-full rounded-lg border border-red-200 bg-red-50 px-4 py-2.5 text-sm font-medium text-red-700 hover:bg-red-100 disabled:opacity-50"
+        >
+          ⚠ 실물 부족 — 급매입 리스트에 반영 ({shortages.reduce((s, x) => s + x.short, 0)}박스 부족)
+        </button>
+      )}
     </div>
   );
 }
