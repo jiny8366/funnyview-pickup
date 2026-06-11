@@ -87,6 +87,42 @@ export async function GET() {
   return NextResponse.json({ orders });
 }
 
+/**
+ * PATCH — 매장 '수령 확인'. 본사가 배송(shipped)한 발주를 매장이 실물 수령 처리(received).
+ * 매장(owner·optician) 전용, 자기 매장 발주만. shipped→received 만 허용.
+ */
+export async function PATCH(req: Request) {
+  const me = await getCurrentUser();
+  if (!me || me.role !== 'store_staff' || !me.storeId) {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+  const body = (await req.json().catch(() => ({}))) as { id?: string };
+  const id = typeof body.id === 'string' ? body.id : '';
+  if (!id) return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
+
+  const [order] = await db
+    .select({ status: storeOrders.status, storeId: storeOrders.storeId })
+    .from(storeOrders)
+    .where(eq(storeOrders.id, id))
+    .limit(1);
+  if (!order || order.storeId !== me.storeId) {
+    return NextResponse.json({ error: 'NOT_FOUND' }, { status: 404 });
+  }
+  if (order.status !== 'shipped') {
+    return NextResponse.json(
+      { error: 'INVALID_TRANSITION', message: '수령 확인은 배송중(shipped) 상태에서만 가능합니다.' },
+      { status: 409 },
+    );
+  }
+
+  const [updated] = await db
+    .update(storeOrders)
+    .set({ status: 'received', updatedAt: new Date() })
+    .where(eq(storeOrders.id, id))
+    .returning();
+  return NextResponse.json({ ok: true, order: updated });
+}
+
 /** 발주번호 생성: SO-YYYYMMDD-NNN (당일 순번). */
 async function nextOrderNumber(storeId: string): Promise<string> {
   const now = new Date();

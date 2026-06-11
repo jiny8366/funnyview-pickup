@@ -39,13 +39,36 @@ export function StoreOrderHistoryClient() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
+  const [busy, setBusy] = useState<string | null>(null);
 
-  useEffect(() => {
+  function load() {
     fetch('/api/store/purchase-orders')
       .then((r) => r.json())
       .then((j) => setOrders(j.orders ?? []))
       .finally(() => setLoading(false));
+  }
+
+  useEffect(() => {
+    load();
   }, []);
+
+  // 매장 '수령 확인' — 본사 배송(shipped) 발주를 실물 수령 처리(received)
+  async function receive(id: string) {
+    if (typeof window !== 'undefined' && !window.confirm('이 발주를 수령 확인할까요? (배송 물품 도착 확인)')) {
+      return;
+    }
+    setBusy(id);
+    try {
+      const res = await fetch('/api/store/purchase-orders', {
+        method: 'PATCH',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ id }),
+      });
+      if (res.ok) load();
+    } finally {
+      setBusy(null);
+    }
+  }
 
   return (
     <div className="space-y-5">
@@ -93,7 +116,22 @@ export function StoreOrderHistoryClient() {
                         {o.orderNumber}
                       </td>
                       <td className="px-4 py-3">
-                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.cls}`}>{s.label}</span>
+                        <div className="flex items-center gap-2">
+                          <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.cls}`}>{s.label}</span>
+                          {o.status === 'shipped' && (
+                            <button
+                              type="button"
+                              disabled={busy === o.id}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                receive(o.id);
+                              }}
+                              className="rounded-lg bg-emerald-600 px-2.5 py-1 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                            >
+                              {busy === o.id ? '처리 중…' : '수령 확인'}
+                            </button>
+                          )}
+                        </div>
                       </td>
                       <td className="px-4 py-3 text-right text-gray-600">{o.itemCount}건</td>
                       <td className="px-4 py-3 text-right font-semibold text-gray-900">
