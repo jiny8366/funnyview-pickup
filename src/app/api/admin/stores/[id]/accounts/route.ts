@@ -14,7 +14,7 @@ async function requireAdmin() {
   return me;
 }
 function validPw(pw: string): boolean {
-  return pw.length >= 4 && pw.length <= 72;
+  return pw.length >= 6 && pw.length <= 72;
 }
 
 /** GET — 해당 매장의 대표자+안경사 계정 목록. */
@@ -40,7 +40,7 @@ export async function GET(_req: Request, { params }: { params: { id: string } })
 const createSchema = z.object({
   storeRole: z.enum(['owner', 'optician']),
   email: z.string().email('아이디는 이메일 형식으로 입력하세요'),
-  password: z.string().refine(validPw, '비밀번호는 4자 이상'),
+  password: z.string().refine(validPw, '비밀번호는 6자 이상'),
   name: z.string().min(1, '이름을 입력하세요').max(40),
 });
 
@@ -73,7 +73,7 @@ export async function POST(req: Request, { params }: { params: { id: string } })
 
 const patchSchema = z.object({
   id: z.string().uuid(),
-  password: z.string().refine(validPw, '비밀번호는 4자 이상').optional(),
+  password: z.string().refine(validPw, '비밀번호는 6자 이상').optional(),
   name: z.string().min(1).max(40).optional(),
   isActive: z.boolean().optional(),
   storeRole: z.enum(['owner', 'optician']).optional(),

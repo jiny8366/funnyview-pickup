@@ -17,7 +17,7 @@ async function requireOwner() {
 
 // 운영자가 임의 입력 — 최소 길이만 보장(이메일 아이디 + 임의 비밀번호).
 function validPw(pw: string): boolean {
-  return pw.length >= 4 && pw.length <= 72;
+  return pw.length >= 6 && pw.length <= 72;
 }
 
 /** GET — 우리 매장 담당 안경사 목록. */
@@ -44,7 +44,7 @@ export async function GET() {
 
 const createSchema = z.object({
   email: z.string().email('아이디는 이메일 형식으로 입력하세요'),
-  password: z.string().refine(validPw, '비밀번호는 4자 이상'),
+  password: z.string().refine(validPw, '비밀번호는 6자 이상'),
   name: z.string().min(1, '담당 안경사 이름을 입력하세요').max(40),
 });
 
@@ -79,7 +79,7 @@ export async function POST(req: Request) {
 
 const patchSchema = z.object({
   id: z.string().uuid(),
-  password: z.string().refine(validPw, '비밀번호는 4자 이상').optional(),
+  password: z.string().refine(validPw, '비밀번호는 6자 이상').optional(),
   name: z.string().min(1).max(40).optional(),
   isActive: z.boolean().optional(),
 });
