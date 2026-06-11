@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { formatLensDisplayName } from '@/lib/lens/format';
@@ -82,6 +82,16 @@ export default function WarehousePicklistPage() {
   const allSelected = orders.length > 0 && selected.size === orders.length;
   function toggleAll() {
     setSelected(allSelected ? new Set() : new Set(orders.map((o) => o.id)));
+  }
+  // 매장 단위 일괄선택 — 같은 가맹점 주문을 한 번에 묶어 픽리스트/발송 처리(한 가맹점 = 한 박스)
+  function toggleStore(list: OrderRow[]) {
+    const groupIds = list.map((o) => o.id);
+    const allIn = groupIds.every((id) => selected.has(id));
+    setSelected((prev) => {
+      const n = new Set(prev);
+      groupIds.forEach((id) => (allIn ? n.delete(id) : n.add(id)));
+      return n;
+    });
   }
   function togglePicked(sku: string) {
     setPickedSkus((p) => {
@@ -222,34 +232,56 @@ export default function WarehousePicklistPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
-                {orders.map((o) => (
-                  <tr key={o.id}>
-                    <td className="px-3 py-2">
-                      <input
-                        type="checkbox"
-                        checked={selected.has(o.id)}
-                        onChange={() => {
-                          const n = new Set(selected);
-                          n.has(o.id) ? n.delete(o.id) : n.add(o.id);
-                          setSelected(n);
-                        }}
-                      />
-                    </td>
-                    <td className="px-3 py-2 font-mono text-xs">{o.orderNumber}</td>
-                    <td className="px-3 py-2">{o.customerName}</td>
-                    <td className="px-3 py-2">{o.storeName}</td>
-                    <td className="px-3 py-2 text-right">{o.itemCount}</td>
-                    <td className="px-3 py-2 text-right">
-                      {/* 무검증 직접출고 대신 패킹 검수(스캔) 화면 경유 */}
-                      <Link
-                        href={`/warehouse/packing/${o.id}`}
-                        className="inline-block rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
-                      >
-                        📦 검수→출고
-                      </Link>
-                    </td>
-                  </tr>
-                ))}
+                {groupByStore(orders).map(([store, list]) => {
+                  const groupAll = list.every((o) => selected.has(o.id));
+                  const groupItems = list.reduce((s, o) => s + o.itemCount, 0);
+                  return (
+                    <Fragment key={store}>
+                      {/* 가맹점 그룹 헤더 — 동일 가맹점 묶음 + 매장 단위 일괄선택 */}
+                      <tr className="bg-gray-100">
+                        <td className="px-3 py-2">
+                          <input
+                            type="checkbox"
+                            checked={groupAll}
+                            onChange={() => toggleStore(list)}
+                            aria-label={`${store} 전체선택`}
+                          />
+                        </td>
+                        <td colSpan={5} className="px-3 py-2 text-sm font-semibold text-gray-800">
+                          🏪 {store} · {list.length}건 · {groupItems}아이템
+                        </td>
+                      </tr>
+                      {list.map((o) => (
+                        <tr key={o.id}>
+                          <td className="px-3 py-2 pl-6">
+                            <input
+                              type="checkbox"
+                              checked={selected.has(o.id)}
+                              onChange={() => {
+                                const n = new Set(selected);
+                                n.has(o.id) ? n.delete(o.id) : n.add(o.id);
+                                setSelected(n);
+                              }}
+                            />
+                          </td>
+                          <td className="px-3 py-2 font-mono text-xs">{o.orderNumber}</td>
+                          <td className="px-3 py-2">{o.customerName}</td>
+                          <td className="px-3 py-2 text-gray-400">{o.storeName}</td>
+                          <td className="px-3 py-2 text-right">{o.itemCount}</td>
+                          <td className="px-3 py-2 text-right">
+                            {/* 무검증 직접출고 대신 패킹 검수(스캔) 화면 경유 */}
+                            <Link
+                              href={`/warehouse/packing/${o.id}`}
+                              className="inline-block rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs text-gray-700 hover:bg-gray-50"
+                            >
+                              📦 검수→출고
+                            </Link>
+                          </td>
+                        </tr>
+                      ))}
+                    </Fragment>
+                  );
+                })}
                 {orders.length === 0 && (
                   <tr>
                     <td colSpan={6} className="px-3 py-8 text-center text-gray-400">
