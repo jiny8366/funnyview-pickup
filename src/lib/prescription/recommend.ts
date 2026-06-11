@@ -145,15 +145,30 @@ export async function recommendLenses(
     | { kind: 'grade'; label: string; min: number; max: number }
     | { kind: 'unknown' };
 
-  const GRADE3: Record<string, [number, number]> = {
+  // 제조사 공식 피팅 가이드 기준 등급↔처방 ADD 매핑 (2026-06 공식 자료 검증):
+  //   알콘(DT1/에어옵틱스 하이드라):  LO ≤+1.25 / MED +1.50~+2.00 / HI +2.25~+2.50
+  //   아큐브(J&J):                  LOW +0.75~+1.25 / MID +1.50~+1.75 / HIGH +2.00~+2.50
+  //   바슈롬(울트라/바이오트루):      LOW +0.75~+1.50 / HIGH +1.75~+2.50
+  const GRADE_ALCON: Record<string, [number, number]> = {
     LOW: [0.75, 1.25],
     MID: [1.5, 2.0],
     HIGH: [2.25, 2.5],
   };
-  const GRADE2: Record<string, [number, number]> = {
+  const GRADE_JNJ: Record<string, [number, number]> = {
+    LOW: [0.75, 1.25],
+    MID: [1.5, 1.75],
+    HIGH: [2.0, 2.5],
+  };
+  const GRADE_BL: Record<string, [number, number]> = {
     LOW: [0.75, 1.5],
     HIGH: [1.75, 2.5],
   };
+
+  function gradeTableFor(brand: string): Record<string, [number, number]> {
+    if (brand.includes('바슈롬')) return GRADE_BL;
+    if (brand.includes('아큐브')) return GRADE_JNJ;
+    return GRADE_ALCON; // 알콘 및 기타 3등급 — 일반 근사
+  }
 
   function parseGrade(name: string, productCode: string): 'LOW' | 'MID' | 'HIGH' | null {
     const n = name.toUpperCase();
@@ -164,24 +179,27 @@ export async function recommendLenses(
   }
 
   function multifocalAddInfo(r: { id: string; name: string; productCode: string; brand: string }): AddInfo {
-    const adds = addAtSphereByLens.get(r.id);
-    if (adds && adds.length > 0) return { kind: 'numeric', adds: [...new Set(adds)].sort((a, b) => a - b) };
+    // 국내 유통 멀티포컬은 전부 등급제 — 제조사 공식 차트(등급)를 1순위로 적용.
+    // 제품명에 등급 토큰이 없을 때만 variant 수치로 폴백.
     const grade = parseGrade(r.name, r.productCode);
     if (grade) {
-      // 바슈롬 = 2등급 체계 (MID 없음 — LOW 가 +1.50 까지 커버)
-      const table = r.brand.includes('바슈롬') ? GRADE2 : GRADE3;
-      const range = table[grade] ?? GRADE3[grade];
+      const range = gradeTableFor(r.brand)[grade];
       if (range) return { kind: 'grade', label: grade, min: range[0], max: range[1] };
     }
+    const adds = addAtSphereByLens.get(r.id);
+    if (adds && adds.length > 0) return { kind: 'numeric', adds: [...new Set(adds)].sort((a, b) => a - b) };
     return { kind: 'unknown' };
   }
 
   function multifocalFitsAdd(info: AddInfo, rxAdd: number): boolean {
+    // 처방 ADD 는 0.25 스텝 — 등급 범위가 빈틈없이 이어지므로 정확 포함으로 판정.
+    // 범위 밖(0.75 미만/2.50 초과)은 가장 가까운 끝으로 클램프.
+    const rx = Math.min(2.5, Math.max(0.75, rxAdd));
+    if (info.kind === 'grade') {
+      return rx >= info.min && rx <= info.max;
+    }
     if (info.kind === 'numeric') {
       return info.adds.some((a) => a >= rxAdd - RX_BELOW && a <= rxAdd + RX_ABOVE);
-    }
-    if (info.kind === 'grade') {
-      return rxAdd >= info.min - RX_BELOW && rxAdd <= info.max + RX_ABOVE;
     }
     return true; // 미상 — 제외 대신 하위 노출 ('가입도 확인 필요')
   }
@@ -293,13 +311,11 @@ export async function recommendLenses(
         score += Math.max(0, (2.5 - best) * 0.1);
         reasons.unshift(`멀티포컬 — 가입도 ADD +${best.toFixed(2)} (처방 +${rxAdd.toFixed(2)}에 적합)`);
       } else if (info.kind === 'grade') {
-        const center = (info.min + info.max) / 2;
-        const diff = Math.abs(center - rxAdd);
-        if (diff <= 0.375) score += 3;
-        else if (diff <= 0.625) score += 2;
-        score += Math.max(0, (2.5 - center) * 0.1);
+        // 제조사 공식 차트 범위에 정확 포함 — 만점 가산 (동률 정렬은 낮은 등급 우선)
+        score += 3;
+        score += Math.max(0, (2.5 - (info.min + info.max) / 2) * 0.1);
         reasons.unshift(
-          `멀티포컬 ${info.label} 등급 (ADD +${info.min.toFixed(2)}~+${info.max.toFixed(2)}) — 처방 +${rxAdd.toFixed(2)} 적합`,
+          `멀티포컬 ${info.label} 등급 (ADD +${info.min.toFixed(2)}~+${info.max.toFixed(2)}) — 처방 +${rxAdd.toFixed(2)} 적합 (제조사 피팅 가이드)`,
         );
       } else {
         // 가입도 미상 — 제외하지 않되 가산 없이 하위 노출 + 확인 안내
