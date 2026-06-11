@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ProductFilterBar } from '@/components/product/product-filter-bar';
 
 interface Candidate {
   variantId: string;
@@ -23,6 +24,21 @@ interface Candidate {
   reasonSold: boolean;
   reasonLow: boolean;
   suggested: number;
+  alreadyOrdered?: boolean;
+}
+
+const TYPE_OPTIONS = [
+  { value: 'spherical', label: '구면(투명)' },
+  { value: 'toric', label: '난시(토릭)' },
+  { value: 'multifocal', label: '멀티포컬' },
+  { value: 'color', label: '컬러' },
+];
+
+function toggleInSet<T>(set: Set<T>, val: T, setter: (s: Set<T>) => void) {
+  const s = new Set(set);
+  if (s.has(val)) s.delete(val);
+  else s.add(val);
+  setter(s);
 }
 
 interface OrderRow {
@@ -75,6 +91,79 @@ export default function PurchasingPage() {
   const [creating, setCreating] = useState(false);
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  // 제품 검색 추가 (JINY) — 표준 검색으로 임의 제품을 발주 후보에 추가
+  const [searchOpen, setSearchOpen] = useState(false);
+  const [sq, setSq] = useState('');
+  const [sBrands, setSBrands] = useState<Set<string>>(new Set());
+  const [sTypes, setSTypes] = useState<Set<string>>(new Set());
+  const [sCycles, setSCycles] = useState<Set<string>>(new Set());
+  const [sPacks, setSPacks] = useState<Set<number>>(new Set());
+  const [allBrands, setAllBrands] = useState<string[]>([]);
+  const [allCycles, setAllCycles] = useState<string[]>([]);
+  const [allPacks, setAllPacks] = useState<number[]>([]);
+  const [searching, setSearching] = useState(false);
+
+  useEffect(() => {
+    // facet 목록 — 표준 검색과 동일 소스
+    fetch('/api/admin/safety-stock?facets=1')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => {
+        setAllBrands(j?.brands ?? []);
+        setAllCycles(j?.cycles ?? []);
+        setAllPacks(j?.packs ?? []);
+      })
+      .catch(() => {});
+  }, []);
+
+  const sHasFilter = Boolean(sq.trim() || sBrands.size || sTypes.size || sCycles.size || sPacks.size);
+
+  async function searchAndAdd() {
+    if (!sHasFilter) return;
+    setSearching(true);
+    setErr(null);
+    try {
+      const sp = new URLSearchParams({ search: '1' });
+      if (sq.trim()) sp.set('q', sq.trim());
+      if (sBrands.size > 0) sp.set('brand', [...sBrands].join(','));
+      if (sTypes.size > 0) sp.set('type', [...sTypes].join(','));
+      if (sCycles.size > 0) sp.set('cycle', [...sCycles].join(','));
+      if (sPacks.size > 0) sp.set('pack', [...sPacks].join(','));
+      const res = await fetch('/api/admin/purchasing?' + sp.toString());
+      const j = await res.json();
+      const found: Candidate[] = j.candidates ?? [];
+      if (found.length === 0) {
+        setErr('검색 결과가 없습니다.');
+        return;
+      }
+      // 기존 후보에 병합 (중복 제외) — 추가분은 체크 + 제안수량/표준단가 기본값
+      setCands((prev) => {
+        const base = prev ?? [];
+        const have = new Set(base.map((c) => c.variantId));
+        const added = found.filter((c) => !have.has(c.variantId));
+        setQty((q2) => {
+          const next = new Map(q2);
+          added.forEach((c) => next.set(c.variantId, c.suggested));
+          return next;
+        });
+        setCost((c2) => {
+          const next = new Map(c2);
+          added.forEach((c) => next.set(c.variantId, c.standardCost));
+          return next;
+        });
+        setChecked((ch) => {
+          const next = new Set(ch);
+          added.forEach((c) => next.add(c.variantId));
+          return next;
+        });
+        return [...added, ...base];
+      });
+      setMsg(`검색 결과 ${found.length}개 중 새 품목을 후보 상단에 추가했습니다.`);
+      setTimeout(() => setMsg(null), 4000);
+    } finally {
+      setSearching(false);
+    }
+  }
 
   useEffect(() => {
     fetch('/api/admin/suppliers')
@@ -195,10 +284,33 @@ export default function PurchasingPage() {
         <Button size="sm" onClick={loadCandidates} disabled={loading}>
           {loading ? '분석 중…' : '📦 보충 후보 불러오기 (출고분 + 안전재고 미달)'}
         </Button>
+        <Button variant="secondary" size="sm" onClick={() => setSearchOpen((v) => !v)}>
+          {searchOpen ? '검색 닫기' : '🔍 제품 검색해서 추가'}
+        </Button>
         {cands && supplierId && !supplierScoped && (
           <span className="text-xs text-amber-600">이 매입처의 입고 이력이 없어 전체 후보를 표시합니다.</span>
         )}
       </div>
+
+      {/* 제품 검색 추가 — 표준 검색(검색어 + 칩)으로 임의 품목을 후보에 추가 (JINY) */}
+      {searchOpen && (
+        <div className="space-y-2 rounded-2xl border border-gray-200 bg-white p-3">
+          <ProductFilterBar
+            className="space-y-2"
+            facets={{ brands: allBrands, types: TYPE_OPTIONS, cycles: allCycles, packs: allPacks }}
+            values={{ query: sq, brands: sBrands, types: sTypes, cycles: sCycles, packs: sPacks }}
+            onQuery={setSq}
+            onToggleBrand={(b) => toggleInSet(sBrands, b, setSBrands)}
+            onToggleType={(t) => toggleInSet(sTypes, t, setSTypes)}
+            onToggleCycle={(c) => toggleInSet(sCycles, c, setSCycles)}
+            onTogglePack={(p) => toggleInSet(sPacks, p, setSPacks)}
+            searchPlaceholder="제품명 · 브랜드 · SKU 검색"
+          />
+          <Button size="sm" onClick={searchAndAdd} disabled={searching || !sHasFilter}>
+            {searching ? '검색 중…' : '＋ 검색 결과를 후보에 추가'}
+          </Button>
+        </div>
+      )}
 
       {/* 후보 테이블 */}
       {cands && (
@@ -219,7 +331,8 @@ export default function PurchasingPage() {
                   <th className="px-3 py-2 text-left">사유</th>
                   <th className="px-3 py-2 text-right">현재고</th>
                   <th className="px-3 py-2 text-right">안전재고</th>
-                  <th className="px-3 py-2 text-right">30일 출고</th>
+                  {/* '출고분' — 발주(매입)된 출고분은 다음 후보에서 제외되므로 기간 표기 불필요 (JINY) */}
+                  <th className="px-3 py-2 text-right">출고분</th>
                   <th className="px-3 py-2 text-right">발주수량</th>
                   <th className="px-3 py-2 text-right">예상단가</th>
                 </tr>
@@ -262,6 +375,14 @@ export default function PurchasingPage() {
                         )}
                         {c.reasonLow && (
                           <span className="rounded bg-red-50 px-1.5 py-0.5 text-[10px] font-medium text-red-700">안전재고 미달</span>
+                        )}
+                        {c.alreadyOrdered && (
+                          <span
+                            className="rounded bg-amber-50 px-1.5 py-0.5 text-[10px] font-medium text-amber-700"
+                            title="발주완료 상태의 다른 발주서에 이미 포함된 도수입니다"
+                          >
+                            발주중
+                          </span>
                         )}
                       </div>
                     </td>

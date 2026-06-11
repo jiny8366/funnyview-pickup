@@ -62,7 +62,9 @@ export async function GET(req: Request) {
     return NextResponse.json({ orders: rows });
   }
 
-  if (url.searchParams.get('candidates') === '1') {
+  const isCandidates = url.searchParams.get('candidates') === '1';
+  const isSearch = url.searchParams.get('search') === '1';
+  if (isCandidates || isSearch) {
     const supplierId = url.searchParams.get('supplierId');
 
     // 최근 30일 출고량 (고객 배송 + B2B 발주)
@@ -78,18 +80,47 @@ export async function GET(req: Request) {
       .groupBy(inventoryMovements.variantId)
       .as('sold');
 
-    const conds = [
-      eq(lensVariants.isActive, true),
-      sql`${lenses.deletedAt} IS NULL`,
+    const orderedExpr = sql<boolean>`EXISTS (
+      SELECT 1 FROM supplier_order_items soi
+      JOIN supplier_orders so ON so.id = soi.order_id
+      WHERE soi.variant_id = ${lensVariants.id} AND so.status = 'ordered'
+    )`;
+
+    const conds = [eq(lensVariants.isActive, true), sql`${lenses.deletedAt} IS NULL`];
+
+    if (isCandidates) {
       // 보충 후보: 출고분 또는 안전재고 미달
-      sql`(COALESCE(${sold.qty}, 0) > 0 OR (COALESCE(${inventory.quantityOnHand},0) - COALESCE(${inventory.quantityReserved},0)) < COALESCE(${inventory.safetyStock},0))`,
+      conds.push(
+        sql`(COALESCE(${sold.qty}, 0) > 0 OR (COALESCE(${inventory.quantityOnHand},0) - COALESCE(${inventory.quantityReserved},0)) < COALESCE(${inventory.safetyStock},0))`,
+      );
       // 발주완료(ordered) 발주에 이미 포함된 도수 제외 (JINY: 다음 출고분 리스트에서 구분)
-      sql`NOT EXISTS (
-        SELECT 1 FROM supplier_order_items soi
-        JOIN supplier_orders so ON so.id = soi.order_id
-        WHERE soi.variant_id = ${lensVariants.id} AND so.status = 'ordered'
-      )`,
-    ];
+      conds.push(sql`NOT ${orderedExpr}`);
+    } else {
+      // 제품검색 추가 (JINY) — 표준 검색(검색어 + 브랜드/타입/주기/갯수 칩)으로 임의 제품 추가.
+      // ordered 포함 여부는 제외하지 않고 alreadyOrdered 플래그로 구분 표시.
+      const sq = url.searchParams.get('q')?.trim();
+      const brandList = (url.searchParams.get('brand') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+      const typeList = (url.searchParams.get('type') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+      const cycleList = (url.searchParams.get('cycle') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+      const packList = (url.searchParams.get('pack') ?? '')
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
+        .map(Number)
+        .filter((n) => Number.isFinite(n));
+      if (!sq && !brandList.length && !typeList.length && !cycleList.length && !packList.length) {
+        return NextResponse.json({ candidates: [], supplierScoped: false });
+      }
+      if (sq) {
+        const pat = `%${sq}%`;
+        const search = sql`(${lenses.name} ILIKE ${pat} OR ${lenses.brand} ILIKE ${pat} OR ${lensVariants.sku} ILIKE ${pat})`;
+        conds.push(search);
+      }
+      if (brandList.length > 0) conds.push(inArray(lenses.brand, brandList));
+      if (typeList.length > 0) conds.push(inArray(lenses.lensType, typeList as never));
+      if (cycleList.length > 0) conds.push(inArray(lenses.replacementCycle, cycleList as never));
+      if (packList.length > 0) conds.push(inArray(lenses.piecesPerBox, packList));
+    }
 
     // 매입처 선택 시: 그 매입처로 입고했던 제품(lens) 한정 — 이력 없으면 빈 결과 + 플래그
     let supplierScoped = false;
@@ -128,6 +159,7 @@ export async function GET(req: Request) {
           reserved: sql<number>`COALESCE(${inventory.quantityReserved}, 0)`,
           safetyStock: sql<number>`COALESCE(${inventory.safetyStock}, 0)`,
           sold30d: sql<number>`COALESCE(${sold.qty}, 0)`,
+          alreadyOrdered: orderedExpr,
         })
         .from(lensVariants)
         .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
