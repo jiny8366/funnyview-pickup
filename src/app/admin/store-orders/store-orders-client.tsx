@@ -17,24 +17,24 @@ interface OrderRow {
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   placed: { label: '발주접수', cls: 'bg-blue-100 text-blue-700' },
-  confirmed: { label: '확인', cls: 'bg-amber-100 text-amber-700' },
-  shipped: { label: '출고', cls: 'bg-emerald-100 text-emerald-700' },
-  received: { label: '완료', cls: 'bg-green-100 text-green-700' },
+  confirmed: { label: '주문접수', cls: 'bg-amber-100 text-amber-700' },
+  shipped: { label: '배송중', cls: 'bg-emerald-100 text-emerald-700' },
+  received: { label: '입고완료', cls: 'bg-green-100 text-green-700' },
   cancelled: { label: '취소', cls: 'bg-gray-200 text-gray-600' },
 };
 
 // 상태별 가능한 다음 액션
 const NEXT_ACTIONS: Record<string, { status: string; label: string; danger?: boolean }[]> = {
   placed: [
-    { status: 'confirmed', label: '확인' },
+    { status: 'confirmed', label: '접수' },
     { status: 'cancelled', label: '취소', danger: true },
   ],
   confirmed: [
-    { status: 'shipped', label: '출고' },
+    { status: 'shipped', label: '배송' },
     { status: 'cancelled', label: '취소', danger: true },
   ],
   shipped: [
-    { status: 'received', label: '완료' },
+    { status: 'received', label: '입고완료' },
     { status: 'cancelled', label: '취소', danger: true },
   ],
   received: [],
@@ -44,9 +44,9 @@ const NEXT_ACTIONS: Record<string, { status: string; label: string; danger?: boo
 const FILTERS = [
   { key: '', label: '전체' },
   { key: 'placed', label: '발주접수' },
-  { key: 'confirmed', label: '확인' },
-  { key: 'shipped', label: '출고' },
-  { key: 'received', label: '완료' },
+  { key: 'confirmed', label: '주문접수' },
+  { key: 'shipped', label: '배송중' },
+  { key: 'received', label: '입고완료' },
   { key: 'cancelled', label: '취소' },
 ];
 

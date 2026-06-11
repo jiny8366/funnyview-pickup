@@ -29,9 +29,9 @@ interface OrderRow {
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
   placed: { label: '발주접수', cls: 'bg-blue-100 text-blue-700' },
-  confirmed: { label: '확인', cls: 'bg-amber-100 text-amber-700' },
-  shipped: { label: '출고', cls: 'bg-emerald-100 text-emerald-700' },
-  received: { label: '완료', cls: 'bg-green-100 text-green-700' },
+  confirmed: { label: '주문접수', cls: 'bg-amber-100 text-amber-700' },
+  shipped: { label: '배송중', cls: 'bg-emerald-100 text-emerald-700' },
+  received: { label: '입고완료', cls: 'bg-green-100 text-green-700' },
   cancelled: { label: '취소', cls: 'bg-gray-200 text-gray-600' },
 };
 
