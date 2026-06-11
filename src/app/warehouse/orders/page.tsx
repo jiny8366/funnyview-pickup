@@ -130,10 +130,23 @@ function WarehouseOrdersInner() {
     load();
   }
 
-  async function batch(action: 'accept' | 'pick' | 'ship' | 'cancel') {
-    if (selected.size === 0) return;
+  // 패킹 시작 — 선택분이 있으면 그것을, 없으면 목록 전체를(확인 후) 시작.
+  // ("패킹시작은 이 모두를 시작하는 것인지" 혼란 해소 + 비활성으로 '안 눌림' 방지)
+  async function startPacking() {
+    const ids = selected.size > 0 ? Array.from(selected) : (visible?.map((o) => o.id) ?? []);
+    if (ids.length === 0) {
+      setError('패킹 시작할 주문이 없습니다.');
+      return;
+    }
+    if (selected.size === 0 && typeof window !== 'undefined') {
+      if (!window.confirm(`목록의 전체 ${ids.length}건을 패킹 시작할까요? (선택 없이 진행)`)) return;
+    }
+    await runBatch('pick', ids);
+  }
+
+  async function runBatch(action: 'accept' | 'pick' | 'ship' | 'cancel', ids: string[]) {
+    if (ids.length === 0) return;
     setError(null);
-    const ids = Array.from(selected);
     const results = await Promise.allSettled(
       ids.map((id) =>
         fetch(`/api/warehouse/orders/${id}/transition`, {
@@ -179,16 +192,41 @@ function WarehouseOrdersInner() {
               </option>
             ))}
           </select>
-          <Button variant="secondary" size="sm" onClick={() => batch('pick')} disabled={selected.size === 0}>
-            패킹 시작
+          <Button variant="primary" size="sm" onClick={startPacking} disabled={!visible || visible.length === 0}>
+            패킹 시작{selected.size > 0 ? ` (${selected.size})` : visible && visible.length > 0 ? ` (전체 ${visible.length})` : ''}
           </Button>
-          <Button variant="danger" size="sm" onClick={() => batch('cancel')} disabled={selected.size === 0}>
-            취소
+          <Button
+            variant="danger"
+            size="sm"
+            onClick={() => runBatch('cancel', Array.from(selected))}
+            disabled={selected.size === 0}
+          >
+            취소{selected.size > 0 ? ` (${selected.size})` : ''}
           </Button>
         </div>
       </header>
 
       {error && <p className="text-sm text-red-600">{error}</p>}
+
+      <p className="text-xs text-gray-400">
+        주문을 선택해 <b>패킹 시작</b>을 누르면 선택분만, 선택 없이 누르면 <b>목록 전체</b>가 시작됩니다. 시작하면
+        픽리스트 화면에서 픽킹·배송을 진행합니다.
+      </p>
+
+      {/* 모바일 전체선택 (데스크탑은 표 헤더에 있음) */}
+      {visible && visible.length > 0 && (
+        <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs font-medium text-gray-600 md:hidden">
+          <input
+            type="checkbox"
+            checked={visible.length > 0 && visible.every((o) => selected.has(o.id))}
+            onChange={(e) =>
+              setSelected(e.target.checked ? new Set(visible.map((o) => o.id)) : new Set())
+            }
+            className="h-4 w-4"
+          />
+          전체 선택 ({selected.size}/{visible.length})
+        </label>
+      )}
 
       {/* 모바일: 카드 리스트 */}
       <ul className="space-y-2 md:hidden">
