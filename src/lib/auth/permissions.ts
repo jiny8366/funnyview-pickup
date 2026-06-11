@@ -14,6 +14,7 @@ export type PermissionGroup =
   | '운영'
   | '상품'
   | '가맹점'
+  | '창고·재고'
   | 'CMS·마케팅'
   | '시스템';
 
@@ -46,6 +47,10 @@ export const ALL_PERMISSIONS: PermissionDef[] = [
   { key: 'stores_read', label: '가맹점 조회', group: '가맹점' },
   { key: 'stores_write', label: '가맹점 등록/수정', group: '가맹점' },
 
+  // 창고·재고
+  { key: 'inventory_read', label: '재고 조회', group: '창고·재고' },
+  { key: 'inventory_adjust', label: '재고·안전재고 조정/편집', group: '창고·재고' },
+
   // CMS·마케팅
   { key: 'home_sections_read', label: '홈 섹션 조회', group: 'CMS·마케팅' },
   { key: 'home_sections_write', label: '홈 섹션 편집', group: 'CMS·마케팅' },
@@ -61,6 +66,7 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
   '운영',
   '상품',
   '가맹점',
+  '창고·재고',
   'CMS·마케팅',
   '시스템',
 ];
