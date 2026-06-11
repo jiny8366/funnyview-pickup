@@ -146,10 +146,21 @@ export default function StorePackingPage() {
     setErr(`배송 처리 실패: ${j.message ?? j.error ?? res.status}${res.status === 409 ? ' (서버 수량 재검증 불일치)' : ''}`);
   }
 
+  // 전 품목 일괄 확정(스캔 생략) — 실물 수량을 눈으로 확인한 경우. required 기준 scanned 일괄 채움.
+  // (M1 단건 검수화면과 동일 패턴) 서버 batch-ship 가 합계를 재검증하므로 안전.
+  function fillAll() {
+    if (confirmed) return;
+    if (typeof window !== 'undefined' && !window.confirm('바코드 스캔을 생략하고 전 품목을 발주 수량대로 일괄 확정합니다. 실물 수량을 직접 확인하셨습니까?')) return;
+    const next: Record<string, number> = {};
+    for (const r of Object.values(required)) next[r.variantId] = r.quantity;
+    setScanned(next);
+  }
+
   if (err && !data) return <div className="p-6 text-sm text-red-600">{err}</div>;
   if (!data) return <div className="p-6 text-sm text-gray-400">불러오는 중…</div>;
 
   const invoiceHref = `/warehouse/invoice-bundle?ids=${data.orderIds.join(',')}&mode=invoice`;
+  const waybillHref = `/warehouse/invoice-bundle?ids=${data.orderIds.join(',')}&mode=waybill`;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4 p-4">
@@ -259,19 +270,31 @@ export default function StorePackingPage() {
 
           {err && <p className="text-sm text-red-600">{err}</p>}
 
-          {/* 확정 → 거래명세서 동봉 → 배송 */}
+          {/* 확정 → 거래명세서·송장 동봉/출력 → 배송 */}
           {!confirmed ? (
-            <Button
-              onClick={() => setConfirmed(true)}
-              disabled={!allMatched}
-              className="w-full bg-emerald-600 hover:bg-emerald-700"
-            >
-              {allMatched ? '✅ 확정 (수량 일치)' : '전 품목 스캔 후 확정 가능'}
-            </Button>
+            <div className="space-y-2">
+              <Button
+                onClick={() => setConfirmed(true)}
+                disabled={!allMatched}
+                className="w-full bg-emerald-600 hover:bg-emerald-700"
+              >
+                {allMatched ? '✅ 확정 (수량 일치)' : '전 품목 스캔 후 확정 가능'}
+              </Button>
+              {/* 스캔 생략 일괄 확정 — 실물 수량 직접 확인 시(단건 검수화면과 동일 패턴) */}
+              {!allMatched && (
+                <button
+                  type="button"
+                  onClick={fillAll}
+                  className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+                >
+                  ✓ 전품목 확정 (스캔 생략)
+                </button>
+              )}
+            </div>
           ) : (
             <div className="space-y-3 rounded-2xl border border-emerald-200 bg-emerald-50 p-4">
               <p className="text-sm font-semibold text-emerald-800">
-                ✅ 확정됨 — 거래명세서를 출력해 박스에 동봉한 뒤 배송 처리하세요.
+                ✅ 확정됨 — 거래명세서·송장을 출력해 박스에 동봉한 뒤 배송 처리하세요.
               </p>
               <div className="flex flex-col gap-2 sm:flex-row">
                 <Link
@@ -281,6 +304,15 @@ export default function StorePackingPage() {
                 >
                   🧾 거래명세서 출력·동봉
                 </Link>
+                <Link
+                  href={waybillHref}
+                  target="_blank"
+                  className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
+                >
+                  🚚 송장 출력
+                </Link>
+              </div>
+              <div className="flex">
                 <Button onClick={ship} disabled={busy} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
                   {busy ? '배송 처리 중…' : '🚚 배송 처리 (출고 확정)'}
                 </Button>
