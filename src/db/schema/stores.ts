@@ -10,6 +10,7 @@ import {
   uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
+import { lenses } from './lenses';
 
 /**
  * 픽업가맹점 그룹.
@@ -99,3 +100,75 @@ export const stores = pgTable(
 
 export type Store = typeof stores.$inferSelect;
 export type NewStore = typeof stores.$inferInsert;
+
+/**
+ * 그룹 × 제품 수수료율 오버라이드.
+ * 그룹 전체율보다 우선하지만, 매장 × 제품 오버라이드보다는 후순위.
+ * 효과 수수료율 해석 순서는 src/lib/commission/resolve.ts 참조.
+ */
+export const groupProductCommissions = pgTable(
+  'group_product_commissions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    groupId: uuid('group_id')
+      .notNull()
+      .references(() => storeGroups.id),
+    lensId: uuid('lens_id')
+      .notNull()
+      .references(() => lenses.id),
+    commissionRate: numeric('commission_rate', { precision: 5, scale: 2 })
+      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    groupLensUnique: uniqueIndex('group_product_commissions_group_lens_unique').on(
+      t.groupId,
+      t.lensId,
+    ),
+  }),
+);
+
+export type GroupProductCommission = typeof groupProductCommissions.$inferSelect;
+export type NewGroupProductCommission =
+  typeof groupProductCommissions.$inferInsert;
+
+/**
+ * 매장 × 제품 수수료율 오버라이드.
+ * 가장 구체적인 수준 — 모든 fallback(그룹×제품, 매장 전체, 그룹 전체)보다 우선.
+ * 효과 수수료율 해석 순서는 src/lib/commission/resolve.ts 참조.
+ */
+export const storeProductCommissions = pgTable(
+  'store_product_commissions',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    storeId: uuid('store_id')
+      .notNull()
+      .references(() => stores.id),
+    lensId: uuid('lens_id')
+      .notNull()
+      .references(() => lenses.id),
+    commissionRate: numeric('commission_rate', { precision: 5, scale: 2 })
+      .notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+    updatedAt: timestamp('updated_at', { withTimezone: true })
+      .defaultNow()
+      .notNull(),
+  },
+  (t) => ({
+    storeLensUnique: uniqueIndex('store_product_commissions_store_lens_unique').on(
+      t.storeId,
+      t.lensId,
+    ),
+  }),
+);
+
+export type StoreProductCommission = typeof storeProductCommissions.$inferSelect;
+export type NewStoreProductCommission =
+  typeof storeProductCommissions.$inferInsert;

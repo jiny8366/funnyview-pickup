@@ -30,6 +30,25 @@ interface FormState {
   memo: string;
 }
 
+interface LensRow {
+  id: string;
+  brand: string;
+  name: string;
+  productCode: string;
+}
+
+interface GroupProductCommission {
+  id: string;
+  lensId: string;
+  commissionRate: string;
+  brand: string;
+  name: string;
+  productCode: string;
+}
+
+const gpcInputCls =
+  'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none';
+
 const EMPTY: FormState = { name: '', commissionRate: '', sortOrder: '0', memo: '' };
 
 export function StoreGroupsManager() {
@@ -240,6 +259,15 @@ export function StoreGroupsManager() {
         </CardBody>
       </Card>
 
+      {/* 제품별 수수료율 (그룹 × 제품) — 그룹 수정 모드에서만 노출 */}
+      {editingId && (
+        <GroupProductCommissions
+          groupId={editingId}
+          groupName={groups.find((g) => g.id === editingId)?.name ?? ''}
+          groupOverallRate={groups.find((g) => g.id === editingId)?.commissionRate ?? '0'}
+        />
+      )}
+
       {/* 그룹 목록 */}
       <Card>
         <CardHeader>
@@ -375,5 +403,240 @@ export function StoreGroupsManager() {
         </CardBody>
       </Card>
     </div>
+  );
+}
+
+/** 그룹 × 제품 수수료율 오버라이드 섹션 (그룹 수정 시 노출). */
+function GroupProductCommissions({
+  groupId,
+  groupName,
+  groupOverallRate,
+}: {
+  groupId: string;
+  groupName: string;
+  groupOverallRate: string;
+}) {
+  const [items, setItems] = useState<GroupProductCommission[]>([]);
+  const [lenses, setLenses] = useState<LensRow[]>([]);
+  const [query, setQuery] = useState('');
+  const [selectedLensId, setSelectedLensId] = useState('');
+  const [rate, setRate] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [msg, setMsg] = useState<string | null>(null);
+
+  async function load() {
+    try {
+      const [cr, lr] = await Promise.all([
+        fetch(`/api/admin/store-groups/${groupId}/product-commissions`).then((r) => r.json()),
+        fetch('/api/admin/lenses').then((r) => r.json()),
+      ]);
+      setItems(cr.commissions ?? []);
+      setLenses(
+        (lr.lenses ?? []).map((l: LensRow) => ({
+          id: l.id,
+          brand: l.brand,
+          name: l.name,
+          productCode: l.productCode,
+        })),
+      );
+    } catch {
+      setMsg('불러오기 실패');
+    }
+  }
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [groupId]);
+
+  const overriddenIds = useMemo(() => new Set(items.map((i) => i.lensId)), [items]);
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    if (!q) return [];
+    return lenses
+      .filter(
+        (l) =>
+          l.brand.toLowerCase().includes(q) ||
+          l.name.toLowerCase().includes(q) ||
+          l.productCode.toLowerCase().includes(q),
+      )
+      .slice(0, 20);
+  }, [query, lenses]);
+
+  async function save() {
+    if (!selectedLensId) {
+      setMsg('제품을 선택하세요');
+      return;
+    }
+    if (rate.trim() === '' || Number.isNaN(Number(rate))) {
+      setMsg('수수료율을 입력하세요');
+      return;
+    }
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(`/api/admin/store-groups/${groupId}/product-commissions`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ lensId: selectedLensId, commissionRate: rate.trim() }),
+      });
+      if (!res.ok) throw new Error();
+      setMsg('저장되었습니다');
+      setSelectedLensId('');
+      setQuery('');
+      setRate('');
+      await load();
+    } catch {
+      setMsg('저장 실패');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function remove(lensId: string) {
+    if (typeof window !== 'undefined' && !window.confirm('이 제품 오버라이드를 삭제할까요?')) return;
+    setBusy(true);
+    setMsg(null);
+    try {
+      const res = await fetch(
+        `/api/admin/store-groups/${groupId}/product-commissions?lensId=${encodeURIComponent(lensId)}`,
+        { method: 'DELETE' },
+      );
+      if (!res.ok) throw new Error();
+      await load();
+    } catch {
+      setMsg('삭제 실패');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  const selectedLens = lenses.find((l) => l.id === selectedLensId);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>제품별 수수료율 — {groupName || '그룹'}</CardTitle>
+      </CardHeader>
+      <CardBody>
+        <p className="mb-4 text-xs text-gray-500">
+          그룹 전체율({groupOverallRate}%)보다 우선하는 제품별 그룹 수수료율입니다. 매장 × 제품 오버라이드가 있으면 그쪽이 더 우선합니다.
+        </p>
+
+        <div className="mb-4 grid gap-2 md:grid-cols-[1fr_140px_auto]">
+          <div className="relative">
+            <input
+              type="text"
+              value={
+                selectedLens
+                  ? `${selectedLens.brand} ${selectedLens.name} (${selectedLens.productCode})`
+                  : query
+              }
+              onChange={(e) => {
+                setSelectedLensId('');
+                setQuery(e.target.value);
+              }}
+              placeholder="제품 검색 (브랜드/제품명/코드)"
+              className={gpcInputCls}
+            />
+            {!selectedLensId && filtered.length > 0 && (
+              <ul className="absolute z-10 mt-1 max-h-60 w-full overflow-auto rounded-lg border border-gray-200 bg-white shadow-lg">
+                {filtered.map((l) => (
+                  <li key={l.id}>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setSelectedLensId(l.id);
+                        setQuery('');
+                      }}
+                      disabled={overriddenIds.has(l.id)}
+                      className="flex w-full items-center justify-between px-3 py-2 text-left text-sm hover:bg-gray-50 disabled:opacity-40"
+                    >
+                      <span>
+                        <span className="font-medium text-gray-900">{l.brand}</span>{' '}
+                        <span className="text-gray-700">{l.name}</span>{' '}
+                        <span className="font-mono text-xs text-gray-400">{l.productCode}</span>
+                      </span>
+                      {overriddenIds.has(l.id) && (
+                        <span className="text-xs text-gray-400">이미 설정됨</span>
+                      )}
+                    </button>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
+          <input
+            type="number"
+            step="0.01"
+            value={rate}
+            onChange={(e) => setRate(e.target.value)}
+            placeholder="수수료율 %"
+            className={gpcInputCls}
+          />
+          <Button onClick={save} disabled={busy || !selectedLensId}>
+            추가/저장
+          </Button>
+        </div>
+        {msg && <p className="mb-3 text-sm text-gray-600">{msg}</p>}
+
+        {items.length === 0 ? (
+          <p className="px-1 py-4 text-sm text-gray-500">설정된 제품별 수수료율이 없습니다.</p>
+        ) : (
+          <div className="overflow-x-auto rounded-lg border border-gray-200">
+            <table className="w-full text-sm">
+              <thead className="bg-gray-50 text-xs text-gray-500">
+                <tr>
+                  <th className="px-3 py-2 text-left">브랜드</th>
+                  <th className="px-3 py-2 text-left">제품명</th>
+                  <th className="px-3 py-2 text-left">코드</th>
+                  <th className="px-3 py-2 text-right">수수료율</th>
+                  <th className="px-3 py-2 text-right">작업</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {items.map((it) => (
+                  <tr key={it.id}>
+                    <td className="px-3 py-2 font-medium text-gray-900">{it.brand}</td>
+                    <td className="px-3 py-2 text-gray-700">{it.name}</td>
+                    <td className="px-3 py-2 font-mono text-xs text-gray-400">{it.productCode}</td>
+                    <td className="px-3 py-2 text-right">
+                      <input
+                        type="number"
+                        step="0.01"
+                        defaultValue={it.commissionRate}
+                        onBlur={async (e) => {
+                          const v = e.target.value.trim();
+                          if (v === '' || v === it.commissionRate || Number.isNaN(Number(v))) return;
+                          setBusy(true);
+                          await fetch(
+                            `/api/admin/store-groups/${groupId}/product-commissions`,
+                            {
+                              method: 'POST',
+                              headers: { 'content-type': 'application/json' },
+                              body: JSON.stringify({ lensId: it.lensId, commissionRate: v }),
+                            },
+                          );
+                          setBusy(false);
+                          await load();
+                        }}
+                        className="w-24 rounded border border-gray-200 px-2 py-1 text-right text-sm focus:border-brand-500 focus:outline-none"
+                      />
+                      <span className="ml-1 text-gray-400">%</span>
+                    </td>
+                    <td className="px-3 py-2 text-right">
+                      <Button size="sm" variant="danger" onClick={() => remove(it.lensId)} disabled={busy}>
+                        삭제
+                      </Button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </CardBody>
+    </Card>
   );
 }

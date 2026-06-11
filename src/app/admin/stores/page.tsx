@@ -52,12 +52,17 @@ export default async function AdminStoresPage() {
                 <Th>전화</Th>
                 <Th className="text-right">수수료율</Th>
                 <Th className="text-center">상태</Th>
+                <Th className="text-right">관리</Th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-50">
               {rows.map((s) => (
                 <tr key={s.id} className="hover:bg-gray-50">
-                  <Td className="font-medium text-gray-900">{s.name}</Td>
+                  <Td className="font-medium text-gray-900">
+                    <Link href={`/admin/stores/${s.id}`} className="hover:text-brand-700 hover:underline">
+                      {s.name}
+                    </Link>
+                  </Td>
                   <Td className="text-gray-600">{s.addressLine1 ?? '—'}</Td>
                   <Td className="font-mono text-xs text-gray-600">{s.phone ?? '—'}</Td>
                   <Td className="text-right text-gray-700">
@@ -73,6 +78,13 @@ export default async function AdminStoresPage() {
                         비활성
                       </span>
                     )}
+                  </Td>
+                  <Td className="text-right">
+                    <Link href={`/admin/stores/${s.id}`}>
+                      <Button size="sm" variant="secondary">
+                        수정/상세
+                      </Button>
+                    </Link>
                   </Td>
                 </tr>
               ))}
