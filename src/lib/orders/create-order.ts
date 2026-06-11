@@ -25,6 +25,8 @@ export interface CreateOrderInput {
   pickupStoreId: string;
   lines: CreateOrderLine[];
   customerNote?: string;
+  /** 픽업가맹점 대리 발주 시 해당 매장 id — staff 주문처리에서 '발주'로 표시 */
+  orderedByStoreId?: string;
 }
 
 export class OrderCreationError extends Error {
@@ -100,6 +102,7 @@ export async function createOrder(input: CreateOrderInput) {
         orderNumber,
         customerId: input.customerId,
         pickupStoreId: input.pickupStoreId,
+        orderedByStoreId: input.orderedByStoreId,
         status: 'pending',
         subtotal,
         discount: 0,

@@ -22,6 +22,8 @@ export interface PrescriptionGroup {
   recordedAt: string; // ISO — 이력 그룹 키 겸 표시
   kind: PrescriptionKind;
   source: string | null;
+  /** 수정 주체 — 가맹점 변경 시 상호, 고객 본인 변경 시 null (JINY 확정 표기) */
+  changedByStoreName: string | null;
   left: EyeData | null;
   right: EyeData | null;
 }
@@ -29,6 +31,8 @@ export interface PrescriptionGroup {
 export interface SavePrescriptionInput {
   kind: PrescriptionKind;
   source?: string | null;
+  /** 가맹점이 수정하는 경우 상호 스냅샷 — 고객 본인이면 미지정(null) */
+  changedByStore?: { id: string; name: string } | null;
   left?: EyeInput | null;
   right?: EyeInput | null;
   /** 지정 시 해당 시각의 기존 같은 종류 기록을 교체(수정). 미지정이면 신규. */
@@ -64,6 +68,8 @@ export async function savePrescription(
       axis: e.axis ?? null,
       addPower: e.addPower ?? null,
       source: input.source ?? null,
+      changedByStoreId: input.changedByStore?.id ?? null,
+      changedByStoreName: input.changedByStore?.name ?? null,
       recordedAt,
     });
   };
@@ -93,6 +99,7 @@ export async function listPrescriptions(
         recordedAt: iso,
         kind: (r.kind as PrescriptionKind) ?? 'contact',
         source: r.source,
+        changedByStoreName: r.changedByStoreName ?? null,
         left: null,
         right: null,
       };

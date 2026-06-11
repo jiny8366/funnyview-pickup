@@ -25,6 +25,8 @@ interface PrescriptionGroup {
   recordedAt: string;
   kind: Kind;
   source: string | null;
+  /** 수정 주체 — 픽업가맹점 변경 시 상호, 고객 본인 변경 시 null(비움) — JINY */
+  changedByStoreName?: string | null;
   left: EyeData | null;
   right: EyeData | null;
 }
@@ -424,6 +426,11 @@ function HistoryList({
                   {(g.source === 'converted' || g.source === 'se') && (
                     <span className="ml-1.5 rounded bg-brand-50 px-1 py-0.5 text-[10px] text-brand-600">
                       {g.source === 'se' ? '구면등가' : '변환'}
+                    </span>
+                  )}
+                  {g.changedByStoreName && (
+                    <span className="ml-1.5 rounded bg-indigo-50 px-1 py-0.5 text-[10px] font-medium text-indigo-600">
+                      {g.changedByStoreName} 수정
                     </span>
                   )}
                 </span>

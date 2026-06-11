@@ -38,6 +38,7 @@ export async function GET(
         arrivedAt: orders.arrivedAt,
         readyAt: orders.readyAt,
         completedAt: orders.completedAt,
+        orderedByStoreId: orders.orderedByStoreId,
         customerName: customers.name,
         customerPhone: customers.phone,
         storeName: stores.name,
@@ -100,5 +101,9 @@ export async function GET(
     ),
   ]);
 
-  return NextResponse.json({ order: head[0], items, history, payments: pays });
+  // 가맹점 발주 주문은 고객명 대신 '발주' (JINY)
+  const order = head[0].orderedByStoreId
+    ? { ...head[0], customerName: '발주', customerPhone: '' }
+    : head[0];
+  return NextResponse.json({ order, items, history, payments: pays });
 }

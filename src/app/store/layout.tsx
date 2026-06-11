@@ -7,6 +7,7 @@ const NAV = [
   { href: '/store/order/history', label: '내 발주 내역' },
   { href: '/store/incoming', label: '배송 중' },
   { href: '/store/pickup', label: '픽업 처리' },
+  { href: '/store/customers', label: '고객 관리' },
   { href: '/store/history', label: '처리 이력' },
   { href: '/store/info', label: '매장 정보' },
 ];

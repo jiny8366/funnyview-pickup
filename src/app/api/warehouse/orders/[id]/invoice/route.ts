@@ -33,6 +33,7 @@ export async function GET(
         discount: orders.discount,
         total: orders.total,
         customerNote: orders.customerNote,
+        orderedByStoreId: orders.orderedByStoreId,
         customerName: customers.name,
         customerPhone: customers.phone,
         storeName: stores.name,
@@ -83,8 +84,9 @@ export async function GET(
       orderNumber: h.orderNumber,
       createdAt: h.createdAt,
       status: h.status,
-      customerName: h.customerName,
-      customerPhone: h.customerPhone,
+      // 가맹점 발주 주문은 명세서에도 고객명 대신 '발주' (JINY)
+      customerName: h.orderedByStoreId ? '발주' : h.customerName,
+      customerPhone: h.orderedByStoreId ? '' : h.customerPhone,
       customerNote: h.customerNote,
     },
     store: {
