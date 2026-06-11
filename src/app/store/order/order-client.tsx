@@ -329,7 +329,7 @@ export function StoreOrderClient() {
       <aside className="lg:sticky lg:top-20 lg:self-start">
         <div className="rounded-2xl border border-gray-200 bg-white p-4">
           <h2 className="text-base font-bold text-gray-900">
-            발주 목록 {cartCount > 0 && <span className="text-amber-600">({cartCount})</span>}
+            장바구니 {cartCount > 0 && <span className="text-amber-600">({cartCount})</span>}
           </h2>
 
           {cartLines.length === 0 ? (
@@ -397,7 +397,7 @@ export function StoreOrderClient() {
                 disabled={submitting}
                 className="mt-3 w-full rounded-lg bg-amber-600 py-3 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-60"
               >
-                {submitting ? '발주 처리 중…' : '발주하기'}
+                {submitting ? '발주 중…' : '발주'}
               </button>
             </>
           )}
@@ -548,7 +548,7 @@ function ProductCard({
           disabled={item.supplyPrice == null}
           className="mt-2 w-full rounded-lg bg-amber-600 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
         >
-          {qtyInCart > 0 ? `도수 추가 (${qtyInCart})` : '발주 담기'}
+          {qtyInCart > 0 ? `도수 추가 (${qtyInCart})` : '장바구니 담기'}
         </button>
       </div>
     </div>
@@ -635,7 +635,7 @@ function ProductRow({
         disabled={item.supplyPrice == null}
         className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
       >
-        {qtyInCart > 0 ? `도수 추가 (${qtyInCart})` : '발주 담기'}
+        {qtyInCart > 0 ? `도수 추가 (${qtyInCart})` : '장바구니 담기'}
       </button>
     </div>
   );

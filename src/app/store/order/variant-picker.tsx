@@ -284,7 +284,7 @@ export function StoreVariantPicker({
             onClick={() => selected && onConfirm(selected, qty)}
             className="mt-1 w-full rounded-lg bg-amber-600 py-2.5 text-sm font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
           >
-            발주 담기
+            장바구니 담기
           </button>
         </div>
       )}
