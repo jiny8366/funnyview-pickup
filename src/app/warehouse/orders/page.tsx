@@ -208,6 +208,9 @@ function WarehouseOrdersInner() {
 
       {error && <p className="text-sm text-red-600">{error}</p>}
 
+      <p className="text-xs text-gray-500">
+        단계: <b>주문접수</b> → <b>픽리스트 출력(배송준비)</b> → <b>검수 → 배송중</b>.
+      </p>
       <p className="text-xs text-gray-400">
         주문을 선택해 <b>패킹 시작</b>을 누르면 선택분만, 선택 없이 누르면 <b>목록 전체</b>가 시작됩니다. 시작하면
         픽리스트 화면에서 픽킹·배송을 진행합니다.

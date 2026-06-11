@@ -115,11 +115,47 @@ export default function WarehousePicklistPage() {
 
   // 출고(배송)는 이제 패킹 검수 화면(/warehouse/packing/[id])에서 스캔 검수 후 진행한다.
 
+  // 선택 주문 묶음으로 가맹점별 문서 출력 (거래명세서/팩리스트/송장) — 목록·미리보기 양쪽에서 항상 접근 가능
+  const ids = Array.from(selected).join(',');
+  const docLinks = selected.size > 0 && (
+    <>
+      <Link
+        href={`/warehouse/invoice-bundle?ids=${ids}&mode=invoice`}
+        className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+      >
+        🧾 거래명세서 ({selected.size})
+      </Link>
+      <Link
+        href={`/warehouse/invoice-bundle?ids=${ids}&mode=packlist`}
+        className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+      >
+        📦 팩리스트 ({selected.size})
+      </Link>
+      <Link
+        href={`/warehouse/invoice-bundle?ids=${ids}&mode=waybill`}
+        className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+      >
+        🚚 송장 ({selected.size})
+      </Link>
+    </>
+  );
+
   return (
     <div className="space-y-6">
-      <header className="flex items-center justify-between print:hidden">
-        <h1 className="text-2xl font-bold">픽리스트</h1>
-        <div className="flex gap-2">
+      {/* 배송준비중 처리 허브 — 햄버거 없이 화면 안에서 전체 순서 진행 */}
+      <div className="print:hidden">
+        <Link href="/warehouse/orders" className="text-sm text-gray-500 hover:text-gray-700">
+          ← 주문 처리
+        </Link>
+      </div>
+      <header className="flex flex-col gap-3 print:hidden md:flex-row md:items-start md:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold">배송준비중 — 픽리스트</h1>
+          <p className="mt-1 text-xs text-gray-500">
+            픽리스트/팩리스트/거래명세서/송장 출력 후 <b>검수→배송</b>. 단계: 주문접수 → <b>픽리스트 출력(배송준비)</b> → 검수 → 배송중.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
           {!picklist ? (
             <>
               <Button onClick={() => generate(false)} variant="secondary" disabled={selected.size === 0}>
@@ -128,23 +164,7 @@ export default function WarehousePicklistPage() {
               <Button onClick={() => generate(true)} disabled={selected.size === 0} className="bg-emerald-600 hover:bg-emerald-700">
                 🖨 인쇄 ({selected.size})
               </Button>
-              {/* 선택 주문(픽리스트 묶음)으로 가맹점별 출력 — 거래명세서/송장 별도 문서(JINY 지시) */}
-              {selected.size > 0 && (
-                <>
-                  <Link
-                    href={`/warehouse/invoice-bundle?ids=${Array.from(selected).join(',')}&mode=invoice`}
-                    className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    🧾 거래명세서 ({selected.size})
-                  </Link>
-                  <Link
-                    href={`/warehouse/invoice-bundle?ids=${Array.from(selected).join(',')}&mode=waybill`}
-                    className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                  >
-                    🚚 송장 ({selected.size})
-                  </Link>
-                </>
-              )}
+              {docLinks}
             </>
           ) : (
             <>
@@ -154,6 +174,8 @@ export default function WarehousePicklistPage() {
               <Button onClick={printPage} className="bg-emerald-600 hover:bg-emerald-700">
                 🖨 인쇄 / PDF 저장
               </Button>
+              {/* 미리보기 후에도 거래명세서/팩리스트/송장 액션 유지 (작업 흐름 끊기지 않게) */}
+              {docLinks}
             </>
           )}
         </div>
