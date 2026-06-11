@@ -40,7 +40,7 @@ export function ProductCard({ product, href }: { product: ProductCardData; href?
   const salePct = onSale ? Math.round(((rrp - product.price) / rrp) * 100) : 0;
 
   return (
-    <Link href={linkHref} className="group block focus:outline-none">
+    <Link href={linkHref} className="tap group block focus:outline-none">
       {/* ── Image block ── */}
       <div className="relative aspect-square w-full overflow-hidden rounded-2xl bg-white ring-1 ring-gray-100 transition-all duration-300 group-hover:shadow-xl group-hover:-translate-y-0.5">
         {/* 모델컷(착용샷)이 있으면 메인으로 꽉 채우고(비율 일정), 없으면 제품박스(여백 contain) */}
