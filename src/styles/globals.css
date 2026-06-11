@@ -199,6 +199,30 @@ html.theme-dark .text-amber-700,
 html.theme-dark .text-amber-800 { color: #ffd60a !important; }
 html.theme-dark .text-red-600,
 html.theme-dark .text-red-700 { color: #ff6b61 !important; }
+/* 옅은 -100 틴트 배경 — 다크 틴트로 (밝은 텍스트와 조합 시 가독 확보: 출고관리 결제/노쇼 뱃지 등) */
+html.theme-dark .bg-green-100,
+html.theme-dark .bg-emerald-100 { background-color: rgba(48,209,88,0.18) !important; }
+html.theme-dark .bg-red-100,
+html.theme-dark .bg-rose-100,
+html.theme-dark .bg-rose-50 { background-color: rgba(255,69,58,0.18) !important; }
+html.theme-dark .bg-amber-100,
+html.theme-dark .bg-yellow-100 { background-color: rgba(255,159,10,0.18) !important; }
+html.theme-dark .bg-blue-100 { background-color: rgba(10,132,255,0.18) !important; }
+html.theme-dark .bg-indigo-50,
+html.theme-dark .bg-indigo-100 { background-color: rgba(94,92,230,0.22) !important; }
+html.theme-dark .bg-purple-50,
+html.theme-dark .bg-purple-100 { background-color: rgba(191,90,242,0.18) !important; }
+/* 미커버 텍스트 색 — 다크에서 밝게 */
+html.theme-dark .text-rose-700 { color: #ff7a8c !important; }
+html.theme-dark .text-blue-600,
+html.theme-dark .text-blue-700,
+html.theme-dark .text-blue-800,
+html.theme-dark .text-blue-900 { color: #6cb2ff !important; }
+html.theme-dark .text-indigo-700 { color: #9d9bff !important; }
+html.theme-dark .text-purple-700 { color: #d899ff !important; }
+html.theme-dark .text-orange-600,
+html.theme-dark .text-orange-700 { color: #ffb340 !important; }
+
 /* 진한 뱃지/활성 필터칩(bg-gray-900 text-white)은 다크에서 표면과 또렷이 구분 */
 html.theme-dark .bg-gray-900 { background-color: #48484a !important; }
 
