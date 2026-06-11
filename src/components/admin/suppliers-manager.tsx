@@ -307,7 +307,7 @@ export function SuppliersManager() {
                       <td className="px-3 py-2 text-right">
                         <div className="flex justify-end gap-1.5">
                           <Button size="sm" variant="secondary" onClick={() => startEdit(s)}>
-                            수정
+                            편집
                           </Button>
                           {s.isActive ? (
                             <Button

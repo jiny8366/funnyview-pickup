@@ -300,7 +300,7 @@ export function StoreGroupsManager() {
                       <td className="px-3 py-2 text-right">
                         <div className="flex justify-end gap-1.5">
                           <Button size="sm" variant="secondary" onClick={() => startEdit(g)}>
-                            수정
+                            편집
                           </Button>
                           <Button
                             size="sm"

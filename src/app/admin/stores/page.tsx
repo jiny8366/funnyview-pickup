@@ -1,21 +1,31 @@
 import Link from 'next/link';
-import { desc, isNull } from 'drizzle-orm';
+import { desc, eq, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
-import { stores } from '@/db/schema';
+import { stores, storeGroups } from '@/db/schema';
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconPlus, IconStore } from '@/components/ui/icons';
 import { requirePermissionOrRedirect } from '@/lib/auth/guards';
 import { JinysImportButton } from '@/components/admin/jinys-import-button';
+import { StoresTable } from '@/components/admin/stores-table';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminStoresPage() {
   await requirePermissionOrRedirect('stores_read');
   const rows = await db
-    .select()
+    .select({
+      id: stores.id,
+      name: stores.name,
+      addressLine1: stores.addressLine1,
+      phone: stores.phone,
+      commissionRate: stores.commissionRate,
+      isActive: stores.isActive,
+      groupName: storeGroups.name,
+    })
     .from(stores)
+    .leftJoin(storeGroups, eq(storeGroups.id, stores.groupId))
     .where(isNull(stores.deletedAt))
     .orderBy(desc(stores.createdAt));
 
@@ -43,69 +53,8 @@ export default async function AdminStoresPage() {
           description="첫 픽업가맹점을 등록하면 고객 주문이 해당 매장으로 라우팅됩니다."
         />
       ) : (
-        <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
-          <table className="min-w-full divide-y divide-gray-100 text-sm">
-            <thead className="bg-gray-50">
-              <tr>
-                <Th>이름</Th>
-                <Th>주소</Th>
-                <Th>전화</Th>
-                <Th className="text-right">수수료율</Th>
-                <Th className="text-center">상태</Th>
-                <Th className="text-right">관리</Th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-50">
-              {rows.map((s) => (
-                <tr key={s.id} className="hover:bg-gray-50">
-                  <Td className="font-medium text-gray-900">
-                    <Link href={`/admin/stores/${s.id}`} className="hover:text-brand-700 hover:underline">
-                      {s.name}
-                    </Link>
-                  </Td>
-                  <Td className="text-gray-600">{s.addressLine1 ?? '—'}</Td>
-                  <Td className="font-mono text-xs text-gray-600">{s.phone ?? '—'}</Td>
-                  <Td className="text-right text-gray-700">
-                    {s.commissionRate ? `${s.commissionRate}%` : '—'}
-                  </Td>
-                  <Td className="text-center">
-                    {s.isActive ? (
-                      <span className="rounded bg-emerald-50 px-2 py-0.5 text-[11px] font-medium text-emerald-700">
-                        활성
-                      </span>
-                    ) : (
-                      <span className="rounded bg-gray-100 px-2 py-0.5 text-[11px] text-gray-500">
-                        비활성
-                      </span>
-                    )}
-                  </Td>
-                  <Td className="text-right">
-                    <Link href={`/admin/stores/${s.id}`}>
-                      <Button size="sm" variant="secondary">
-                        수정/상세
-                      </Button>
-                    </Link>
-                  </Td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <StoresTable rows={rows} />
       )}
     </PageWrap>
   );
-}
-
-function Th({ children, className }: { children: React.ReactNode; className?: string }) {
-  return (
-    <th
-      className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 ${className ?? ''}`}
-    >
-      {children}
-    </th>
-  );
-}
-
-function Td({ children, className }: { children: React.ReactNode; className?: string }) {
-  return <td className={`px-4 py-3 ${className ?? ''}`}>{children}</td>;
 }
