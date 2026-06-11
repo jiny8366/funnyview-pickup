@@ -139,21 +139,21 @@ export default function SafetyStockPage() {
     }
   }
 
-  // 2단계: 제품 선택 → 하단에 그 제품의 도수 리스트
+  // 2단계: 제품 선택 → 자식창에 그 제품의 도수 리스트 (JINY — 매입 관리와 동일)
+  const [modalRows, setModalRows] = useState<Row[] | null>(null);
+
   async function selectProduct(p: ProductHit) {
     setSelectedProduct(p);
-    setLoading(true);
-    setMode('search');
+    setModalRows(null);
     setErr(null);
     try {
       const res = await fetch(`/api/admin/safety-stock?lensId=${p.id}`);
       const j = await res.json();
-      setRows(j.rows ?? []);
+      setModalRows(j.rows ?? []);
       setParams(j.params ?? null);
     } catch {
       setErr('도수 조회에 실패했습니다.');
-    } finally {
-      setLoading(false);
+      setSelectedProduct(null);
     }
   }
 
@@ -168,7 +168,10 @@ export default function SafetyStockPage() {
       setErr('저장에 실패했습니다.');
       return;
     }
-    setRows((prev) => prev?.map((r) => (r.variantId === variantId ? { ...r, safetyStock: value } : r)) ?? null);
+    const apply = (prev: Row[] | null) =>
+      prev?.map((r) => (r.variantId === variantId ? { ...r, safetyStock: value } : r)) ?? null;
+    setRows(apply);
+    setModalRows(apply);
   }
 
   // 권고 적용 — 권고수량을 안전재고로 일괄/개별 셋팅
@@ -230,6 +233,97 @@ export default function SafetyStockPage() {
 
       {uploadOpen && <SalesUploadModal onClose={() => setUploadOpen(false)} />}
 
+      {/* 도수정보 자식창 — 제품명 리스트에서 선택 시 (JINY, 매입 관리와 동일 컨트롤) */}
+      {selectedProduct && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
+          onClick={() => setSelectedProduct(null)}
+        >
+          <div
+            className="flex max-h-[88vh] w-full max-w-3xl flex-col overflow-hidden rounded-3xl bg-white shadow-pop"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <header className="flex items-center justify-between border-b border-gray-100 px-5 py-4">
+              <div>
+                <h2 className="text-base font-bold text-gray-900">
+                  {selectedProduct.brand} {selectedProduct.name} — 도수정보
+                </h2>
+                <p className="mt-0.5 text-xs text-gray-500">
+                  안전재고 숫자를 클릭하면 바로 수정되고, 권고 적용 버튼으로 권고값을 셋팅합니다.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setSelectedProduct(null)}
+                className="grid h-8 w-8 place-items-center rounded-full text-gray-400 hover:bg-gray-100"
+                aria-label="닫기"
+              >
+                ✕
+              </button>
+            </header>
+            <div className="flex-1 overflow-auto px-5 py-3">
+              {!modalRows ? (
+                <p className="py-8 text-center text-sm text-gray-400">도수 불러오는 중...</p>
+              ) : modalRows.length === 0 ? (
+                <p className="py-8 text-center text-sm text-gray-400">활성 도수가 없습니다.</p>
+              ) : (
+                <table className="w-full text-xs">
+                  <thead className="text-left text-[11px] uppercase text-gray-400">
+                    <tr>
+                      <th className="px-2 py-1.5">도수</th>
+                      <th className="px-2 py-1.5 text-right">출고분</th>
+                      <th className="px-2 py-1.5 text-right">현재고</th>
+                      <th className="px-2 py-1.5 text-right">안전재고</th>
+                      <th className="px-2 py-1.5 text-right">권고수량</th>
+                      <th className="px-2 py-1.5 text-right">적용</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-gray-50">
+                    {modalRows.map((r) => {
+                      const low = r.onHand < Math.max(r.safetyStock, r.recommended);
+                      return (
+                        <tr key={r.variantId} className={low ? 'bg-red-50/60' : ''}>
+                          <td className="px-2 py-1.5 font-medium text-gray-800">{doseLabel(r)}</td>
+                          <td className="px-2 py-1.5 text-right text-gray-600">{r.sold30d}</td>
+                          <td className={`px-2 py-1.5 text-right font-semibold ${low ? 'text-red-700' : ''}`}>{r.onHand}</td>
+                          <td className="px-2 py-1.5 text-right">
+                            <InlineNumberCell
+                              value={r.safetyStock}
+                              canEdit
+                              onSave={(n) => saveSafety(r.variantId, n)}
+                              title="클릭하여 안전재고 수정"
+                            />
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            <span className={r.recommended > 0 ? 'font-semibold text-blue-700' : 'text-gray-400'}>
+                              {r.recommended}
+                            </span>
+                          </td>
+                          <td className="px-2 py-1.5 text-right">
+                            {r.recommended !== r.safetyStock && r.recommended > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => saveSafety(r.variantId, r.recommended)}
+                                className="rounded border border-blue-200 bg-blue-50 px-1.5 py-0.5 text-[10px] font-medium text-blue-700 hover:bg-blue-100"
+                              >
+                                권고 적용
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <footer className="border-t border-gray-100 px-5 py-2.5 text-right text-xs text-gray-400">
+              {modalRows ? `${modalRows.length}개 도수` : ''}
+            </footer>
+          </div>
+        </div>
+      )}
+
       {err && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{err}</p>}
 
       {/* 1단계: 제품명 리스트 — 선택하면 하단에 도수 리스트 (JINY) */}
@@ -256,20 +350,12 @@ export default function SafetyStockPage() {
                     {CYCLE_LABEL[p.replacementCycle] ?? p.replacementCycle} · {p.piecesPerBox}P
                   </td>
                   <td className="px-3 py-2 text-right text-gray-600">{p.variantCount}</td>
-                  <td className="px-3 py-2 text-right text-xs text-amber-700">
-                    {selectedProduct?.id === p.id ? '선택됨 ▾' : '도수 보기 ›'}
-                  </td>
+                  <td className="px-3 py-2 text-right text-xs text-amber-700">도수정보 ›</td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-      )}
-
-      {selectedProduct && rows && (
-        <p className="text-xs text-gray-500">
-          ▾ <b>{selectedProduct.brand} {selectedProduct.name}</b> 의 도수별 현재고/안전재고/권고
-        </p>
       )}
 
       {!rows ? (
