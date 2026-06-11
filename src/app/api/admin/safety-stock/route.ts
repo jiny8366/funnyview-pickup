@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { and, asc, eq, ilike, inArray, or, sql } from 'drizzle-orm';
 import { z } from 'zod';
 import { db } from '@/db/client';
-import { inventory, inventoryMovements, lensVariants, lenses } from '@/db/schema';
+import { historicalSales, inventory, inventoryMovements, lensVariants, lenses } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
 import { withDbRetry } from '@/lib/db/retry';
 import {
@@ -61,7 +61,8 @@ export async function GET(req: Request) {
   const hasFilter = Boolean(q || brandList.length || typeList.length || cycleList.length || packList.length);
   if (!hasFilter && !all) return NextResponse.json({ rows: [], params: SAFETY_STOCK_PARAMS });
 
-  // 관측창 내 일별 출고(outbound: 고객 배송 + B2B 발주) 집계 — σ 계산용 Σq² 포함
+  // 관측창 내 일별 수요 집계 — 시스템 출고(outbound: 고객 배송 + B2B 발주)
+  // + 과거 판매데이터(historical_sales, 엑셀 업로드 — JINY) 합산. σ 계산용 Σq² 포함.
   const windowDays = SAFETY_STOCK_PARAMS.windowDays;
   const daily = db
     .select({
@@ -86,6 +87,30 @@ export async function GET(req: Request) {
     .groupBy(daily.variantId)
     .as('demand');
 
+  // 과거 판매데이터(업로드분) — 같은 관측창 내 일별 집계 (도입 전 데이터라 출고와 날짜 중복 거의 없음)
+  const histDaily = db
+    .select({
+      variantId: historicalSales.variantId,
+      q: sql<number>`SUM(${historicalSales.quantity})`.as('hq'),
+    })
+    .from(historicalSales)
+    .where(sql`${historicalSales.soldOn} >= (now() - make_interval(days => ${windowDays}))::date`)
+    .groupBy(historicalSales.variantId, historicalSales.soldOn)
+    .as('hs');
+
+  const histDemand = db
+    .select({
+      variantId: histDaily.variantId,
+      totalQty: sql<number>`SUM(${histDaily.q})::int`.as('h_total_qty'),
+      saleDays: sql<number>`COUNT(*)::int`.as('h_sale_days'),
+      sumSq: sql<number>`SUM(${histDaily.q} * ${histDaily.q})::float`.as('h_sum_sq'),
+    })
+    .from(histDaily)
+    .groupBy(histDaily.variantId)
+    .as('hist');
+
+  const totalQtyExpr = sql<number>`COALESCE(${demand.totalQty}, 0) + COALESCE(${histDemand.totalQty}, 0)`;
+
   const conds = [eq(lensVariants.isActive, true), sql`${lenses.deletedAt} IS NULL`];
   if (q) {
     const pat = `%${q}%`;
@@ -99,7 +124,7 @@ export async function GET(req: Request) {
   if (all) {
     // 전체 모드: 의미 있는 행만 (판매이력 또는 현재고/안전재고 보유)
     conds.push(
-      sql`(COALESCE(${demand.totalQty}, 0) > 0 OR COALESCE(${inventory.quantityOnHand}, 0) > 0 OR COALESCE(${inventory.safetyStock}, 0) > 0)`,
+      sql`(${totalQtyExpr} > 0 OR COALESCE(${inventory.quantityOnHand}, 0) > 0 OR COALESCE(${inventory.safetyStock}, 0) > 0)`,
     );
   }
 
@@ -118,17 +143,18 @@ export async function GET(req: Request) {
         addPower: lensVariants.addPower,
         onHand: sql<number>`COALESCE(${inventory.quantityOnHand}, 0)`,
         safetyStock: sql<number>`COALESCE(${inventory.safetyStock}, 0)`,
-        totalQty: sql<number>`COALESCE(${demand.totalQty}, 0)`,
-        saleDays: sql<number>`COALESCE(${demand.saleDays}, 0)`,
-        sumSq: sql<number>`COALESCE(${demand.sumSq}, 0)`,
+        totalQty: totalQtyExpr,
+        saleDays: sql<number>`COALESCE(${demand.saleDays}, 0) + COALESCE(${histDemand.saleDays}, 0)`,
+        sumSq: sql<number>`COALESCE(${demand.sumSq}, 0) + COALESCE(${histDemand.sumSq}, 0)`,
       })
       .from(lensVariants)
       .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
       .leftJoin(inventory, eq(inventory.variantId, lensVariants.id))
       .leftJoin(demand, eq(demand.variantId, lensVariants.id))
+      .leftJoin(histDemand, eq(histDemand.variantId, lensVariants.id))
       .where(and(...conds))
       .orderBy(
-        sql`COALESCE(${demand.totalQty}, 0) DESC`,
+        sql`${totalQtyExpr} DESC`,
         lenses.brand,
         lenses.name,
         lensVariants.sphere,

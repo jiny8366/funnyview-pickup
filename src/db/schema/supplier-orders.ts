@@ -1,4 +1,5 @@
 import {
+  date,
   index,
   integer,
   pgTable,
@@ -79,3 +80,28 @@ export const supplierOrderItems = pgTable(
 
 export type SupplierOrder = typeof supplierOrders.$inferSelect;
 export type SupplierOrderItem = typeof supplierOrderItems.$inferSelect;
+
+/**
+ * 과거 판매데이터 (엑셀 업로드 — JINY).
+ * 시스템 도입 전 판매 이력을 안전재고 권고의 수요 참조데이터로 활용.
+ * 업로드 시 제품명+도수 → variant 매칭·검수를 통과한 행만 저장된다.
+ */
+export const historicalSales = pgTable(
+  'historical_sales',
+  {
+    id: uuid('id').primaryKey().defaultRandom(),
+    variantId: uuid('variant_id')
+      .notNull()
+      .references(() => lensVariants.id, { onDelete: 'cascade' }),
+    quantity: integer('quantity').notNull(),
+    soldOn: date('sold_on').notNull(),
+    uploadedBy: uuid('uploaded_by'),
+    createdAt: timestamp('created_at', { withTimezone: true }).defaultNow().notNull(),
+  },
+  (t) => ({
+    variantSoldIdx: index('historical_sales_variant_sold_idx').on(t.variantId, t.soldOn),
+    soldOnIdx: index('historical_sales_sold_on_idx').on(t.soldOn),
+  }),
+);
+
+export type HistoricalSale = typeof historicalSales.$inferSelect;

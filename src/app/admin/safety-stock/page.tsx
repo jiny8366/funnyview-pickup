@@ -75,6 +75,7 @@ export default function SafetyStockPage() {
   const [loading, setLoading] = useState(false);
   const [mode, setMode] = useState<'search' | 'all' | null>(null);
   const [err, setErr] = useState<string | null>(null);
+  const [uploadOpen, setUploadOpen] = useState(false);
 
   // 필터 칩 facet — 다른 화면과 동일한 표준 검색
   useEffect(() => {
@@ -181,8 +182,13 @@ export default function SafetyStockPage() {
               ⚡ 권고값 일괄 적용
             </Button>
           )}
+          <Button variant="secondary" size="sm" onClick={() => setUploadOpen(true)}>
+            📤 과거 판매데이터 업로드
+          </Button>
         </div>
       </div>
+
+      {uploadOpen && <SalesUploadModal onClose={() => setUploadOpen(false)} />}
 
       {err && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{err}</p>}
 
@@ -268,6 +274,172 @@ export default function SafetyStockPage() {
           <b>*</b> = 판매일수 부족으로 단순법 산출 (판매 누적 시 통계법으로 자동 전환)
         </p>
       )}
+    </div>
+  );
+}
+
+/** 간단 CSV 파서 — 따옴표·이스케이프("") 지원 */
+function parseCsv(text: string): string[][] {
+  const rows: string[][] = [];
+  let row: string[] = [];
+  let cur = '';
+  let inQ = false;
+  const src = text.replace(/^﻿/, '');
+  for (let i = 0; i < src.length; i++) {
+    const ch = src[i];
+    if (inQ) {
+      if (ch === '"') {
+        if (src[i + 1] === '"') { cur += '"'; i++; }
+        else inQ = false;
+      } else cur += ch;
+    } else if (ch === '"') inQ = true;
+    else if (ch === ',') { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') {
+      if (ch === '\r' && src[i + 1] === '\n') i++;
+      row.push(cur); cur = '';
+      if (row.some((c) => c.trim() !== '')) rows.push(row);
+      row = [];
+    } else cur += ch;
+  }
+  row.push(cur);
+  if (row.some((c) => c.trim() !== '')) rows.push(row);
+  return rows;
+}
+
+/**
+ * 과거 판매데이터 업로드 모달 (JINY) — 샘플양식(CSV·엑셀 호환) 다운로드,
+ * 파일 업로드 → 서버 검수(제품명·도수 매칭, 수량·날짜 형식) → 유효 행만 참조데이터 저장.
+ */
+function SalesUploadModal({ onClose }: { onClose: () => void }) {
+  const [busy, setBusy] = useState(false);
+  const [result, setResult] = useState<{ inserted: number; errorCount: number; errors: { row: number; reason: string }[] } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const [summary, setSummary] = useState<{ rows: number; qty: number; from: string | null; to: string | null } | null>(null);
+
+  useEffect(() => {
+    fetch('/api/admin/safety-stock/sales-upload')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setSummary(j?.summary ?? null))
+      .catch(() => {});
+  }, []);
+
+  async function handleFile(file: File) {
+    setBusy(true);
+    setError(null);
+    setResult(null);
+    try {
+      const text = await file.text();
+      const table = parseCsv(text);
+      if (table.length < 2) {
+        setError('데이터 행이 없습니다. 샘플양식을 참고해 주세요.');
+        return;
+      }
+      // 헤더 검사 (순서 고정: 제품명, SPH, CYL, AXIS, ADD, 수량, 판매일)
+      const header = table[0].map((h) => h.trim());
+      if (!header[0]?.includes('제품명') || !header[5]?.includes('수량') || !header[6]?.includes('판매일')) {
+        setError('양식이 다릅니다 — 샘플양식(제품명/SPH/CYL/AXIS/ADD/수량/판매일)을 사용해 주세요.');
+        return;
+      }
+      const rows = table.slice(1).map((r) => ({
+        productName: (r[0] ?? '').trim(),
+        sphere: (r[1] ?? '').trim() || null,
+        cylinder: (r[2] ?? '').trim() || null,
+        axis: (r[3] ?? '').trim() || null,
+        addPower: (r[4] ?? '').trim() || null,
+        quantity: (r[5] ?? '').trim(),
+        soldOn: (r[6] ?? '').trim(),
+      }));
+      if (rows.length > 5000) {
+        setError('한 번에 최대 5,000행까지 업로드할 수 있습니다. 파일을 나눠 주세요.');
+        return;
+      }
+      const res = await fetch('/api/admin/safety-stock/sales-upload', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ rows }),
+      });
+      const j = await res.json();
+      if (!res.ok) {
+        setError(j.message ?? j.error ?? '업로드에 실패했습니다.');
+        return;
+      }
+      setResult(j);
+    } catch {
+      setError('파일을 읽지 못했습니다. CSV(엑셀에서 다른 이름으로 저장 → CSV) 형식인지 확인해 주세요.');
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
+      <div
+        className="w-full max-w-lg rounded-3xl bg-white p-6 shadow-pop"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-center justify-between">
+          <h2 className="text-base font-bold text-gray-900">과거 판매데이터 업로드</h2>
+          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full text-gray-400 hover:bg-gray-100">✕</button>
+        </div>
+        <p className="mt-2 text-xs leading-relaxed text-gray-500">
+          시스템 도입 전 판매 이력을 올리면 안전재고 권고의 참조데이터로 활용됩니다.
+          샘플양식에 <b>제품명 · 도수(SPH/CYL/AXIS/ADD) · 수량 · 판매일</b>을 채워 CSV로 저장 후 업로드하세요.
+          검수를 통과한 행만 저장되고, 오류 행은 사유와 함께 표시됩니다.
+        </p>
+        {summary && summary.rows > 0 && (
+          <p className="mt-2 rounded-lg bg-gray-50 px-3 py-2 text-xs text-gray-600">
+            현재 참조데이터: {summary.rows.toLocaleString()}행 · 총 {summary.qty.toLocaleString()}개 ({summary.from} ~ {summary.to})
+          </p>
+        )}
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <a
+            href="/api/admin/safety-stock/sales-upload?template=1"
+            className="rounded-lg border border-gray-300 px-3 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50"
+          >
+            ⬇ 샘플양식 다운로드 (CSV)
+          </a>
+          <label className="cursor-pointer rounded-lg bg-gray-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-black">
+            {busy ? '검수 중…' : '📤 파일 선택·업로드'}
+            <input
+              type="file"
+              accept=".csv,text/csv"
+              className="hidden"
+              disabled={busy}
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) handleFile(f);
+                e.target.value = '';
+              }}
+            />
+          </label>
+        </div>
+
+        {error && <p className="mt-3 rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
+        {result && (
+          <div className="mt-3 space-y-2">
+            <p className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+              ✅ {result.inserted.toLocaleString()}행 저장 완료
+              {result.errorCount > 0 && ` · 오류 ${result.errorCount}행 (저장 안 됨)`}
+            </p>
+            {result.errors.length > 0 && (
+              <div className="max-h-44 overflow-y-auto rounded-xl border border-red-100 bg-red-50/50 p-2 text-xs text-red-700">
+                {result.errors.map((e2, i) => (
+                  <p key={i}>
+                    {e2.row}행: {e2.reason}
+                  </p>
+                ))}
+                {result.errorCount > result.errors.length && (
+                  <p className="text-red-400">… 외 {result.errorCount - result.errors.length}건</p>
+                )}
+              </div>
+            )}
+            <p className="text-[11px] text-gray-400">
+              ※ 같은 파일을 다시 올리면 중복 저장됩니다. 수정 재업로드 시 오류 행만 골라 올려주세요.
+            </p>
+          </div>
+        )}
+      </div>
     </div>
   );
 }
