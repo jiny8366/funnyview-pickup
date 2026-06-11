@@ -65,8 +65,9 @@ function MovementsInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [types]);
 
+  // 구분 필터는 단일선택(중복선택 방지) — 누른 항목만 활성, 같은 항목 다시 누르면 전체(해제).
   const toggleType = (t: string) =>
-    setTypes((s) => { const n = new Set(s); n.has(t) ? n.delete(t) : n.add(t); return n; });
+    setTypes((s) => (s.has(t) && s.size === 1 ? new Set() : new Set([t])));
 
   return (
     <PageWrap>
