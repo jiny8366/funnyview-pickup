@@ -577,7 +577,7 @@ export default function CustomerOrderPage() {
   }
 
   return (
-    <div className="space-y-6 pb-32 md:space-y-8 md:pb-0">
+    <div className="animate-fade-in space-y-6 pb-32 md:space-y-8 md:pb-0">
       <header>
         <h1 className="text-xl font-bold md:text-2xl">주문하기</h1>
         <p className="mt-1 text-sm text-gray-500">

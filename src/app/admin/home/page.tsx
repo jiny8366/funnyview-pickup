@@ -109,7 +109,7 @@ export default function AdminHomePage() {
               <button
                 key={k}
                 onClick={() => createSection(k)}
-                className="rounded-xl border border-gray-200 bg-white p-3 text-left hover:border-brand-500"
+                className="press rounded-xl border border-gray-200 bg-white p-3 text-left hover:border-brand-500"
               >
                 <div className="text-xl">{v.emoji}</div>
                 <div className="mt-1 text-sm font-medium">{v.label}</div>

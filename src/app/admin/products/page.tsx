@@ -311,7 +311,7 @@ export default function AdminProductsPage() {
         <button
           type="button"
           onClick={() => setShowFilters((v) => !v)}
-          className={`relative rounded-xl border px-3 py-2 text-sm transition ${
+          className={`press relative rounded-xl border px-3 py-2 text-sm transition ${
             showFilters
               ? 'border-brand-300 bg-brand-50 text-brand-700'
               : 'border-gray-200 bg-white text-gray-700 hover:bg-gray-50'
@@ -575,7 +575,7 @@ function Chip({
     <button
       type="button"
       onClick={onClick}
-      className={`rounded-full px-2.5 py-1 text-xs transition ${
+      className={`press rounded-full px-2.5 py-1 text-xs transition ${
         active
           ? 'bg-brand-600 text-white'
           : 'bg-gray-100 text-gray-700 hover:bg-gray-200'

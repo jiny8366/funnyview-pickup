@@ -53,7 +53,7 @@ function CustomerLoginInner() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-6 py-8 md:py-16">
+    <main className="animate-fade-in mx-auto w-full max-w-2xl px-6 py-8 md:py-16">
       <Breadcrumb items={[{ href: '/', label: '홈' }, { label: '로그인' }]} />
 
       <h1 className="mt-8 text-center text-2xl font-bold text-gray-900">로그인</h1>

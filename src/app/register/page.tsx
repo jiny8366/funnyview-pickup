@@ -179,7 +179,7 @@ export default function RegisterPage() {
   }
 
   return (
-    <main className="mx-auto w-full max-w-5xl px-4 py-8 md:px-6 md:py-12">
+    <main className="animate-fade-in mx-auto w-full max-w-5xl px-4 py-8 md:px-6 md:py-12">
       <Breadcrumb items={[{ href: '/', label: '홈' }, { label: '회원 가입' }]} />
 
       <h1 className="mt-6 text-center text-2xl font-bold text-gray-900">회원 가입</h1>
