@@ -3,6 +3,7 @@ import { and, desc, eq, inArray, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import {
   groupProductCommissions,
+  lensVariants,
   lenses,
   storeOrderItems,
   storeOrders,
@@ -25,6 +26,7 @@ export const dynamic = 'force-dynamic';
  */
 
 interface OrderItemInput {
+  variantId: string;
   lensId: string;
   quantity: number;
 }
@@ -50,7 +52,39 @@ export async function GET() {
     .where(eq(storeOrders.storeId, me.storeId))
     .orderBy(desc(storeOrders.createdAt));
 
-  return NextResponse.json({ orders: rows });
+  // 라인 항목(도수 포함) — 발주 상세 펼침용
+  const orderIds = rows.map((r) => r.id);
+  const itemRows = orderIds.length
+    ? await db
+        .select({
+          orderId: storeOrderItems.orderId,
+          brand: storeOrderItems.brand,
+          productName: storeOrderItems.productName,
+          sphere: storeOrderItems.sphere,
+          cylinder: storeOrderItems.cylinder,
+          axis: storeOrderItems.axis,
+          addPower: storeOrderItems.addPower,
+          quantity: storeOrderItems.quantity,
+          unitSupplyPrice: storeOrderItems.unitSupplyPrice,
+          lineTotal: storeOrderItems.lineTotal,
+        })
+        .from(storeOrderItems)
+        .where(inArray(storeOrderItems.orderId, orderIds))
+    : [];
+
+  const itemsByOrder = new Map<string, typeof itemRows>();
+  for (const it of itemRows) {
+    const list = itemsByOrder.get(it.orderId) ?? [];
+    list.push(it);
+    itemsByOrder.set(it.orderId, list);
+  }
+
+  const orders = rows.map((r) => ({
+    ...r,
+    items: itemsByOrder.get(r.id) ?? [],
+  }));
+
+  return NextResponse.json({ orders });
 }
 
 /** 발주번호 생성: SO-YYYYMMDD-NNN (당일 순번). */
@@ -90,19 +124,43 @@ export async function POST(req: Request) {
   };
 
   const rawItems = Array.isArray(body.items) ? body.items : [];
-  // 동일 lensId 합치기 + 유효성
-  const qtyByLens = new Map<string, number>();
+  // 동일 variantId(도수) 합치기 + 유효성. lensId 는 서버에서 variant 로부터 재검증.
+  const qtyByVariant = new Map<string, number>();
   for (const it of rawItems) {
-    if (!it || typeof it.lensId !== 'string') continue;
+    if (!it || typeof it.variantId !== 'string') continue;
     const q = Math.floor(Number(it.quantity));
     if (!Number.isFinite(q) || q <= 0) continue;
-    qtyByLens.set(it.lensId, (qtyByLens.get(it.lensId) ?? 0) + q);
+    qtyByVariant.set(it.variantId, (qtyByVariant.get(it.variantId) ?? 0) + q);
   }
-  if (qtyByLens.size === 0) {
+  if (qtyByVariant.size === 0) {
     return NextResponse.json({ error: 'EMPTY_ITEMS' }, { status: 400 });
   }
 
-  const lensIds = [...qtyByLens.keys()];
+  const variantIds = [...qtyByVariant.keys()];
+
+  // variant → lensId/도수 스냅샷 (활성 variant 만). 클라이언트 lensId 불신.
+  const variantRows = await db
+    .select({
+      variantId: lensVariants.id,
+      lensId: lensVariants.lensId,
+      sphere: lensVariants.sphere,
+      cylinder: lensVariants.cylinder,
+      axis: lensVariants.axis,
+      addPower: lensVariants.addPower,
+      isActive: lensVariants.isActive,
+    })
+    .from(lensVariants)
+    .where(inArray(lensVariants.id, variantIds));
+  const variantMap = new Map(variantRows.map((r) => [r.variantId, r]));
+
+  for (const vid of variantIds) {
+    const v = variantMap.get(vid);
+    if (!v || !v.isActive) {
+      return NextResponse.json({ error: 'INVALID_VARIANT', variantId: vid }, { status: 400 });
+    }
+  }
+
+  const lensIds = [...new Set(variantRows.map((r) => r.lensId))];
 
   // 매장 소속 그룹
   const [storeRow] = await db
@@ -163,18 +221,28 @@ export async function POST(req: Request) {
 
   const lensMap = new Map(lensRows.map((r) => [r.id, r]));
 
-  // 라인 구성 + 공급가 재해석
+  // 라인 구성 + 공급가 재해석 (variant=도수 단위). 공급가는 제품(lensId) 단위.
   const lines: {
+    variantId: string;
     lensId: string;
     brand: string | null;
     productName: string | null;
     productCode: string | null;
+    sphere: string | null;
+    cylinder: string | null;
+    axis: number | null;
+    addPower: string | null;
     quantity: number;
     unitSupplyPrice: number;
     lineTotal: number;
   }[] = [];
 
-  for (const [lensId, quantity] of qtyByLens) {
+  for (const [variantId, quantity] of qtyByVariant) {
+    const variant = variantMap.get(variantId);
+    if (!variant) {
+      return NextResponse.json({ error: 'INVALID_VARIANT', variantId }, { status: 400 });
+    }
+    const lensId = variant.lensId;
     const lens = lensMap.get(lensId);
     if (!lens || !lens.isActive || lens.deletedAt) {
       return NextResponse.json(
@@ -199,10 +267,15 @@ export async function POST(req: Request) {
       );
     }
     lines.push({
+      variantId,
       lensId,
       brand: lens.brand,
       productName: lens.name,
       productCode: lens.productCode,
+      sphere: variant.sphere,
+      cylinder: variant.cylinder,
+      axis: variant.axis,
+      addPower: variant.addPower,
       quantity,
       unitSupplyPrice: unit,
       lineTotal: unit * quantity,
@@ -230,10 +303,15 @@ export async function POST(req: Request) {
     await tx.insert(storeOrderItems).values(
       lines.map((l) => ({
         orderId: order.id,
+        variantId: l.variantId,
         lensId: l.lensId,
         brand: l.brand,
         productName: l.productName,
         productCode: l.productCode,
+        sphere: l.sphere,
+        cylinder: l.cylinder,
+        axis: l.axis,
+        addPower: l.addPower,
         quantity: l.quantity,
         unitSupplyPrice: l.unitSupplyPrice,
         lineTotal: l.lineTotal,

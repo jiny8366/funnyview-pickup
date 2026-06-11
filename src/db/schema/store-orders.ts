@@ -65,10 +65,17 @@ export const storeOrderItems = pgTable(
       .notNull()
       .references(() => storeOrders.id, { onDelete: 'cascade' }),
     lensId: uuid('lens_id').notNull(),
+    // 도수(variant) 단위 발주 — 기존 행(제품 단위) 호환 위해 nullable.
+    variantId: uuid('variant_id'),
     // 스냅샷
     brand: text('brand'),
     productName: text('product_name'),
     productCode: text('product_code'),
+    // 도수 스냅샷 (variant 에서 복사) — 제품/도수가 바뀌어도 발주 기록 보존
+    sphere: text('sphere'),
+    cylinder: text('cylinder'),
+    axis: integer('axis'),
+    addPower: text('add_power'),
     quantity: integer('quantity').notNull(),
     // 공급가 단가 (원, KRW) — 서버에서 재해석한 값
     unitSupplyPrice: integer('unit_supply_price').notNull(),

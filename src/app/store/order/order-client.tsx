@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { ProductFilterBar } from '@/components/product/product-filter-bar';
+import { StoreVariantPicker, powerLabel, type PickerVariant } from './variant-picker';
 
 interface CatalogItem {
   id: string;
@@ -18,6 +19,21 @@ interface CatalogItem {
   colorPreviewUrl: string | null;
   diameter: string | null;
   supplyPrice: number | null;
+}
+
+/** 장바구니 라인 — variantId 단위. 같은 제품도 도수 다르면 별도 라인. */
+interface CartLine {
+  variantId: string;
+  lensId: string;
+  brand: string;
+  name: string;
+  productCode: string;
+  supplyPrice: number;
+  sphere: string | null;
+  cylinder: string | null;
+  axis: number | null;
+  addPower: string | null;
+  qty: number;
 }
 
 const CYCLE_LABEL: Record<string, string> = {
@@ -39,12 +55,15 @@ export function StoreOrderClient() {
   // 보기 모드: 기본 이미지(그리드)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
-  // 장바구니: lensId -> quantity
-  const [cart, setCart] = useState<Record<string, number>>({});
+  // 장바구니: variantId -> CartLine (도수 단위)
+  const [cart, setCart] = useState<Record<string, CartLine>>({});
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState<{ orderNumber: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // 도수 선택 모달 대상 제품
+  const [picking, setPicking] = useState<CatalogItem | null>(null);
 
   useEffect(() => {
     fetch('/api/store/catalog')
@@ -86,31 +105,50 @@ export function StoreOrderClient() {
     return list;
   }, [items, brand, cycle, pack, query]);
 
-  const itemMap = useMemo(() => new Map(items.map((i) => [i.id, i])), [items]);
-
   const cartLines = useMemo(
-    () =>
-      Object.entries(cart)
-        .map(([lensId, qty]) => {
-          const it = itemMap.get(lensId);
-          if (!it || it.supplyPrice == null) return null;
-          return { item: it, qty, lineTotal: it.supplyPrice * qty };
-        })
-        .filter((x): x is { item: CatalogItem; qty: number; lineTotal: number } => x != null),
-    [cart, itemMap],
+    () => Object.values(cart).map((l) => ({ ...l, lineTotal: l.supplyPrice * l.qty })),
+    [cart],
   );
 
   const total = cartLines.reduce((s, l) => s + l.lineTotal, 0);
   const cartCount = cartLines.reduce((s, l) => s + l.qty, 0);
 
-  function addToCart(id: string) {
-    setCart((c) => ({ ...c, [id]: (c[id] ?? 0) + 1 }));
+  // 제품별 장바구니 담긴 수량(도수 합산) — 카드 배지용
+  const qtyByLens = useMemo(() => {
+    const m = new Map<string, number>();
+    for (const l of cartLines) m.set(l.lensId, (m.get(l.lensId) ?? 0) + l.qty);
+    return m;
+  }, [cartLines]);
+
+  function addVariant(product: CatalogItem, variant: PickerVariant, quantity: number) {
+    if (product.supplyPrice == null) return;
+    setCart((c) => {
+      const existing = c[variant.variantId];
+      return {
+        ...c,
+        [variant.variantId]: {
+          variantId: variant.variantId,
+          lensId: product.id,
+          brand: product.brand,
+          name: product.name,
+          productCode: product.productCode,
+          supplyPrice: product.supplyPrice as number,
+          sphere: variant.sphere,
+          cylinder: variant.cylinder,
+          axis: variant.axis,
+          addPower: variant.addPower,
+          qty: (existing?.qty ?? 0) + quantity,
+        },
+      };
+    });
+    setPicking(null);
   }
-  function setQty(id: string, qty: number) {
+
+  function setQty(variantId: string, qty: number) {
     setCart((c) => {
       const next = { ...c };
-      if (qty <= 0) delete next[id];
-      else next[id] = qty;
+      if (qty <= 0) delete next[variantId];
+      else if (next[variantId]) next[variantId] = { ...next[variantId], qty };
       return next;
     });
   }
@@ -123,7 +161,11 @@ export function StoreOrderClient() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          items: cartLines.map((l) => ({ lensId: l.item.id, quantity: l.qty })),
+          items: cartLines.map((l) => ({
+            variantId: l.variantId,
+            lensId: l.lensId,
+            quantity: l.qty,
+          })),
           note: note.trim() || undefined,
         }),
       });
@@ -241,8 +283,8 @@ export function StoreOrderClient() {
               <ProductCard
                 key={l.id}
                 item={l}
-                qtyInCart={cart[l.id] ?? 0}
-                onAdd={() => addToCart(l.id)}
+                qtyInCart={qtyByLens.get(l.id) ?? 0}
+                onAdd={() => setPicking(l)}
               />
             ))}
           </div>
@@ -252,8 +294,8 @@ export function StoreOrderClient() {
               <ProductRow
                 key={l.id}
                 item={l}
-                qtyInCart={cart[l.id] ?? 0}
-                onAdd={() => addToCart(l.id)}
+                qtyInCart={qtyByLens.get(l.id) ?? 0}
+                onAdd={() => setPicking(l)}
               />
             ))}
           </div>
@@ -272,16 +314,17 @@ export function StoreOrderClient() {
           ) : (
             <ul className="mt-3 space-y-3">
               {cartLines.map((l) => (
-                <li key={l.item.id} className="border-b border-gray-100 pb-3">
+                <li key={l.variantId} className="border-b border-gray-100 pb-3">
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="truncate text-xs text-gray-400">{l.item.brand}</p>
-                      <p className="truncate text-sm font-medium text-gray-900">
-                        {l.item.name}
+                      <p className="truncate text-xs text-gray-400">{l.brand}</p>
+                      <p className="truncate text-sm font-medium text-gray-900">{l.name}</p>
+                      <p className="mt-0.5 truncate text-xs font-medium text-amber-700">
+                        {powerLabel(l) || '단일도수'}
                       </p>
                     </div>
                     <button
-                      onClick={() => setQty(l.item.id, 0)}
+                      onClick={() => setQty(l.variantId, 0)}
                       className="shrink-0 text-xs text-gray-400 hover:text-red-500"
                       aria-label="삭제"
                     >
@@ -290,15 +333,15 @@ export function StoreOrderClient() {
                   </div>
                   <div className="mt-2 flex items-center justify-between">
                     <div className="flex items-center gap-1">
-                      <QtyBtn onClick={() => setQty(l.item.id, l.qty - 1)}>−</QtyBtn>
+                      <QtyBtn onClick={() => setQty(l.variantId, l.qty - 1)}>−</QtyBtn>
                       <input
                         type="number"
                         min={1}
                         value={l.qty}
-                        onChange={(e) => setQty(l.item.id, Math.max(0, Math.floor(Number(e.target.value))))}
+                        onChange={(e) => setQty(l.variantId, Math.max(0, Math.floor(Number(e.target.value))))}
                         className="w-12 rounded border border-gray-300 bg-white py-1 text-center text-sm text-gray-900"
                       />
-                      <QtyBtn onClick={() => setQty(l.item.id, l.qty + 1)}>+</QtyBtn>
+                      <QtyBtn onClick={() => setQty(l.variantId, l.qty + 1)}>+</QtyBtn>
                     </div>
                     <span className="text-sm font-semibold text-gray-900">
                       {l.lineTotal.toLocaleString()}원
@@ -337,6 +380,11 @@ export function StoreOrderClient() {
           )}
         </div>
       </aside>
+
+      {/* ── 도수+수량 선택 모달 ───────────────────── */}
+      {picking && (
+        <VariantModal product={picking} onClose={() => setPicking(null)} onAdd={addVariant} />
+      )}
     </div>
   );
 }
@@ -349,11 +397,87 @@ function errorMessage(code: string | undefined): string {
       return '공급가가 설정되지 않은 제품이 포함되어 있습니다. 본사에 문의해주세요.';
     case 'INVALID_PRODUCT':
       return '판매 중지된 제품이 포함되어 있습니다.';
+    case 'INVALID_VARIANT':
+      return '선택한 도수가 더 이상 유효하지 않습니다. 다시 선택해주세요.';
     case 'FORBIDDEN':
       return '발주 권한이 없습니다.';
     default:
       return '발주에 실패했습니다. 다시 시도해주세요.';
   }
+}
+
+/** 도수+수량 선택 모달 — 제품 클릭 시 해당 제품의 variants 를 불러와 선택. */
+function VariantModal({
+  product,
+  onClose,
+  onAdd,
+}: {
+  product: CatalogItem;
+  onClose: () => void;
+  onAdd: (product: CatalogItem, variant: PickerVariant, quantity: number) => void;
+}) {
+  const [variants, setVariants] = useState<PickerVariant[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let alive = true;
+    setLoading(true);
+    fetch(`/api/store/lenses/${product.id}/variants`)
+      .then((r) => r.json())
+      .then((j) => {
+        if (alive) setVariants((j.variants ?? []) as PickerVariant[]);
+      })
+      .catch(() => {
+        if (alive) setVariants([]);
+      })
+      .finally(() => {
+        if (alive) setLoading(false);
+      });
+    return () => {
+      alive = false;
+    };
+  }, [product.id]);
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-end justify-center bg-black/40 p-0 sm:items-center sm:p-4"
+      onClick={onClose}
+    >
+      <div
+        className="w-full max-w-md rounded-t-2xl bg-white p-5 sm:rounded-2xl"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="truncate text-xs text-gray-400">{product.brand}</p>
+            <h3 className="truncate text-base font-bold text-gray-900">{product.name}</h3>
+            <p className="mt-0.5 text-xs text-amber-700">
+              공급가{' '}
+              {product.supplyPrice == null
+                ? '가격문의'
+                : `${product.supplyPrice.toLocaleString()}원`}
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="shrink-0 rounded-full p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            aria-label="닫기"
+          >
+            ✕
+          </button>
+        </div>
+
+        <div className="mt-4">
+          <StoreVariantPicker
+            variants={variants}
+            lensType={product.lensType}
+            loading={loading}
+            onConfirm={(variant, quantity) => onAdd(product, variant, quantity)}
+          />
+        </div>
+      </div>
+    </div>
+  );
 }
 
 function ProductCard({
@@ -409,7 +533,7 @@ function ProductCard({
           disabled={item.supplyPrice == null}
           className="mt-2 w-full rounded-lg bg-amber-600 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
         >
-          {qtyInCart > 0 ? `담음 (${qtyInCart})` : '발주 담기'}
+          {qtyInCart > 0 ? `도수 추가 (${qtyInCart})` : '발주 담기'}
         </button>
       </div>
     </div>
@@ -503,7 +627,7 @@ function ProductRow({
         disabled={item.supplyPrice == null}
         className="shrink-0 rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-amber-700 disabled:opacity-50"
       >
-        {qtyInCart > 0 ? `담음 (${qtyInCart})` : '발주 담기'}
+        {qtyInCart > 0 ? `도수 추가 (${qtyInCart})` : '발주 담기'}
       </button>
     </div>
   );

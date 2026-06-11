@@ -1,7 +1,20 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Fragment, useEffect, useState } from 'react';
 import Link from 'next/link';
+import { powerLabel } from '../variant-picker';
+
+interface OrderItem {
+  brand: string | null;
+  productName: string | null;
+  sphere: string | null;
+  cylinder: string | null;
+  axis: number | null;
+  addPower: string | null;
+  quantity: number;
+  unitSupplyPrice: number;
+  lineTotal: number;
+}
 
 interface OrderRow {
   id: string;
@@ -11,6 +24,7 @@ interface OrderRow {
   note: string | null;
   createdAt: string;
   itemCount: number;
+  items: OrderItem[];
 }
 
 const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
@@ -24,6 +38,7 @@ const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
 export function StoreOrderHistoryClient() {
   const [orders, setOrders] = useState<OrderRow[]>([]);
   const [loading, setLoading] = useState(true);
+  const [expanded, setExpanded] = useState<string | null>(null);
 
   useEffect(() => {
     fetch('/api/store/purchase-orders')
@@ -66,20 +81,58 @@ export function StoreOrderHistoryClient() {
             <tbody className="divide-y divide-gray-100">
               {orders.map((o) => {
                 const s = STATUS_LABEL[o.status] ?? { label: o.status, cls: 'bg-gray-100 text-gray-600' };
+                const open = expanded === o.id;
                 return (
-                  <tr key={o.id} className="bg-white">
-                    <td className="px-4 py-3 font-medium text-gray-900">{o.orderNumber}</td>
-                    <td className="px-4 py-3">
-                      <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.cls}`}>{s.label}</span>
-                    </td>
-                    <td className="px-4 py-3 text-right text-gray-600">{o.itemCount}건</td>
-                    <td className="px-4 py-3 text-right font-semibold text-gray-900">
-                      {o.totalSupplyAmount.toLocaleString()}원
-                    </td>
-                    <td className="px-4 py-3 text-gray-500">
-                      {new Date(o.createdAt).toLocaleString('ko-KR')}
-                    </td>
-                  </tr>
+                  <Fragment key={o.id}>
+                    <tr
+                      className="cursor-pointer bg-white hover:bg-gray-50"
+                      onClick={() => setExpanded(open ? null : o.id)}
+                    >
+                      <td className="px-4 py-3 font-medium text-gray-900">
+                        <span className="mr-1 inline-block text-gray-400">{open ? '▾' : '▸'}</span>
+                        {o.orderNumber}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`rounded-full px-2 py-0.5 text-xs font-medium ${s.cls}`}>{s.label}</span>
+                      </td>
+                      <td className="px-4 py-3 text-right text-gray-600">{o.itemCount}건</td>
+                      <td className="px-4 py-3 text-right font-semibold text-gray-900">
+                        {o.totalSupplyAmount.toLocaleString()}원
+                      </td>
+                      <td className="px-4 py-3 text-gray-500">
+                        {new Date(o.createdAt).toLocaleString('ko-KR')}
+                      </td>
+                    </tr>
+                    {open && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={5} className="px-4 py-3">
+                          {o.items.length === 0 ? (
+                            <p className="text-xs text-gray-400">품목 정보가 없습니다.</p>
+                          ) : (
+                            <ul className="space-y-1.5">
+                              {o.items.map((it, i) => {
+                                const power = powerLabel(it);
+                                return (
+                                  <li key={i} className="flex items-center justify-between gap-3 text-xs">
+                                    <div className="min-w-0">
+                                      <span className="font-medium text-gray-900">{it.productName ?? '—'}</span>
+                                      {it.brand && <span className="ml-1 text-gray-400">{it.brand}</span>}
+                                      <span className="ml-2 font-medium text-amber-700">
+                                        {power || '단일도수'}
+                                      </span>
+                                    </div>
+                                    <span className="shrink-0 text-gray-600">
+                                      {it.quantity}개 · {it.lineTotal.toLocaleString()}원
+                                    </span>
+                                  </li>
+                                );
+                              })}
+                            </ul>
+                          )}
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 );
               })}
             </tbody>

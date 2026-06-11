@@ -253,6 +253,13 @@
       "when": 1780500800000,
       "tag": "0035_store_orders",
       "breakpoints": true
+    },
+    {
+      "idx": 38,
+      "version": "7",
+      "when": 1780500900000,
+      "tag": "0038_store_order_variant",
+      "breakpoints": true
     }
   ]
 }
