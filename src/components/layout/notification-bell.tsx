@@ -22,8 +22,9 @@ export function NotificationBell() {
   const [open, setOpen] = useState(false);
   const esRef = useRef<EventSource | null>(null);
 
+  // 미읽음만 노출 — 읽은 알림은 벨에서 사라진다.
   const load = useCallback(async () => {
-    const res = await fetch('/api/notifications?limit=20', { cache: 'no-store' });
+    const res = await fetch('/api/notifications?unread=1&limit=20', { cache: 'no-store' });
     if (!res.ok) return;
     const j = await res.json();
     setItems(j.notifications ?? []);
@@ -54,7 +55,16 @@ export function NotificationBell() {
   }, [load]);
 
   async function markRead(id: string) {
+    // 낙관적 제거 — 읽으면 즉시 목록에서 사라진다.
+    setItems((prev) => prev.filter((n) => n.id !== id));
+    setUnread((u) => Math.max(0, u - 1));
     await fetch(`/api/notifications/${id}/read`, { method: 'POST' });
+  }
+
+  async function markAllRead() {
+    setItems([]);
+    setUnread(0);
+    await fetch('/api/notifications/read-all', { method: 'POST' });
     load();
   }
 
@@ -94,8 +104,17 @@ export function NotificationBell() {
 
       {open && (
         <div className="absolute right-0 mt-2 max-h-[28rem] w-80 overflow-auto rounded-2xl border border-gray-200 bg-white shadow-lg">
-          <div className="sticky top-0 border-b bg-white px-4 py-2 text-xs font-semibold text-gray-500">
-            알림 {unread > 0 && <span className="text-red-600">· 새 {unread}</span>}
+          <div className="sticky top-0 flex items-center justify-between border-b bg-white px-4 py-2 text-xs font-semibold text-gray-500">
+            <span>알림 {unread > 0 && <span className="text-red-600">· 새 {unread}</span>}</span>
+            {items.length > 0 && (
+              <button
+                type="button"
+                onClick={markAllRead}
+                className="rounded px-1.5 py-0.5 text-[11px] font-medium text-brand-600 hover:bg-brand-50"
+              >
+                모두 읽음
+              </button>
+            )}
           </div>
           <ul className="divide-y divide-gray-100">
             {items.length === 0 && (
