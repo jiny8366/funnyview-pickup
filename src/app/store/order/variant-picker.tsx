@@ -27,12 +27,12 @@ function fmtSph(s: string): string {
  * 가맹점 발주용 도수+수량 선택 패널.
  *
  * 구면(spherical): SPH 단일 드롭다운.
- * 토릭(toric): JINY 지시 — 난시(CYL) → 축(AXIS) → 구면(SPH) 순서로 선택.
- *              각 단계는 제품 variants 에 실제 존재하는 조합만 노출(스펙 인지).
+ * 토릭(toric): JINY 지시 — 구면(SPH)·난시(CYL)·난시축(AXIS) 3개를 화면 순서로 표시하되
+ *              **순서 무관**하게 어느 항목을 먼저 골라도 제품 스펙(실제 variant 조합)에
+ *              맞춰 나머지 드롭다운이 자동으로 좁혀진다(난시축이 주문요구와 맞는지 확인 후 주문).
  * 다초점(multifocal): SPH → ADD.
  *
- * customer 용 VariantSelector(SPH 우선) 와 토릭 순서가 충돌하므로 B2B 전용으로 분리.
- * 동일 필터링(스펙에 맞춰 좁히기) 로직은 동일하게 유지.
+ * customer 용 VariantSelector 와 분리한 B2B 전용 선택기.
  */
 export function StoreVariantPicker({
   variants,
@@ -66,25 +66,50 @@ export function StoreVariantPicker({
   const hasStock = (pred: (v: PickerVariant) => boolean) =>
     variants.some((v) => pred(v) && v.available > 0);
 
-  // ── 토릭: CYL → AXIS → SPH ─────────────────────────────
-  const cylOptions = useMemo(
-    () => uniqSort(variants.filter((v) => v.cylinder != null).map((v) => v.cylinder as string), 'desc'),
-    [variants],
-  );
-  const axisOptionsToric = useMemo(
-    () => uniqSort(variants.filter((v) => v.cylinder === cyl && v.axis != null).map((v) => String(v.axis))),
-    [variants, cyl],
-  );
+  // ── 토릭: 순서 무관(구면/난시/축 중 무엇을 골라도 스펙에 맞춰 나머지 필터) ──
+  // 각 드롭다운 옵션 = "나머지 두 선택"에 부합하는 variant 들의 값(해당 차원 미선택은 제약 안 함).
+  const matchExcept = (
+    v: PickerVariant,
+    sel: { s?: string; c?: string; a?: string },
+  ) =>
+    (!sel.s || v.sphere === sel.s) &&
+    (!sel.c || v.cylinder === sel.c) &&
+    (!sel.a || String(v.axis) === sel.a);
+
   const sphOptionsToric = useMemo(
+    () => uniqSort(variants.filter((v) => matchExcept(v, { c: cyl, a: axis })).map((v) => v.sphere), 'desc'),
+    [variants, cyl, axis],
+  );
+  const cylOptionsToric = useMemo(
     () =>
       uniqSort(
         variants
-          .filter((v) => v.cylinder === cyl && String(v.axis) === axis)
-          .map((v) => v.sphere),
+          .filter((v) => v.cylinder != null && matchExcept(v, { s: sph, a: axis }))
+          .map((v) => v.cylinder as string),
         'desc',
       ),
-    [variants, cyl, axis],
+    [variants, sph, axis],
   );
+  const axisOptionsToric = useMemo(
+    () =>
+      uniqSort(
+        variants
+          .filter((v) => v.axis != null && matchExcept(v, { s: sph, c: cyl }))
+          .map((v) => String(v.axis)),
+      ),
+    [variants, sph, cyl],
+  );
+
+  // 선택이 다른 선택 변경으로 더는 유효하지 않게 되면 정리(루프 없음 — 각 옵션은 자기 차원에 비의존).
+  useEffect(() => {
+    if (isToric && sph && !sphOptionsToric.includes(sph)) setSph('');
+  }, [isToric, sph, sphOptionsToric]);
+  useEffect(() => {
+    if (isToric && cyl && !cylOptionsToric.includes(cyl)) setCyl('');
+  }, [isToric, cyl, cylOptionsToric]);
+  useEffect(() => {
+    if (isToric && axis && !axisOptionsToric.includes(axis)) setAxis('');
+  }, [isToric, axis, axisOptionsToric]);
 
   // ── 구면/다초점: SPH 우선 ─────────────────────────────
   const sphOptions = useMemo(() => uniqSort(variants.map((v) => v.sphere), 'desc'), [variants]);
@@ -127,66 +152,55 @@ export function StoreVariantPicker({
         <div className="space-y-2.5">
           {isToric ? (
             <>
-              <select
-                className={SELECT_CLASS}
-                value={cyl}
-                onChange={(e) => {
-                  setCyl(e.target.value);
-                  setAxis('');
-                  setSph('');
-                }}
-              >
-                <option value="" disabled>
-                  난시도수 (CYL)
-                </option>
-                {cylOptions.map((o) => {
-                  const ok = hasStock((v) => v.cylinder === o);
-                  return (
-                    <option key={o} value={o} disabled={!ok}>
-                      {o}{ok ? '' : ' (품절)'}
-                    </option>
-                  );
-                })}
-              </select>
-
-              <select
-                className={SELECT_CLASS}
-                value={axis}
-                disabled={!cyl}
-                onChange={(e) => {
-                  setAxis(e.target.value);
-                  setSph('');
-                }}
-              >
-                <option value="" disabled>
-                  난시축 (AXIS)
-                </option>
-                {axisOptionsToric.map((o) => {
-                  const ok = hasStock((v) => v.cylinder === cyl && String(v.axis) === o);
-                  return (
-                    <option key={o} value={o} disabled={!ok}>
-                      {o}{ok ? '' : ' (품절)'}
-                    </option>
-                  );
-                })}
-              </select>
-
+              <p className="text-[11px] text-gray-400">
+                구면·난시·축을 순서와 무관하게 선택하면 제품 스펙에 맞춰 나머지가 자동으로 좁혀집니다.
+              </p>
+              {/* 구면(SPH) */}
               <select
                 className={SELECT_CLASS}
                 value={sph}
-                disabled={!axis}
                 onChange={(e) => setSph(e.target.value)}
               >
-                <option value="" disabled>
-                  구면도수 (SPH)
-                </option>
+                <option value="">구면도수 (SPH) 선택</option>
                 {sphOptionsToric.map((o) => {
-                  const ok = hasStock(
-                    (v) => v.cylinder === cyl && String(v.axis) === axis && v.sphere === o,
-                  );
+                  const ok = hasStock((v) => matchExcept(v, { s: o, c: cyl, a: axis }));
                   return (
                     <option key={o} value={o} disabled={!ok}>
                       {fmtSph(o)}{ok ? '' : ' (품절)'}
+                    </option>
+                  );
+                })}
+              </select>
+
+              {/* 난시도수(CYL) */}
+              <select
+                className={SELECT_CLASS}
+                value={cyl}
+                onChange={(e) => setCyl(e.target.value)}
+              >
+                <option value="">난시도수 (CYL) 선택</option>
+                {cylOptionsToric.map((o) => {
+                  const ok = hasStock((v) => matchExcept(v, { s: sph, c: o, a: axis }));
+                  return (
+                    <option key={o} value={o} disabled={!ok}>
+                      {o}{ok ? '' : ' (품절)'}
+                    </option>
+                  );
+                })}
+              </select>
+
+              {/* 난시축(AXIS) — 주문 요구와 맞는지 확인 */}
+              <select
+                className={SELECT_CLASS}
+                value={axis}
+                onChange={(e) => setAxis(e.target.value)}
+              >
+                <option value="">난시축 (AXIS) 선택</option>
+                {axisOptionsToric.map((o) => {
+                  const ok = hasStock((v) => matchExcept(v, { s: sph, c: cyl, a: o }));
+                  return (
+                    <option key={o} value={o} disabled={!ok}>
+                      {o}{ok ? '' : ' (품절)'}
                     </option>
                   );
                 })}
