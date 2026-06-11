@@ -66,7 +66,7 @@ function InboundNewInner() {
 
   // 매입처 로드 (활성만)
   useEffect(() => {
-    fetch('/api/admin/suppliers')
+    fetch('/api/warehouse/suppliers')
       .then((r) => (r.ok ? r.json() : { suppliers: [] }))
       .then((d) => setSuppliers(d.suppliers ?? []))
       .catch(() => setSuppliers([]));

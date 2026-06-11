@@ -56,11 +56,20 @@ export default function WarehouseInboundPage() {
   const [quantity, setQuantity] = useState(1);
   const [unitCost, setUnitCost] = useState<number>(0);
   const [inboundDate, setInboundDate] = useState<string>(todayISO());
-  const [invoiceRef, setInvoiceRef] = useState<string>('');
+  const [supplierId, setSupplierId] = useState<string>('');
+  const [suppliers, setSuppliers] = useState<{ id: string; name: string }[]>([]);
   const [continuous, setContinuous] = useState(true);
   const [note, setNote] = useState('');
   const [logs, setLogs] = useState<InboundLog[]>([]);
   const [error, setError] = useState<string | null>(null);
+
+  // 매입처 목록 (staff 호스트 접근 가능한 warehouse 엔드포인트 사용)
+  useEffect(() => {
+    fetch('/api/warehouse/suppliers')
+      .then((r) => (r.ok ? r.json() : { suppliers: [] }))
+      .then((d) => setSuppliers(d.suppliers ?? []))
+      .catch(() => setSuppliers([]));
+  }, []);
 
   // 자동 포커스
   useEffect(() => {
@@ -111,7 +120,7 @@ export default function WarehouseInboundPage() {
           quantity,
           unitCostIncVat: unitCost,
           inboundDate,
-          invoiceRef: invoiceRef || null,
+          supplierId: supplierId || null,
           note: note || null,
         }),
       });
@@ -188,14 +197,18 @@ export default function WarehouseInboundPage() {
               />
             </div>
             <div>
-              <label className="mb-1 block text-xs font-medium text-gray-700">전표번호 (선택)</label>
-              <input
-                type="text"
-                value={invoiceRef}
-                onChange={(e) => setInvoiceRef(e.target.value)}
-                placeholder="세금계산서 / 거래명세서 번호"
+              <label className="mb-1 block text-xs font-medium text-gray-700">매입처</label>
+              <select
+                value={supplierId}
+                onChange={(e) => setSupplierId(e.target.value)}
                 className="input"
-              />
+              >
+                <option value="">매입처 선택 (미지정 가능)</option>
+                {suppliers.map((sp) => (
+                  <option key={sp.id} value={sp.id}>{sp.name}</option>
+                ))}
+              </select>
+              <p className="mt-1 text-[11px] text-gray-400">매입처는 어드민 &gt; 매입처 관리에서 등록합니다.</p>
             </div>
             <div>
               <label className="mb-1 block text-xs font-medium text-gray-700">
