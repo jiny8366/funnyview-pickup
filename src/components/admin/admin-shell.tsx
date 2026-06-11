@@ -37,6 +37,7 @@ const SECTIONS: MenuSection[] = [
     title: '상품',
     items: [
       { href: '/admin/products', label: '제품 마스터', icon: <IconBox size={16} />, permission: 'products_read' },
+      { href: '/admin/purchasing', label: '매입 관리', icon: <IconCart size={16} />, permission: 'products_read' },
       { href: '/admin/suppliers', label: '매입처 관리', icon: <IconClipboard size={16} />, permission: 'settings_write' },
       // 카테고리 메뉴 제거(JINY 지시) — 페이지/API 는 보존, 자리에 안전재고량 관리
       { href: '/admin/safety-stock', label: '안전재고량 관리', icon: <IconTag size={16} />, permission: 'products_read' },
