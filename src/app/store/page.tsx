@@ -12,6 +12,15 @@ interface Summary {
 
 export default function StoreDashboardPage() {
   const [summary, setSummary] = useState<Summary | null>(null);
+  const [isAdminViewer, setIsAdminViewer] = useState(false);
+
+  useEffect(() => {
+    // 마스터/관리자(매장 소속 없음)가 포털 전환으로 들어오면 현황이 0으로 보임 — 안내 배너용
+    fetch('/api/auth/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setIsAdminViewer(j?.user?.role === 'admin'))
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     async function load() {
@@ -45,6 +54,13 @@ export default function StoreDashboardPage() {
           입고 예정 · 픽업 대기 · 매장 결제 및 처리완료
         </p>
       </header>
+
+      {isAdminViewer && (
+        <div className="rounded-xl bg-amber-50 px-4 py-3 text-sm text-amber-800">
+          관리자 계정은 특정 매장 소속이 아니어서 현황이 <b>0으로 표시</b>됩니다.
+          해당 매장의 <b>가맹점 계정(대표자/안경사)</b>으로 로그인하면 그 매장의 실제 현황이 보입니다.
+        </div>
+      )}
 
       <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <DashCard label="배송 중" value={summary?.shipped} href="/store/incoming" accent="text-emerald-700" />
