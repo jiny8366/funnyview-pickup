@@ -296,21 +296,22 @@ export default function StorePackingPage() {
               <p className="text-sm font-semibold text-emerald-800">
                 ✅ 확정됨 — 거래명세서·송장을 출력해 박스에 동봉한 뒤 배송 처리하세요.
               </p>
+              {/* 자식창 자동인쇄 → 인쇄 후 창닫기 → 이 화면 유지 → 바로 배송 처리 (M1 단건 검수와 동일 패턴) */}
               <div className="flex flex-col gap-2 sm:flex-row">
-                <Link
-                  href={invoiceHref}
-                  target="_blank"
+                <button
+                  type="button"
+                  onClick={() => window.open(`${invoiceHref}&autoprint=1`, 'fvdocprint', 'width=920,height=760')}
                   className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
                 >
                   🧾 거래명세서 출력·동봉
-                </Link>
-                <Link
-                  href={waybillHref}
-                  target="_blank"
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.open(`${waybillHref}&autoprint=1`, 'fvdocprint', 'width=920,height=760')}
                   className="inline-flex flex-1 items-center justify-center rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm font-medium text-gray-800 hover:bg-gray-50"
                 >
                   🚚 송장 출력
-                </Link>
+                </button>
               </div>
               <div className="flex">
                 <Button onClick={ship} disabled={busy} className="flex-1 bg-emerald-600 hover:bg-emerald-700">
