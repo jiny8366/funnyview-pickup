@@ -298,7 +298,7 @@ export function StoreProductCommissions({ storeId }: { storeId: string }) {
       </p>
 
       {/* 제품 검색 — 어드민 제품마스터와 동일한 텍스트+칩 필터 */}
-      <div className="mb-3 space-y-2 rounded-xl border border-gray-200 bg-gray-50/60 p-3">
+      <div className="mb-3 space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
         <div className="relative">
           <input
             type="text"
