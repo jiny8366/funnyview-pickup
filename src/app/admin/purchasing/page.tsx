@@ -182,12 +182,7 @@ export default function PurchasingPage() {
       });
       return next;
     });
-    setChecked((ch) => {
-      const next = new Set(ch);
-      items.forEach((i) => next.add(i.cand.variantId));
-      return next;
-    });
-    setMsg(`${items.length}개 도수를 발주리스트에 추가했습니다.`);
+    setMsg(`${items.length}개 도수를 발주리스트에 추가했습니다. 발주할 품목을 체크하세요.`);
     setTimeout(() => setMsg(null), 4000);
   }
 
@@ -219,7 +214,7 @@ export default function PurchasingPage() {
       setSupplierScoped(Boolean(j.supplierScoped));
       setQty(new Map(list.map((c) => [c.variantId, c.suggested])));
       setCost(new Map(list.map((c) => [c.variantId, c.lastCost > 0 ? c.lastCost : c.standardCost])));
-      setChecked(new Set(list.map((c) => c.variantId)));
+      setChecked(new Set()); // 기본 미체크 — 발주할 품목만 선택 (JINY)
     } finally {
       setLoading(false);
     }
@@ -759,6 +754,9 @@ function DoseGridModal({
 }) {
   const [variants, setVariants] = useState<Candidate[] | null>(null);
   const [input, setInput] = useState<Map<string, number>>(new Map());
+  // 난시(토릭) 검색 보조 — 우측 상단 CYL·AX 셀렉트로 그리드를 좁힘 (JINY, 발주 화면과 동일 UX)
+  const [fCyl, setFCyl] = useState('');
+  const [fAxis, setFAxis] = useState('');
 
   useEffect(() => {
     fetch(`/api/admin/purchasing?variantsOf=${product.id}`)
@@ -767,20 +765,39 @@ function DoseGridModal({
       .catch(() => setVariants([]));
   }, [product.id]);
 
+  const isToric = useMemo(() => (variants ?? []).some((v) => v.cylinder), [variants]);
+  const cylOptions = useMemo(
+    () => [...new Set((variants ?? []).filter((v) => v.cylinder).map((v) => v.cylinder as string))].sort((a, b) => Number(b) - Number(a)),
+    [variants],
+  );
+  const axisOptions = useMemo(
+    () =>
+      [...new Set(
+        (variants ?? [])
+          .filter((v) => v.axis !== null && (!fCyl || v.cylinder === fCyl))
+          .map((v) => String(v.axis)),
+      )].sort((a, b) => Number(a) - Number(b)),
+    [variants, fCyl],
+  );
+
   // 피벗: 행 = SPH(내림차순), 열 = 토릭 'CYL·AX' | 멀티포컬 'ADD' | 그 외 단일
+  // 토릭은 우측 상단 CYL·AX 셀렉트로 열을 좁혀 검색 (JINY)
   const grid = useMemo(() => {
     if (!variants) return null;
+    const filtered = variants.filter(
+      (v) => (!fCyl || v.cylinder === fCyl) && (!fAxis || String(v.axis) === fAxis),
+    );
     const colKey = (v: Candidate) => {
       if (v.cylinder) return `CYL ${v.cylinder}${v.axis !== null ? ` · AX ${v.axis}` : ''}`;
       if (v.addPower) return `ADD ${v.addPower}`;
       return '수량';
     };
-    const cols = [...new Set(variants.map(colKey))].sort();
-    const rows = [...new Set(variants.map((v) => v.sphere))].sort((a, b) => Number(b) - Number(a));
+    const cols = [...new Set(filtered.map(colKey))].sort();
+    const rows = [...new Set(filtered.map((v) => v.sphere))].sort((a, b) => Number(b) - Number(a));
     const cell = new Map<string, Candidate>();
-    variants.forEach((v) => cell.set(`${v.sphere}|${colKey(v)}`, v));
+    filtered.forEach((v) => cell.set(`${v.sphere}|${colKey(v)}`, v));
     return { cols, rows, cell };
-  }, [variants]);
+  }, [variants, fCyl, fAxis]);
 
   const entered = useMemo(() => {
     if (!variants) return [];
@@ -802,9 +819,38 @@ function DoseGridModal({
               발주할 도수 칸에 수량을 입력하고 적용하세요. 칸 아래 회색 숫자는 현재 가용재고입니다.
             </p>
           </div>
-          <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full text-gray-400 hover:bg-gray-100" aria-label="닫기">
-            ✕
-          </button>
+          <div className="flex items-center gap-2">
+            {isToric && (
+              <>
+                <select
+                  value={fCyl}
+                  onChange={(e) => {
+                    setFCyl(e.target.value);
+                    setFAxis('');
+                  }}
+                  className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs"
+                >
+                  <option value="">난시도수 전체</option>
+                  {cylOptions.map((c) => (
+                    <option key={c} value={c}>CYL {c}</option>
+                  ))}
+                </select>
+                <select
+                  value={fAxis}
+                  onChange={(e) => setFAxis(e.target.value)}
+                  className="rounded-lg border border-gray-200 px-2 py-1.5 text-xs"
+                >
+                  <option value="">축 전체</option>
+                  {axisOptions.map((a) => (
+                    <option key={a} value={a}>AX {a}</option>
+                  ))}
+                </select>
+              </>
+            )}
+            <button type="button" onClick={onClose} className="grid h-8 w-8 place-items-center rounded-full text-gray-400 hover:bg-gray-100" aria-label="닫기">
+              ✕
+            </button>
+          </div>
         </header>
 
         <div className="flex-1 overflow-auto px-5 py-3">
