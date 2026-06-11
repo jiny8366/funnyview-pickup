@@ -226,6 +226,39 @@ html.theme-dark .text-orange-700 { color: #ffb340 !important; }
 /* 진한 뱃지/활성 필터칩(bg-gray-900 text-white)은 다크에서 표면과 또렷이 구분 */
 html.theme-dark .bg-gray-900 { background-color: #48484a !important; }
 
+/* ── 가독성 2차 보강 — 중앙 맵 미커버 음영/계열/반투명 패널 (JINY 다크 가독성 일괄) ── */
+/* brand = blue 팔레트(tailwind.config) → blue 와 동일 처리 */
+html.theme-dark .text-brand-500,
+html.theme-dark .text-brand-600,
+html.theme-dark .text-brand-700 { color: #6cb2ff !important; }
+html.theme-dark .bg-brand-100 { background-color: rgba(10,132,255,0.18) !important; }
+
+/* 누락 텍스트 음영 — 다크에서 밝게 (커버된 700/800 과 동일 톤으로 통일) */
+html.theme-dark .text-emerald-600,
+html.theme-dark .text-green-600 { color: #5be59b !important; }
+html.theme-dark .text-amber-600,
+html.theme-dark .text-amber-900,
+html.theme-dark .text-yellow-700 { color: #ffd60a !important; }
+html.theme-dark .text-red-500 { color: #ff6b61 !important; }
+html.theme-dark .text-indigo-600 { color: #9d9bff !important; }
+html.theme-dark .text-cyan-700 { color: #5fd6e6 !important; }
+html.theme-dark .text-pink-500,
+html.theme-dark .text-pink-700 { color: #ff7a9c !important; }
+html.theme-dark .text-slate-700 { color: #d1d1d6 !important; }
+
+/* 누락 -100/-200 틴트 배경 — 다크 틴트로 (밝은 텍스트와 대비 확보) */
+html.theme-dark .bg-slate-100 { background-color: #2c2c2e !important; }
+html.theme-dark .bg-cyan-100 { background-color: rgba(50,173,230,0.18) !important; }
+html.theme-dark .bg-pink-100 { background-color: rgba(255,55,95,0.18) !important; }
+html.theme-dark .bg-orange-100 { background-color: rgba(255,159,10,0.18) !important; }
+html.theme-dark .bg-green-200 { background-color: rgba(48,209,88,0.20) !important; }
+html.theme-dark .bg-red-200 { background-color: rgba(255,69,58,0.20) !important; }
+
+/* 반투명 옅은 패널(bg-gray-50/NN) — 미커버 시 라이트 패널 위 밝은 글자 충돌 → 다크 표면으로 */
+html.theme-dark .bg-gray-50\/40,
+html.theme-dark .bg-gray-50\/50,
+html.theme-dark .bg-gray-50\/70 { background-color: #141416 !important; }
+
 /* 문서(미리보기/인쇄/PDF) — .doc-light 컨테이너는 다크 토글과 무관하게 항상 라이트.
    거래명세서·픽리스트·재고출력 등 인쇄 대상은 화면 미리보기도 라이트로 강제. */
 html.theme-dark .doc-light { background-color: #fff !important; color: #111827 !important; }
