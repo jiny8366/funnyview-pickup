@@ -43,7 +43,7 @@ textarea {
 }
 input::placeholder,
 textarea::placeholder {
-  color: #6b7280; /* gray-500 — 입력값과 구분되되 보일 정도 */
+  color: #b3b9c4; /* 옅은 회색 — 입력값(진한 글씨)과 확실히 구분(입력예시로 인지) */
   font-weight: 400;
   opacity: 1; /* Firefox 의 기본 0.54 opacity 무력화 */
 }
