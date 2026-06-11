@@ -22,6 +22,8 @@ function power(it: BItem): string {
 function BundleInner() {
   const sp = useSearchParams();
   const ids = (sp.get('ids') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  // 출력 분리: invoice=거래명세서 / waybill=배송송장 (JINY 지시 — 별도 문서로 출력)
+  const mode: 'invoice' | 'waybill' = sp.get('mode') === 'waybill' ? 'waybill' : 'invoice';
   const [data, setData] = useState<Bundle | null>(null);
   const [err, setErr] = useState('');
 
@@ -45,17 +47,29 @@ function BundleInner() {
     <div className="mx-auto max-w-3xl space-y-4 p-4">
       <style>{`@media print { body * { visibility: hidden !important; } .bundle-doc, .bundle-doc * { visibility: visible !important; } .bundle-doc { position: absolute; left: 0; top: 0; width: 100%; } .store-page { break-after: page; } .store-page:last-child { break-after: auto; } @page { size: A4; margin: 12mm; } }`}</style>
 
-      <div className="flex items-center justify-between print:hidden">
+      <div className="flex items-center justify-between gap-2 print:hidden">
         <div>
-          <h1 className="text-lg font-bold">거래명세서 · 송장 (가맹점 묶음)</h1>
+          <h1 className="text-lg font-bold">{mode === 'waybill' ? '배송 송장 (가맹점 묶음)' : '거래명세서 (가맹점 묶음)'}</h1>
           <p className="text-xs text-gray-500">{data.found}건 주문 · {data.stores.length}개 가맹점 · 발행 {formatDateTime(data.issuedAt)}</p>
+          {mode === 'waybill' && (
+            <p className="mt-0.5 text-[11px] text-amber-700">※ 임시 자체 양식 — 택배사 계약 확정 시 해당 택배사 송장 양식/연동으로 교체 예정</p>
+          )}
         </div>
-        <Button onClick={() => window.print()} className="bg-emerald-600 hover:bg-emerald-700">🖨 인쇄 / PDF</Button>
+        <div className="flex items-center gap-2">
+          <a
+            href={`/warehouse/invoice-bundle?ids=${ids.join(',')}&mode=${mode === 'waybill' ? 'invoice' : 'waybill'}`}
+            className="rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+          >
+            {mode === 'waybill' ? '🧾 거래명세서 보기' : '🚚 송장 보기'}
+          </a>
+          <Button onClick={() => window.print()} className="bg-emerald-600 hover:bg-emerald-700">🖨 인쇄 / PDF</Button>
+        </div>
       </div>
 
       <div className="doc-light bundle-doc space-y-6">
         {data.stores.map((s) => (
           <div key={s.store.id} className="store-page space-y-3 rounded-2xl border border-gray-300 bg-white p-6 text-gray-900">
+            {mode === 'invoice' && (<>
             {/* 거래명세서 */}
             <div className="text-center text-lg font-bold tracking-wide">거 래 명 세 서</div>
             <div className="grid grid-cols-2 gap-3 text-xs">
@@ -120,28 +134,32 @@ function BundleInner() {
               <div className="flex justify-between text-gray-600"><span>주문 {s.totals.orderCount}건 · 총 {s.totals.quantity}팩</span></div>
               <div className="flex justify-between border-t border-gray-300 pt-1 text-sm font-bold"><span>합계 (VAT 포함)</span><span>{formatKRW(s.totals.amount)}</span></div>
             </div>
+            </>)}
 
-            {/* 송장 */}
-            <div className="mt-4 rounded-lg border border-dashed border-gray-400 p-3 text-xs">
-              <div className="mb-1 text-center text-sm font-bold">배 송 송 장</div>
-              <div className="grid grid-cols-2 gap-3">
+            {mode === 'waybill' && (
+            /* 배송 송장 — 별도 출력(임시 자체 양식, 택배사 연동 전). 라벨 가독 위해 큰 글씨 */
+            <div className="rounded-lg border-2 border-dashed border-gray-500 p-5">
+              <div className="mb-3 text-center text-xl font-bold tracking-widest">배 송 송 장</div>
+              <div className="grid grid-cols-2 gap-5 text-sm">
                 <div>
-                  <div className="font-semibold text-gray-700">받는 곳 (가맹점)</div>
-                  <div className="mt-0.5 font-bold">{s.store.name} {s.store.representativeName ? `· ${s.store.representativeName}` : ''}</div>
-                  <div className="text-gray-600">{s.store.address || '—'}</div>
-                  <div className="text-gray-600">☎ {s.store.phone || '—'}</div>
+                  <div className="text-xs font-semibold text-gray-500">받는 곳 (가맹점)</div>
+                  <div className="mt-1 text-lg font-bold leading-snug">{s.store.name}{s.store.representativeName ? ` · ${s.store.representativeName}` : ''}</div>
+                  <div className="mt-1 text-base leading-snug">{s.store.address || '—'}</div>
+                  <div className="mt-0.5 text-base">☎ {s.store.phone || '—'}</div>
                 </div>
                 <div>
-                  <div className="font-semibold text-gray-700">보내는 곳</div>
-                  <div className="mt-0.5 font-bold">{issuer.company}</div>
-                  <div className="text-gray-600">{issuer.address || '—'}</div>
-                  <div className="text-gray-600">☎ {issuer.phone || '—'}</div>
+                  <div className="text-xs font-semibold text-gray-500">보내는 곳</div>
+                  <div className="mt-1 font-bold">{issuer.company}</div>
+                  <div className="text-gray-700">{issuer.address || '—'}</div>
+                  <div className="text-gray-700">☎ {issuer.phone || '—'}</div>
                 </div>
               </div>
-              <div className="mt-2 border-t border-gray-200 pt-2 text-gray-700">
-                내용물: 콘택트렌즈 {s.totals.quantity}팩 (주문 {s.totals.orderCount}건) · 취급주의
+              <div className="mt-4 border-t border-gray-300 pt-3 text-sm text-gray-800">
+                내용물: 콘택트렌즈 {s.totals.quantity}팩 (주문 {s.totals.orderCount}건) · <b>취급주의</b>
               </div>
+              <div className="mt-3 text-right text-[10px] text-gray-400">운송장번호: ＿＿＿＿＿＿＿＿＿＿ (택배사 발행)</div>
             </div>
+            )}
           </div>
         ))}
       </div>

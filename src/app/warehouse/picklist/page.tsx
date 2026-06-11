@@ -128,14 +128,22 @@ export default function WarehousePicklistPage() {
               <Button onClick={() => generate(true)} disabled={selected.size === 0} className="bg-emerald-600 hover:bg-emerald-700">
                 🖨 인쇄 ({selected.size})
               </Button>
-              {/* 선택 주문(픽리스트 묶음)으로 가맹점별 거래명세서·송장 출력 */}
+              {/* 선택 주문(픽리스트 묶음)으로 가맹점별 출력 — 거래명세서/송장 별도 문서(JINY 지시) */}
               {selected.size > 0 && (
-                <Link
-                  href={`/warehouse/invoice-bundle?ids=${Array.from(selected).join(',')}`}
-                  className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
-                >
-                  🧾 명세서·송장 ({selected.size})
-                </Link>
+                <>
+                  <Link
+                    href={`/warehouse/invoice-bundle?ids=${Array.from(selected).join(',')}&mode=invoice`}
+                    className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    🧾 거래명세서 ({selected.size})
+                  </Link>
+                  <Link
+                    href={`/warehouse/invoice-bundle?ids=${Array.from(selected).join(',')}&mode=waybill`}
+                    className="inline-flex items-center rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                  >
+                    🚚 송장 ({selected.size})
+                  </Link>
+                </>
               )}
             </>
           ) : (
