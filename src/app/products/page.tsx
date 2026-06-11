@@ -4,6 +4,7 @@ import { useState, useEffect, useMemo, Suspense } from 'react';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { SiteHeader } from '@/components/layout/site-header';
+import { CYCLE_LABEL } from '@/components/product/product-filter-bar';
 
 interface LensItem {
   id: string;
@@ -24,14 +25,7 @@ interface LensItem {
   diameter: string | null;
 }
 
-const CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이',
-  '2week': '2주교체',
-  '1month': '1개월',
-  '3month': '3개월',
-  '6month': '6개월',
-  '1year': '연간',
-};
+// CYCLE_LABEL 은 공용 product-filter-bar 의 표준 매핑 사용 (제품마스터·재고·발주와 통일)
 
 type TypeKey = 'all' | 'color' | '1day' | 'extended' | 'toric' | 'multifocal';
 
@@ -44,27 +38,8 @@ const TYPE_TABS: { key: TypeKey; label: string }[] = [
   { key: 'multifocal', label: '다초점' },
 ];
 
-type ColorFamily = 'brown' | 'black' | 'gray' | 'blue' | 'hazel' | 'gold';
-
-const COLOR_FAMILIES: { key: ColorFamily; label: string; hex: string }[] = [
-  { key: 'brown', label: '브라운', hex: '#8B5E3C' },
-  { key: 'black', label: '블랙',   hex: '#1A1A1A' },
-  { key: 'gray',  label: '그레이', hex: '#808080' },
-  { key: 'blue',  label: '블루',   hex: '#4169E1' },
-  { key: 'hazel', label: '헤이즐', hex: '#8B6914' },
-  { key: 'gold',  label: '골드',   hex: '#D4A820' },
-];
-
-function colorFamilyOf(lens: LensItem): ColorFamily | null {
-  const name = lens.colorName ?? '';
-  if (/헤이즐/.test(name)) return 'hazel';
-  if (/(골드|글리터|쉬머링)/.test(name)) return 'gold';
-  if (/(블루|문)/.test(name)) return 'blue';
-  if (/(그레이|스모크)/.test(name)) return 'gray';
-  if (/(블랙|째즈|이터널|퓨어 블랙|스파클링)/.test(name)) return 'black';
-  if (/(브라운|초코|카라멜|모카|메이플|허니|뮤즈|밤비|디어|시크|크리스탈|랩소디|라틴|로즈|메리|멜로우|트윙클|소울|수지|에스텔|알리샤|헤일로 브라운)/.test(name)) return 'brown';
-  return null;
-}
+// 컬러 계열 칩 필터 제거 — 제품DB에 colorName/colorHex 데이터가 없어(전 제품 0건)
+// 항상 빈 결과만 나오던 필터 (JINY 확정: DB 해결 불가 시 제거). '컬러렌즈' 타입 탭은 lensType 기반이라 유지.
 
 function isColored(l: LensItem) {
   return l.lensType === 'color' || l.lensType === 'circle';
@@ -105,8 +80,10 @@ function ProductsInner() {
   const [type, setType] = useState<TypeKey>(
     (params.get('type') as TypeKey | null) ?? 'all',
   );
-  const [colorFam, setColorFam] = useState<ColorFamily | null>(null);
   const [query, setQuery] = useState('');
+  // 표준 검색조건(제품마스터와 동일): 교체주기·갯수(P) 다중선택 칩
+  const [cycles, setCycles] = useState<Set<string>>(new Set());
+  const [packs, setPacks] = useState<Set<number>>(new Set());
   const [shuffleNonce, setShuffleNonce] = useState(0);
 
   useEffect(() => {
@@ -120,6 +97,19 @@ function ProductsInner() {
     () => [...new Set(all.map((l) => l.brand))].sort(),
     [all],
   );
+  const availableCycles = useMemo(() => {
+    const order = ['1day', '2week', '1month', '3month', '6month', '1year'];
+    const set = new Set(all.map((l) => l.replacementCycle).filter(Boolean));
+    return [...set].sort((a, b) => order.indexOf(a) - order.indexOf(b));
+  }, [all]);
+  const availablePacks = useMemo(
+    () => [...new Set(all.map((l) => l.piecesPerBox).filter((n) => n > 0))].sort((a, b) => a - b),
+    [all],
+  );
+  const toggleCycle = (c: string) =>
+    setCycles((s) => { const n = new Set(s); n.has(c) ? n.delete(c) : n.add(c); return n; });
+  const togglePack = (p: number) =>
+    setPacks((s) => { const n = new Set(s); n.has(p) ? n.delete(p) : n.add(p); return n; });
 
   // Random featured pick — refreshes on shuffle button click
   const featuredPick = useMemo(() => {
@@ -146,28 +136,30 @@ function ProductsInner() {
     let list = all;
     if (brand) list = list.filter((l) => l.brand === brand);
     list = list.filter((l) => matchesType(l, type));
-    if (colorFam) list = list.filter((l) => colorFamilyOf(l) === colorFam);
+    if (cycles.size > 0) list = list.filter((l) => cycles.has(l.replacementCycle));
+    if (packs.size > 0) list = list.filter((l) => packs.has(l.piecesPerBox));
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter((l) =>
         l.name.toLowerCase().includes(q) ||
         l.brand.toLowerCase().includes(q) ||
-        (l.colorName ?? '').toLowerCase().includes(q),
+        l.productCode.toLowerCase().includes(q),
       );
     }
     return list;
-  }, [all, brand, type, colorFam, query]);
+  }, [all, brand, type, cycles, packs, query]);
 
   const colorCount = useMemo(() => all.filter(isColored).length, [all]);
 
   const resetFilters = () => {
     setBrand('');
     setType('all');
-    setColorFam(null);
+    setCycles(new Set());
+    setPacks(new Set());
     setQuery('');
   };
 
-  const hasFilter = Boolean(brand || type !== 'all' || colorFam || query.trim());
+  const hasFilter = Boolean(brand || type !== 'all' || cycles.size > 0 || packs.size > 0 || query.trim());
 
   return (
     <div className="min-h-screen bg-white">
@@ -195,7 +187,7 @@ function ProductsInner() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="제품명, 브랜드, 컬러로 검색"
+                placeholder="브랜드, 제품명, 코드로 검색"
                 className="w-full rounded-full border border-gray-200 bg-white py-3 pl-11 pr-4 text-sm placeholder-gray-400 focus:border-gray-900 focus:outline-none transition-colors"
               />
               {query && (
@@ -276,7 +268,7 @@ function ProductsInner() {
             {TYPE_TABS.map((t) => (
               <button
                 key={t.key}
-                onClick={() => { setType(t.key); if (t.key !== 'color') setColorFam(null); }}
+                onClick={() => setType(t.key)}
                 className={`shrink-0 rounded-full px-4 py-1.5 text-sm font-medium transition-all ${
                   type === t.key
                     ? 'bg-gray-900 text-white shadow-sm'
@@ -315,33 +307,41 @@ function ProductsInner() {
             ))}
           </div>
 
-          {/* Color family chips */}
-          {(type === 'color' || type === 'all') && (
-            <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide">
-              <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
-                컬러
-              </span>
-              {COLOR_FAMILIES.map((c) => (
-                <button
-                  key={c.key}
-                  onClick={() => setColorFam(colorFam === c.key ? null : c.key)}
-                  className={`shrink-0 flex items-center gap-1.5 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
-                    colorFam === c.key
-                      ? 'border-gray-900 bg-gray-900 text-white'
-                      : 'border-gray-200 text-gray-600 hover:border-gray-400'
-                  }`}
-                >
-                  <span
-                    className="h-3 w-3 rounded-full border border-white/30"
-                    style={{
-                      background: `radial-gradient(circle at 35% 35%, ${c.hex}40 0%, ${c.hex} 100%)`,
-                    }}
-                  />
-                  {c.label}
-                </button>
-              ))}
-            </div>
-          )}
+          {/* 교체주기 · 갯수(P) 칩 — 제품마스터 표준 검색조건과 통일 */}
+          <div className="flex items-center gap-2 overflow-x-auto pb-3 scrollbar-hide">
+            <span className="shrink-0 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              주기
+            </span>
+            {availableCycles.map((c) => (
+              <button
+                key={c}
+                onClick={() => toggleCycle(c)}
+                className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                  cycles.has(c)
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-800'
+                }`}
+              >
+                {CYCLE_LABEL[c] ?? c}
+              </button>
+            ))}
+            <span className="ml-2 shrink-0 text-[11px] font-semibold uppercase tracking-wider text-gray-400">
+              갯수
+            </span>
+            {availablePacks.map((p) => (
+              <button
+                key={p}
+                onClick={() => togglePack(p)}
+                className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-all ${
+                  packs.has(p)
+                    ? 'border-gray-900 bg-gray-900 text-white'
+                    : 'border-gray-200 text-gray-500 hover:border-gray-400 hover:text-gray-800'
+                }`}
+              >
+                {p}P
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
@@ -351,7 +351,8 @@ function ProductsInner() {
           <p className="text-xs text-gray-400">
             {display.length}개 제품
             {brand && ` · ${brand}`}
-            {colorFam && ` · ${COLOR_FAMILIES.find((c) => c.key === colorFam)?.label}`}
+            {cycles.size > 0 && ` · ${[...cycles].map((c) => CYCLE_LABEL[c] ?? c).join('/')}`}
+            {packs.size > 0 && ` · ${[...packs].map((p) => `${p}P`).join('/')}`}
             {query.trim() && ` · "${query.trim()}"`}
             {hasFilter && (
               <button onClick={resetFilters} className="ml-3 text-gray-600 underline">
