@@ -1,6 +1,12 @@
 import { and, eq, inArray, isNull } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { lenses, lensVariants } from '@/db/schema';
+import {
+  fitsGrade,
+  fitsNumeric,
+  gradeChartForBrand,
+  parseAddGrade,
+} from '@/lib/prescription/multifocal-add-standard';
 
 export interface Lifestyle {
   daysPerWeek: number | null; // 주 며칠 착용
@@ -121,69 +127,19 @@ export async function recommendLenses(
     }
   }
 
-  // ── 멀티포컬 ADD(가입도) 매칭 기준 (JINY 지시 — 정밀화) ─────────────────
-  //
-  // 국내 유통 멀티포컬은 가입도 등급이 "제품 단위"로 분리된다:
-  //   · 3등급 체계(아큐브/알콘): LOW ≤ +1.25 · MID +1.50~+2.00 · HIGH +2.25~+2.50
-  //   · 2등급 체계(바슈롬):     LOW +0.75~+1.50 · HIGH +1.75~+2.50
-  //   · 등급 미분리(쿠퍼 프로클리어 원데이 등): 단일 디자인이 넓은 ADD 커버
-  //
-  // 적합 판정(비대칭): 임상 피팅은 원거리 시력 보존을 위해 "낮은 등급 우선"이 원칙.
-  //   · 수치 ADD: lensAdd ∈ [rxAdd − 0.25, rxAdd + 0.50] 만 적합
-  //     (예: 처방 +1.00 → LOW(+1.25) 적합 ⭕ / MID(+1.75) 부적합 ❌)
-  //   · 등급 범위: rxAdd ∈ [범위min − 0.25, 범위max + 0.25] 만 적합
-  //   · 동률이면 낮은 ADD 가 우선 (정렬 가산에서 처리)
-  //
-  // 렌즈의 ADD 파악 순서: ① variant.addPower 수치 → ② 제품명/코드의 등급 토큰
-  // (HIGH/HIG/MID/MED/LOW, 코드 접미 -H/-M/-L) → ③ 둘 다 없으면 '가입도 미상'
-  // (제외하지 않되 점수 가산 없이 '가입도 확인 필요' 표기로 하위 노출).
-  const RX_BELOW = 0.25; // 처방보다 낮은 쪽 허용
-  const RX_ABOVE = 0.5; // 처방보다 높은 쪽 허용
-
+  // ── 멀티포컬 ADD(가입도) 매칭 — 🔒 동결 표준 적용 ─────────────────────
+  // 기준 수치·판정 규칙은 multifocal-add-standard.ts (JINY 확정, 변경 금지) 참조.
+  // 렌즈 ADD 파악 순서: ① 제품명/코드 등급 토큰(국내 유통은 전부 등급제) →
+  // ② variant 수치 폴백 → ③ 미상(제외하지 않되 '확인 필요'로 하위 노출).
   type AddInfo =
     | { kind: 'numeric'; adds: number[] }
     | { kind: 'grade'; label: string; min: number; max: number }
     | { kind: 'unknown' };
 
-  // 제조사 공식 피팅 가이드 기준 등급↔처방 ADD 매핑 (2026-06 공식 자료 검증):
-  //   알콘(DT1/에어옵틱스 하이드라):  LO ≤+1.25 / MED +1.50~+2.00 / HI +2.25~+2.50
-  //   아큐브(J&J):                  LOW +0.75~+1.25 / MID +1.50~+1.75 / HIGH +2.00~+2.50
-  //   바슈롬(울트라/바이오트루):      LOW +0.75~+1.50 / HIGH +1.75~+2.50
-  const GRADE_ALCON: Record<string, [number, number]> = {
-    LOW: [0.75, 1.25],
-    MID: [1.5, 2.0],
-    HIGH: [2.25, 2.5],
-  };
-  const GRADE_JNJ: Record<string, [number, number]> = {
-    LOW: [0.75, 1.25],
-    MID: [1.5, 1.75],
-    HIGH: [2.0, 2.5],
-  };
-  const GRADE_BL: Record<string, [number, number]> = {
-    LOW: [0.75, 1.5],
-    HIGH: [1.75, 2.5],
-  };
-
-  function gradeTableFor(brand: string): Record<string, [number, number]> {
-    if (brand.includes('바슈롬')) return GRADE_BL;
-    if (brand.includes('아큐브')) return GRADE_JNJ;
-    return GRADE_ALCON; // 알콘 및 기타 3등급 — 일반 근사
-  }
-
-  function parseGrade(name: string, productCode: string): 'LOW' | 'MID' | 'HIGH' | null {
-    const n = name.toUpperCase();
-    if (/HIGH|HIG\b|\(H\)/.test(n) || /-H$/.test(productCode)) return 'HIGH';
-    if (/MID|MED\b|\(M\)/.test(n) || /-M$/.test(productCode)) return 'MID';
-    if (/LOW|\(L\)/.test(n) || /-L$/.test(productCode)) return 'LOW';
-    return null;
-  }
-
   function multifocalAddInfo(r: { id: string; name: string; productCode: string; brand: string }): AddInfo {
-    // 국내 유통 멀티포컬은 전부 등급제 — 제조사 공식 차트(등급)를 1순위로 적용.
-    // 제품명에 등급 토큰이 없을 때만 variant 수치로 폴백.
-    const grade = parseGrade(r.name, r.productCode);
+    const grade = parseAddGrade(r.name, r.productCode);
     if (grade) {
-      const range = gradeTableFor(r.brand)[grade];
+      const range = gradeChartForBrand(r.brand)[grade];
       if (range) return { kind: 'grade', label: grade, min: range[0], max: range[1] };
     }
     const adds = addAtSphereByLens.get(r.id);
@@ -192,15 +148,8 @@ export async function recommendLenses(
   }
 
   function multifocalFitsAdd(info: AddInfo, rxAdd: number): boolean {
-    // 처방 ADD 는 0.25 스텝 — 등급 범위가 빈틈없이 이어지므로 정확 포함으로 판정.
-    // 범위 밖(0.75 미만/2.50 초과)은 가장 가까운 끝으로 클램프.
-    const rx = Math.min(2.5, Math.max(0.75, rxAdd));
-    if (info.kind === 'grade') {
-      return rx >= info.min && rx <= info.max;
-    }
-    if (info.kind === 'numeric') {
-      return info.adds.some((a) => a >= rxAdd - RX_BELOW && a <= rxAdd + RX_ABOVE);
-    }
+    if (info.kind === 'grade') return fitsGrade([info.min, info.max], rxAdd);
+    if (info.kind === 'numeric') return fitsNumeric(info.adds, rxAdd);
     return true; // 미상 — 제외 대신 하위 노출 ('가입도 확인 필요')
   }
 

@@ -21,7 +21,8 @@
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:report": "playwright show-report",
-    "e2e:install": "playwright install --with-deps chromium"
+    "e2e:install": "playwright install --with-deps chromium",
+    "verify:add-standard": "tsx scripts/verify-multifocal-standard.ts"
   },
   "dependencies": {
     "@vercel/blob": "^2.4.0",

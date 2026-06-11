@@ -9,7 +9,6 @@
       "frameOpsRelation": "완전 무관 (PAT 직접 push)"
     }
   },
-
   "project": {
     "company": "(주)퍼니뷰",
     "serviceName": "Funnyview Pickup",
@@ -22,7 +21,6 @@
       "만 14세 미만 픽업 서비스 이용 제한"
     ]
   },
-
   "referenceSites": [
     {
       "name": "렌즈링크",
@@ -55,7 +53,6 @@
       "key": "69개 매장 import (지역/매장명/주소/전화)"
     }
   ],
-
   "techStack": {
     "framework": "Next.js 14 (App Router)",
     "language": "TypeScript strict",
@@ -69,7 +66,6 @@
     "icons": "자체 inline SVG (lucide-style)",
     "nodejs": ">= 18"
   },
-
   "infra": {
     "github": {
       "repo": "jiny8366/funnyview-pickup",
@@ -118,7 +114,6 @@
       ]
     }
   },
-
   "portals": {
     "model": "hostname-based 4 portal 분리",
     "resolver": "src/lib/portal.ts — hostname prefix 또는 ENV 매핑",
@@ -128,40 +123,93 @@
         "label": "고객",
         "host": "funnyview-pickup.vercel.app (또는 funnyview.kr)",
         "entryPath": "/",
-        "allowedPaths": ["/", "/customer", "/login", "/register", "/onboarding", "/order", "/my", "/stores", "/api/auth", "/api/orders", "/api/lenses", "/api/stores", "/api/home", "/api/notifications", "/api/push", "/api/events"]
+        "allowedPaths": [
+          "/",
+          "/customer",
+          "/login",
+          "/register",
+          "/onboarding",
+          "/order",
+          "/my",
+          "/stores",
+          "/api/auth",
+          "/api/orders",
+          "/api/lenses",
+          "/api/stores",
+          "/api/home",
+          "/api/notifications",
+          "/api/push",
+          "/api/events"
+        ]
       },
       {
         "kind": "admin",
         "label": "관리자",
         "host": "admin-funnyview-pickup.vercel.app (또는 admin.funnyview.kr)",
         "entryPath": "/login/admin",
-        "allowedPaths": ["/admin", "/login/admin", "/api/admin", "/api/auth"]
+        "allowedPaths": [
+          "/admin",
+          "/login/admin",
+          "/api/admin",
+          "/api/auth"
+        ]
       },
       {
         "kind": "staff",
         "label": "픽업서비스 업체",
         "host": "staff-funnyview-pickup.vercel.app",
         "entryPath": "/login/warehouse",
-        "allowedPaths": ["/warehouse", "/login/warehouse", "/api/warehouse", "/api/auth", "/api/notifications", "/api/push", "/api/events"]
+        "allowedPaths": [
+          "/warehouse",
+          "/login/warehouse",
+          "/api/warehouse",
+          "/api/auth",
+          "/api/notifications",
+          "/api/push",
+          "/api/events"
+        ]
       },
       {
         "kind": "store",
         "label": "픽업가맹점",
         "host": "store-funnyview-pickup.vercel.app",
         "entryPath": "/login/store",
-        "allowedPaths": ["/store", "/login/store", "/api/store", "/api/auth", "/api/notifications", "/api/push", "/api/events"]
+        "allowedPaths": [
+          "/store",
+          "/login/store",
+          "/api/store",
+          "/api/auth",
+          "/api/notifications",
+          "/api/push",
+          "/api/events"
+        ]
       }
     ],
     "rolePathRules": {
-      "customer": ["/customer"],
-      "warehouse_staff": ["/warehouse"],
-      "store_staff": ["/store"],
-      "admin": ["/customer", "/warehouse", "/store", "/admin"]
+      "customer": [
+        "/customer"
+      ],
+      "warehouse_staff": [
+        "/warehouse"
+      ],
+      "store_staff": [
+        "/store"
+      ],
+      "admin": [
+        "/customer",
+        "/warehouse",
+        "/store",
+        "/admin"
+      ]
     }
   },
-
   "auth": {
-    "roles": ["customer", "warehouse_staff", "store_staff", "admin"],
+    "roles": [
+      "customer",
+      "warehouse_staff",
+      "store_staff",
+      "admin"
+    ],
     "loginPolicy": "user.role === expectedRole OR user.role === 'admin' — admin 1 계정으로 모든 portal 진입 가능",
     "session": {
       "cookie": "{SESSION_COOKIE_NAME}",
@@ -173,7 +221,11 @@
       "password": "8-16자, 영문 대소/숫자/특수 중 3가지 이상 조합"
     },
     "socialLogin": {
-      "providers": ["naver", "kakao", "google"],
+      "providers": [
+        "naver",
+        "kakao",
+        "google"
+      ],
       "phoneOnboarding": "/onboarding/phone (소셜 후 전화번호 미입력 시)"
     },
     "testAccounts": {
@@ -184,18 +236,50 @@
         "note": "모든 portal 진입 가능"
       },
       "seeded": [
-        { "id": "01000000000", "pw": "pickup1234!", "role": "admin" },
-        { "id": "01000000001", "pw": "pickup1234!", "role": "warehouse_staff" },
-        { "id": "01000000002", "pw": "pickup1234!", "role": "store_staff", "store": "강남 본점" },
-        { "id": "01000000003", "pw": "pickup1234!", "role": "store_staff", "store": "홍대 지점" },
-        { "id": "01000000004", "pw": "pickup1234!", "role": "store_staff", "store": "판교 지점" },
-        { "id": "01099990001", "pw": "pickup1234!", "role": "customer", "label": "데모 고객 (성인)" },
-        { "id": "01099990002", "pw": "pickup1234!", "role": "customer", "label": "데모 고객 (시니어)" }
+        {
+          "id": "01000000000",
+          "pw": "pickup1234!",
+          "role": "admin"
+        },
+        {
+          "id": "01000000001",
+          "pw": "pickup1234!",
+          "role": "warehouse_staff"
+        },
+        {
+          "id": "01000000002",
+          "pw": "pickup1234!",
+          "role": "store_staff",
+          "store": "강남 본점"
+        },
+        {
+          "id": "01000000003",
+          "pw": "pickup1234!",
+          "role": "store_staff",
+          "store": "홍대 지점"
+        },
+        {
+          "id": "01000000004",
+          "pw": "pickup1234!",
+          "role": "store_staff",
+          "store": "판교 지점"
+        },
+        {
+          "id": "01099990001",
+          "pw": "pickup1234!",
+          "role": "customer",
+          "label": "데모 고객 (성인)"
+        },
+        {
+          "id": "01099990002",
+          "pw": "pickup1234!",
+          "role": "customer",
+          "label": "데모 고객 (시니어)"
+        }
       ],
       "displayPolicy": "NEXT_PUBLIC_SHOW_TEST_ACCOUNTS='1' 일 때만 로그인 페이지에 박스 노출 (default 숨김, 확정 2026-05-19)"
     }
   },
-
   "ui": {
     "designLanguage": "카페24 스타일 (한국 쇼핑몰 표준)",
     "colorScheme": "Light 고정 (color-scheme: light), 다크모드 미지원",
@@ -208,7 +292,14 @@
           "onClick": "드롭다운 — 관리자 / 픽업스탭 / 픽업가맹점",
           "navigateTo": "각 portal hostname 의 로그인 페이지 (portalUrl 함수)"
         },
-        "regularNav": ["주문", "매장찾기", "내 주문 (로그인 시)", "마이페이지 (로그인 시)", "로그인", "가입"]
+        "regularNav": [
+          "주문",
+          "매장찾기",
+          "내 주문 (로그인 시)",
+          "마이페이지 (로그인 시)",
+          "로그인",
+          "가입"
+        ]
       }
     },
     "header": {
@@ -223,12 +314,25 @@
     },
     "customerBottomNav": {
       "mobile": true,
-      "tabs": ["홈", "주문", "매장찾기", "내 주문", "마이"]
+      "tabs": [
+        "홈",
+        "주문",
+        "매장찾기",
+        "내 주문",
+        "마이"
+      ]
     },
     "loginPage": {
       "path": "/login",
       "design": "카페24 스타일 (빵부스러기 / 큰 input / 검정 로그인 버튼 / 소셜 원형 3개)",
-      "elements": ["홈 > 로그인 빵부스러기", "큰 input 박스 (h-14, font-medium)", "보안접속 토글", "아이디찾기 / 비밀번호찾기 / 회원가입 링크", "검정 로그인 버튼", "소셜 원형 (Naver/Kakao/Apple)"]
+      "elements": [
+        "홈 > 로그인 빵부스러기",
+        "큰 input 박스 (h-14, font-medium)",
+        "보안접속 토글",
+        "아이디찾기 / 비밀번호찾기 / 회원가입 링크",
+        "검정 로그인 버튼",
+        "소셜 원형 (Naver/Kakao/Apple)"
+      ]
     },
     "registerPage": {
       "path": "/register",
@@ -255,7 +359,11 @@
       "fontWeight": "500",
       "placeholderColor": "#6b7280 (gray-500)",
       "autofillOverride": "-webkit-text-fill-color + box-shadow inset (Chrome/Safari)",
-      "placeholderRemoved": ["/login/* 의 휴대전화", "/register 의 휴대전화", "/onboarding/phone"]
+      "placeholderRemoved": [
+        "/login/* 의 휴대전화",
+        "/register 의 휴대전화",
+        "/onboarding/phone"
+      ]
     },
     "productCard": {
       "design": "카페24 스타일",
@@ -273,11 +381,15 @@
     },
     "productSection": {
       "design": "카페24 스타일 섹션",
-      "elements": ["큰 제목 + 부제 (서브타이틀)", "이전/다음 화살표 (데스크탑)", "전체보기 링크", "5열 grid (데스크탑) / 가로 스크롤 (모바일)"],
+      "elements": [
+        "큰 제목 + 부제 (서브타이틀)",
+        "이전/다음 화살표 (데스크탑)",
+        "전체보기 링크",
+        "5열 grid (데스크탑) / 가로 스크롤 (모바일)"
+      ],
       "component": "src/components/product/product-section.tsx"
     }
   },
-
   "terms": {
     "company": "(주)퍼니뷰",
     "serviceName": "Funnyview Pickup",
@@ -303,38 +415,91 @@
       {
         "key": "marketing",
         "title": "[선택] 쇼핑정보 수신 동의",
-        "channels": ["SMS", "이메일"]
+        "channels": [
+          "SMS",
+          "이메일"
+        ]
       }
     ],
     "file": "src/lib/terms.ts"
   },
-
   "dbSchema": {
     "tables": {
       "users": {
         "purpose": "인증 마스터",
         "key": "id (uuid)",
-        "uniqueWhereNotNull": ["username", "phone", "email"],
-        "fields": ["role (customer/warehouse_staff/store_staff/admin)", "storeId (store_staff)", "passwordHash", "isActive", "lastLoginAt", "permissions text[] (NULL = ROLE_DEFAULTS, 배열 = override — 마이그레이션 0008)"]
+        "uniqueWhereNotNull": [
+          "username",
+          "phone",
+          "email"
+        ],
+        "fields": [
+          "role (customer/warehouse_staff/store_staff/admin)",
+          "storeId (store_staff)",
+          "passwordHash",
+          "isActive",
+          "lastLoginAt",
+          "permissions text[] (NULL = ROLE_DEFAULTS, 배열 = override — 마이그레이션 0008)"
+        ]
       },
       "customers": {
         "purpose": "고객 정보 (users 와 1:1)",
-        "fields": ["name", "gender", "birthDate", "phone", "postalCode", "addressLine1/2", "landlinePhone", "memberType", "refundBank (jsonb)", "referrerCode", "referredByCode", "referredById"]
+        "fields": [
+          "name",
+          "gender",
+          "birthDate",
+          "phone",
+          "postalCode",
+          "addressLine1/2",
+          "landlinePhone",
+          "memberType",
+          "refundBank (jsonb)",
+          "referrerCode",
+          "referredByCode",
+          "referredById"
+        ]
       },
       "customer_prescriptions": {
         "purpose": "도수 이력 (재주문 편의)",
-        "fields": ["eyeSide (left/right/both)", "sphere", "cylinder", "axis", "addPower", "source", "recordedAt"]
+        "fields": [
+          "eyeSide (left/right/both)",
+          "sphere",
+          "cylinder",
+          "axis",
+          "addPower",
+          "source",
+          "recordedAt"
+        ]
       },
       "brands": {
         "purpose": "제품 브랜드 마스터 (확정 2026-05-19)",
-        "fields": ["nameKo (unique-when-not-null)", "nameEn", "code (3자 영문 약자, unique-when-not-null, 예: CHR/ACU)", "isActive", "deletedAt"],
+        "fields": [
+          "nameKo (unique-when-not-null)",
+          "nameEn",
+          "code (3자 영문 약자, unique-when-not-null, 예: CHR/ACU)",
+          "isActive",
+          "deletedAt"
+        ],
         "ui": "제품 등록 폼 (/admin/products/new, /admin/products/[id]) 의 브랜드 필드가 select 드롭다운 + 옆 '등록' 버튼 → BrandManagerModal",
-        "api": ["GET /api/admin/brands (활성 목록)", "POST /api/admin/brands (영문/국문/약자, unique 검증, requireAdmin)"],
+        "api": [
+          "GET /api/admin/brands (활성 목록)",
+          "POST /api/admin/brands (영문/국문/약자, unique 검증, requireAdmin)"
+        ],
         "note": "lenses.brand (text) 는 호환을 위해 그대로 유지 — 폼에서 선택 시 brands.nameKo 값을 lenses.brand 에 저장. 추후 lenses.brandId FK 도입 가능."
       },
       "lens_price_entries": {
         "purpose": "매입/공급/소비자 정적 가격의 시계열 (확정 2026-05-19)",
-        "fields": ["lensId (FK lenses cascade)", "scope (purchase/supply/retail)", "standard", "discountAmount", "discountPercent", "startsAt (default now)", "endsAt (NULL=무기한)", "isActive", "note"],
+        "fields": [
+          "lensId (FK lenses cascade)",
+          "scope (purchase/supply/retail)",
+          "standard",
+          "discountAmount",
+          "discountPercent",
+          "startsAt (default now)",
+          "endsAt (NULL=무기한)",
+          "isActive",
+          "note"
+        ],
         "model": "사용자가 매입/공급/소비자 가격 변경 시 '언제부터' 입력. 시작일 ≤ now → lenses 캐시 컬럼 즉시 갱신 / 미래 시작일 → entry 만 INSERT (예약). 종료일 미입력 = 다음 변경 전까지 유지.",
         "cacheSync": "src/lib/lens-pricing-entries.ts createPriceEntryAndSyncCache(lensId, input)",
         "future": "cron/lazy 로 미래 entry 가 startsAt 도달 시 캐시 자동 갱신 (현재는 entries 가 진실, 캐시는 즉시 적용용)"
@@ -360,14 +525,44 @@
       },
       "product_codes": {
         "purpose": "제품 시리즈/모델 코드 마스터 (확정 2026-05-19)",
-        "fields": ["nameKo (unique-when-not-null)", "nameEn (모달 리스트 영문 정렬 기준)", "code (3자 [A-Z0-9])", "suffix (2자 [A-Z0-9])", "isActive", "deletedAt"],
-        "uniqueWhereNotNull": ["nameKo", "(code, suffix) 조합"],
+        "fields": [
+          "nameKo (unique-when-not-null)",
+          "nameEn (모달 리스트 영문 정렬 기준)",
+          "code (3자 [A-Z0-9])",
+          "suffix (2자 [A-Z0-9])",
+          "isActive",
+          "deletedAt"
+        ],
+        "uniqueWhereNotNull": [
+          "nameKo",
+          "(code, suffix) 조합"
+        ],
         "ui": "제품 등록 폼의 '제품 코드' input 옆 '등록' 버튼 → ProductCodeManagerModal. 모달의 행에서 '선택' 클릭 시 현재 선택된 브랜드의 약자 + code + suffix 가 자동 조합되어 lenses.productCode 에 채워짐 (형식: {brand.code}-{pc.code}{pc.suffix} = 예: CHR-OOL1D 11자)",
-        "api": ["GET /api/admin/product-codes (활성, 영문 정렬)", "POST /api/admin/product-codes (영문/국문/3자/2자, code+suffix unique 검증)"]
+        "api": [
+          "GET /api/admin/product-codes (활성, 영문 정렬)",
+          "POST /api/admin/product-codes (영문/국문/3자/2자, code+suffix unique 검증)"
+        ]
       },
       "stores": {
         "purpose": "픽업가맹점 마스터",
-        "fields": ["code (J001~)", "name", "phone", "postalCode", "addressLine1/2", "latitude", "longitude", "kakaoMapUrl", "naverMapUrl", "tmapUrl", "businessHours (jsonb)", "businessNumber", "representativeName", "commissionRate (%)", "sortOrder", "isActive"]
+        "fields": [
+          "code (J001~)",
+          "name",
+          "phone",
+          "postalCode",
+          "addressLine1/2",
+          "latitude",
+          "longitude",
+          "kakaoMapUrl",
+          "naverMapUrl",
+          "tmapUrl",
+          "businessHours (jsonb)",
+          "businessNumber",
+          "representativeName",
+          "commissionRate (%)",
+          "sortOrder",
+          "isActive"
+        ]
       },
       "lenses": {
         "purpose": "제품 마스터 (브랜드/제품군)",
@@ -395,31 +590,94 @@
       },
       "lens_variants": {
         "purpose": "도수별 SKU",
-        "fields": ["lensId (FK)", "sku (unique, 결정적 생성)", "sphere", "cylinder", "axis", "addPower", "udiDi (GTIN-13, unique-when-not-null)", "priceOverride", "isActive"]
+        "fields": [
+          "lensId (FK)",
+          "sku (unique, 결정적 생성)",
+          "sphere",
+          "cylinder",
+          "axis",
+          "addPower",
+          "udiDi (GTIN-13, unique-when-not-null)",
+          "priceOverride",
+          "isActive"
+        ]
       },
       "lens_barcodes": {
         "purpose": "다중 바코드 (1:N)",
-        "fields": ["variantId (FK)", "barcode (unique)", "barcodeType (udi_di/manufacturer_ean/internal/legacy)", "isPrimary"]
+        "fields": [
+          "variantId (FK)",
+          "barcode (unique)",
+          "barcodeType (udi_di/manufacturer_ean/internal/legacy)",
+          "isPrimary"
+        ]
       },
       "inventory": {
         "purpose": "SKU별 현재 재고",
-        "fields": ["variantId (FK, unique)", "quantityOnHand", "quantityReserved", "safetyStock", "reorderPoint", "location", "lastCountedAt"]
+        "fields": [
+          "variantId (FK, unique)",
+          "quantityOnHand",
+          "quantityReserved",
+          "safetyStock",
+          "reorderPoint",
+          "location",
+          "lastCountedAt"
+        ]
       },
       "inventory_movements": {
         "purpose": "Append-only audit log",
-        "fields": ["variantId", "movementType (inbound/outbound/reserve/release/adjust/return)", "quantity (부호 포함)", "referenceType/Id", "lotId (FK → inventory_lots.id, FIFO 로트 연결)", "unitCostSnapshot (int nullable, 출고 시 로트 단가 스냅샷)", "note", "performedBy"]
+        "fields": [
+          "variantId",
+          "movementType (inbound/outbound/reserve/release/adjust/return)",
+          "quantity (부호 포함)",
+          "referenceType/Id",
+          "lotId (FK → inventory_lots.id, FIFO 로트 연결)",
+          "unitCostSnapshot (int nullable, 출고 시 로트 단가 스냅샷)",
+          "note",
+          "performedBy"
+        ]
       },
       "orders": {
-        "fields": ["orderNumber", "customerId", "pickupStoreId", "status (pending/paid/accepted/picking/shipped/arrived/ready/completed/cancelled)", "subtotal", "discount", "total", "isPaid", "각 상태별 timestamp"]
+        "fields": [
+          "orderNumber",
+          "customerId",
+          "pickupStoreId",
+          "status (pending/paid/accepted/picking/shipped/arrived/ready/completed/cancelled)",
+          "subtotal",
+          "discount",
+          "total",
+          "isPaid",
+          "각 상태별 timestamp"
+        ]
       },
       "order_items": {
-        "fields": ["orderId", "variantId", "eyeSide", "quantity", "unitPrice/lineTotal/unitCost", "lensName/Brand (snapshot)", "sphere/cylinder/axis/addPower (snapshot)", "skuSnapshot"]
+        "fields": [
+          "orderId",
+          "variantId",
+          "eyeSide",
+          "quantity",
+          "unitPrice/lineTotal/unitCost",
+          "lensName/Brand (snapshot)",
+          "sphere/cylinder/axis/addPower (snapshot)",
+          "skuSnapshot"
+        ]
       },
       "order_status_history": "상태 전환 감사",
       "payments": "결제 기록",
       "notifications": {
-        "types": ["order_received", "order_shipped", "order_arrived", "pickup_ready", "pickup_completed", "low_stock"],
-        "channels": ["app", "sms", "kakao", "email"]
+        "types": [
+          "order_received",
+          "order_shipped",
+          "order_arrived",
+          "pickup_ready",
+          "pickup_completed",
+          "low_stock"
+        ],
+        "channels": [
+          "app",
+          "sms",
+          "kakao",
+          "email"
+        ]
       },
       "push_subscriptions": "VAPID 푸시 구독",
       "user_oauth_accounts": "소셜 로그인 연동",
@@ -452,7 +710,6 @@
       "0014 — inbound_shipments 테이블 신설 + inventory_lots 테이블 신설(shipmentId 포함, 도수별 FIFO) + inventory_movements.lot_id/unit_cost_snapshot + order_items.lot_id (FIFO 도수별 원가 추적, 확정 2026-05-22)"
     ]
   },
-
   "lensDisplay": {
     "format": "계층형 슬래시 구분",
     "patterns": {
@@ -465,12 +722,21 @@
       "quantity": "팩 (=박스), 매수 환산 동시 표시 (예: 12팩 (360매))",
       "eyeSide": "OS (좌) / OD (우) / 양안"
     },
-    "appliedTo": ["/warehouse/picklist", "/warehouse/inventory", "/customer/orders/[id]", "/store/pickup/[id]"],
+    "appliedTo": [
+      "/warehouse/picklist",
+      "/warehouse/inventory",
+      "/customer/orders/[id]",
+      "/store/pickup/[id]"
+    ],
     "file": "src/lib/lens/format.ts"
   },
-
   "barcode": {
-    "supported": ["EAN-13", "GTIN-14", "GS1-128", "GS1 DataMatrix"],
+    "supported": [
+      "EAN-13",
+      "GTIN-14",
+      "GS1-128",
+      "GS1 DataMatrix"
+    ],
     "policy": "UDI-DI (GTIN-13) 만 사용 — PI (lot/expiry) 참고 메타데이터",
     "applicationIdentifiers": {
       "01": "GTIN (필수)",
@@ -486,7 +752,6 @@
       "outbound": "/store/pickup/[id] — 주문 항목별 매칭, ± 수동 조정, 강제 매칭 토글"
     }
   },
-
   "mfdsUdi": {
     "purpose": "식약처 등록 상품의 정보·표준 차용 (참조 마스터)",
     "runtime": "사용 안 함 (1회/분기 일괄 적재만)",
@@ -495,7 +760,13 @@
         "name": "식품의약품안전처_의료기기 표준코드별 제품정보",
         "priority": 1,
         "source": "data.go.kr",
-        "fields": ["udiDi", "prdlstNm (품목명)", "clsfNo (분류번호)", "gradeCd (등급)", "prmsNo (허가번호)"]
+        "fields": [
+          "udiDi",
+          "prdlstNm (품목명)",
+          "clsfNo (분류번호)",
+          "gradeCd (등급)",
+          "prmsNo (허가번호)"
+        ]
       },
       {
         "name": "식품의약품안전처_의료기기 표준코드(UDI코드)정보",
@@ -509,11 +780,18 @@
     "schedule": "수동 또는 분기 1회 cron",
     "script": "scripts/import-udi.ts (TODO)",
     "dbFields": {
-      "lenses": ["mfdsPermitNo", "mfdsClassificationCode", "mfdsProductName", "manufacturer", "udiSyncedAt"],
-      "lens_variants": ["udiDi (GTIN-13)"]
+      "lenses": [
+        "mfdsPermitNo",
+        "mfdsClassificationCode",
+        "mfdsProductName",
+        "manufacturer",
+        "udiSyncedAt"
+      ],
+      "lens_variants": [
+        "udiDi (GTIN-13)"
+      ]
     }
   },
-
   "stores": {
     "seedDefault": [
       "ST-0001 강남 본점 (서울 강남구)",
@@ -530,13 +808,18 @@
       "geocoding": "KAKAO_REST_API_KEY 있으면 자동 좌표 채움"
     }
   },
-
   "geo": {
     "provider": "카카오 로컬 API",
     "freeQuota": "일 100,000 / 월 3,000,000",
     "envVar": "KAKAO_REST_API_KEY",
     "library": "src/lib/geo/kakao.ts",
-    "functions": ["geocodeAddress(address)", "haversineKm(a,b)", "estimateWalkMinutes(km)", "estimateDriveMinutes(km)", "kakaoRouteUrl / naverRouteUrl / tmapRouteUrl"],
+    "functions": [
+      "geocodeAddress(address)",
+      "haversineKm(a,b)",
+      "estimateWalkMinutes(km)",
+      "estimateDriveMinutes(km)",
+      "kakaoRouteUrl / naverRouteUrl / tmapRouteUrl"
+    ],
     "apis": [
       "POST /api/admin/geocode — 관리자",
       "POST /api/stores/geocode-customer — 공개",
@@ -549,24 +832,64 @@
     "publicStoresPage": {
       "path": "/stores",
       "auth": false,
-      "elements": ["📡 GPS 위치 사용", "🏠 주소 입력", "지역 필터 칩", "검색", "매장 카드 (이름/주소/전화/영업시간/거리/시간/외부 길찾기 링크)", "이 매장으로 주문 CTA"]
+      "elements": [
+        "📡 GPS 위치 사용",
+        "🏠 주소 입력",
+        "지역 필터 칩",
+        "검색",
+        "매장 카드 (이름/주소/전화/영업시간/거리/시간/외부 길찾기 링크)",
+        "이 매장으로 주문 CTA"
+      ]
     }
   },
-
   "products": {
     "schema": "lenses (제품군) + lens_variants (도수) + lens_barcodes (바코드 1:N)",
     "samples": {
       "series": "CHRISTIN-1DAY",
       "items": [
-        { "productCode": "CHR-OO-1D-BR", "brand": "크리스틴", "name": "원앤온리 원데이", "color": "브라운", "hex": "#6B4423", "diameter": "13.0", "price": 19000 },
-        { "productCode": "CHR-VEN-1D-DRIP", "brand": "크리스틴", "name": "빈 원데이", "color": "드립 브라운", "hex": "#8B6F47", "diameter": "13.2", "price": 19000, "isNew": true },
-        { "productCode": "CHR-QUI-1D-GB", "brand": "크리스틴", "name": "콰이어트 원데이", "color": "글로우 블랙", "hex": "#2C2C2C", "diameter": "13.4", "price": 19000, "isNew": true }
+        {
+          "productCode": "CHR-OO-1D-BR",
+          "brand": "크리스틴",
+          "name": "원앤온리 원데이",
+          "color": "브라운",
+          "hex": "#6B4423",
+          "diameter": "13.0",
+          "price": 19000
+        },
+        {
+          "productCode": "CHR-VEN-1D-DRIP",
+          "brand": "크리스틴",
+          "name": "빈 원데이",
+          "color": "드립 브라운",
+          "hex": "#8B6F47",
+          "diameter": "13.2",
+          "price": 19000,
+          "isNew": true
+        },
+        {
+          "productCode": "CHR-QUI-1D-GB",
+          "brand": "크리스틴",
+          "name": "콰이어트 원데이",
+          "color": "글로우 블랙",
+          "hex": "#2C2C2C",
+          "diameter": "13.4",
+          "price": 19000,
+          "isNew": true
+        }
       ],
       "imageUrl": "picsum.photos (placeholder, 실제 모델 이미지로 교체 필요)"
     },
     "editor": {
       "file": "src/components/admin/product-editor.tsx",
-      "blocks": ["heading (H2/H3)", "paragraph (Markdown 일부)", "image (ImagePicker + caption + alt)", "video (YouTube/Vimeo URL → embed)", "gallery (멀티 이미지)", "list (번호/불릿)", "divider"],
+      "blocks": [
+        "heading (H2/H3)",
+        "paragraph (Markdown 일부)",
+        "image (ImagePicker + caption + alt)",
+        "video (YouTube/Vimeo URL → embed)",
+        "gallery (멀티 이미지)",
+        "list (번호/불릿)",
+        "divider"
+      ],
       "storage": "lenses.description (JSON 직렬화)",
       "preview": "토글 가능"
     },
@@ -587,11 +910,20 @@
       "actionButtons": "input 옆 별도 버튼 대신 라벨 옆 파란 작은 텍스트 ('+ 등록') — 공간 절약 (확정 2026-05-19)"
     }
   },
-
   "orders": {
     "flow": "4단계 — 렌즈 선택 → 도수 선택 → 가맹점 선택 → 결제",
     "polling": "5초 (재고 변동 감지)",
-    "statuses": ["pending", "paid", "accepted", "picking", "shipped", "arrived", "ready", "completed", "cancelled"],
+    "statuses": [
+      "pending",
+      "paid",
+      "accepted",
+      "picking",
+      "shipped",
+      "arrived",
+      "ready",
+      "completed",
+      "cancelled"
+    ],
     "stateTransitions": {
       "warehouse": "accepted → picking → shipped",
       "store": "shipped → arrived → ready → completed",
@@ -599,19 +931,58 @@
     },
     "payment": {
       "current": "mock (PG 미연동)",
-      "venue": ["online (선결제)", "store (매장 결제)"],
-      "methods": ["card", "cash", "bank_transfer", "point", "mixed"],
+      "venue": [
+        "online (선결제)",
+        "store (매장 결제)"
+      ],
+      "methods": [
+        "card",
+        "cash",
+        "bank_transfer",
+        "point",
+        "mixed"
+      ],
       "future": "Toss / Nice / PortOne"
     }
   },
-
   "admin": {
     "menu": [
-      { "group": "운영", "items": ["대시보드 (/admin/dashboard)", "주문 관리 (/admin/orders)", "정산/매출 (/admin/settlement)", "계정 관리 (/admin/staff) — 확정 2026-05-19 신설"] },
-      { "group": "상품", "items": ["제품 마스터 (/admin/products)", "카테고리 (/admin/categories)", "가격변동이력 (/admin/price-history) — 확정 2026-05-19"] },
-      { "group": "가맹점", "items": ["가맹점 (/admin/stores)"] },
-      { "group": "CMS·마케팅", "items": ["홈 섹션 (/admin/home)", "섹션 분석 (/admin/home/analytics)"] },
-      { "group": "시스템", "items": ["설정 (/admin/settings)"] }
+      {
+        "group": "운영",
+        "items": [
+          "대시보드 (/admin/dashboard)",
+          "주문 관리 (/admin/orders)",
+          "정산/매출 (/admin/settlement)",
+          "계정 관리 (/admin/staff) — 확정 2026-05-19 신설"
+        ]
+      },
+      {
+        "group": "상품",
+        "items": [
+          "제품 마스터 (/admin/products)",
+          "카테고리 (/admin/categories)",
+          "가격변동이력 (/admin/price-history) — 확정 2026-05-19"
+        ]
+      },
+      {
+        "group": "가맹점",
+        "items": [
+          "가맹점 (/admin/stores)"
+        ]
+      },
+      {
+        "group": "CMS·마케팅",
+        "items": [
+          "홈 섹션 (/admin/home)",
+          "섹션 분석 (/admin/home/analytics)"
+        ]
+      },
+      {
+        "group": "시스템",
+        "items": [
+          "설정 (/admin/settings)"
+        ]
+      }
     ],
     "shell": "src/components/admin/admin-shell.tsx (햄버거 드롭다운)",
     "staffRegistration": {
@@ -629,7 +1000,42 @@
       "note": "확정 2026-05-19 — username 은 사용자 PC 등록 흐름과 통일 (email 주소 전체)"
     }
   },
-
+  "multifocalAddStandard": {
+    "locked": true,
+    "decidedBy": "JINY",
+    "decidedAt": "2026-06-11",
+    "description": "멀티포컬 추천의 가입도(ADD) 적합 표준 — 제조사 공식 피팅 가이드 기준. 변경 시 ①JINY 승인 ②이 섹션 동시 수정 ③scripts/verify-multifocal-standard.ts 통과 필수.",
+    "sourceOfTruth": "src/lib/prescription/multifocal-add-standard.ts",
+    "verifier": "scripts/verify-multifocal-standard.ts (npm run verify:add-standard)",
+    "gradeCharts": {
+      "alcon": {
+        "LOW": "+0.75~+1.25",
+        "MID": "+1.50~+2.00",
+        "HIGH": "+2.25~+2.50",
+        "source": "Alcon DAILIES TOTAL1/AIR OPTIX 공식 피팅 가이드"
+      },
+      "jnj": {
+        "LOW": "+0.75~+1.25",
+        "MID": "+1.50~+1.75",
+        "HIGH": "+2.00~+2.50",
+        "source": "J&J ACUVUE 멀티포컬 공식 피팅 차트 — MID 상한 +1.75 주의"
+      },
+      "bausch": {
+        "LOW": "+0.75~+1.50",
+        "HIGH": "+1.75~+2.50",
+        "source": "Bausch+Lomb ULTRA/Biotrue for Presbyopia 공식 피팅 가이드 (2등급)"
+      },
+      "fallback": "미등재 브랜드는 알콘 3등급 표를 일반 근사로 사용"
+    },
+    "rules": [
+      "등급 판정 우선: 제품명/코드의 등급 토큰(LOW/MID/MED/HIGH/HIG, -L/-M/-H) → 공식 차트 범위 정확 포함 판정",
+      "수치 ADD 폴백: 처방 대비 비대칭 [−0.25, +0.50] 만 적합 (원거리 시력 보존 — 낮은 등급 우선)",
+      "처방 ADD 는 [+0.75, +2.50] 으로 클램프",
+      "동률이면 낮은 ADD 등급 우선 정렬",
+      "가입도 미상 제품은 제외하지 않되 감점 + '가입도 확인 필요' 표기로 하위 노출",
+      "처방 ADD 없는 45세+ 는 LOW 등급 우대 (첫 멀티포컬 권장)"
+    ]
+  },
   "pricing": {
     "purpose": "가격 모델 (확정 2026-05-19) — 매입/공급/소비자 3 영역 + 부가세 + 프로모션",
     "vatRate": 0.1,
@@ -640,9 +1046,19 @@
       "conversion": "Math.round 정수화 — round-trip 시 ±1원 오차 가능"
     },
     "static": {
-      "purchase": ["standardCost", "purchaseDiscountAmount", "purchaseDiscountPercent → effectivePurchaseCost"],
-      "supply": ["standardSupplyPrice", "supplyDiscountAmount", "supplyDiscountPercent → effectiveSupplyPrice"],
-      "consumer": ["recommendedRetailPrice"]
+      "purchase": [
+        "standardCost",
+        "purchaseDiscountAmount",
+        "purchaseDiscountPercent → effectivePurchaseCost"
+      ],
+      "supply": [
+        "standardSupplyPrice",
+        "supplyDiscountAmount",
+        "supplyDiscountPercent → effectiveSupplyPrice"
+      ],
+      "consumer": [
+        "recommendedRetailPrice"
+      ]
     },
     "dynamic": {
       "table": "lens_promotions",
@@ -671,12 +1087,20 @@
     ],
     "guards": "클라이언트 PricingCard 즉시 표시 + 서버 POST/PATCH /api/admin/lenses 에서 동일 검증"
   },
-
   "priceHistory": {
     "purpose": "가격변동이력 (확정 2026-05-19) — 햄버거 → 상품 → 가격변동이력",
     "page": "/admin/price-history",
     "printPage": "/admin/price-history/print (브라우저 'PDF 로 저장' 사용)",
-    "columns": ["제품명", "구분 (매입/공급/소비자)", "변경일시", "적용시작", "이전금액", "변동금액 (+/-)", "실효가", "담당자"],
+    "columns": [
+      "제품명",
+      "구분 (매입/공급/소비자)",
+      "변경일시",
+      "적용시작",
+      "이전금액",
+      "변동금액 (+/-)",
+      "실효가",
+      "담당자"
+    ],
     "actions": {
       "preview": "미리보기 — 인쇄 친화 페이지 (마스터 + price_history_view)",
       "csv": "엑셀 다운로드 — GET /api/admin/price-history/export (UTF-8 BOM 포함, .csv)",
@@ -690,18 +1114,15 @@
     "dataSource": "src/lib/price-history.ts fetchPriceHistory — entries + lenses + users join + 직전 entry 와 effective 비교",
     "csvEncoding": "UTF-8 BOM (한국 엑셀 한글 깨짐 방지)"
   },
-
   "inventoryFifo": {
     "purpose": "선입선출(FIFO) 입고가 원가 계산 — 입고가가 유동적인 환경에서 정확한 수익률 정산",
     "rationale": "표준매입가(standardCost) 는 현재 계약 단가이나, 실제 입고 시점마다 단가가 달라질 수 있다. 출고 시 해당 재고가 어떤 입고 로트에서 소진됐는지를 추적해야 정확한 COGS(매출원가) 와 수익률 산출 가능.",
     "principle": "먼저 입고된 로트를 먼저 소진(FIFO). 출고 시 가장 오래된 로트부터 차감하며, 출고 라인에 로트별 단가를 기록해 수익률 정산 근거로 활용.",
-
     "fifoGranularity": {
       "unit": "lens_variant (variantId) — 도수 조합(sphere × cylinder × axis) 단위로 FIFO 독립 적용",
       "rationale": "같은 제품(lens)이라도 도수별로 수요·회전율이 다르고, 입고 수량도 도수별로 다름. 예: '크리스틴 원앤온리' SPH -1.00: 20팩, SPH -1.25: 15팩, SPH -2.00: 8팩 → 각각 독립 FIFO 로트.",
       "NOT": "제품(lens) 단위 또는 브랜드 단위 FIFO X — 도수가 다르면 물리적으로 다른 재고"
     },
-
     "dbDesign": {
       "newTable1": {
         "name": "inbound_shipments",
@@ -749,7 +1170,6 @@
         "addedField": "lotId (uuid nullable FK → inventory_lots.id) — 어느 로트(도수·전표)에서 출고됐는지 추적"
       }
     },
-
     "algorithm": {
       "inbound": [
         "1. 입고 전표 생성: inbound_shipments INSERT (제품·입고일·공급처·전표번호)",
@@ -769,7 +1189,6 @@
       "adjust": "재고 실사(adjust): inventory_lots.quantityRemaining 직접 수정 + 조정 note 필수. unitCost 는 해당 로트 원가 유지.",
       "return": "반품(return): 새 inbound_shipments(status=confirmed) + inventory_lots 생성. unitCostIncVat = 원 출고 로트 단가. 원 로트 복원 X (이미 소진 처리된 로트는 되돌리지 않음)."
     },
-
     "inboundUi": {
       "page": "/warehouse/inbound (staff portal)",
       "flow": [
@@ -782,23 +1201,25 @@
       ],
       "display": "도수 테이블: SPH 행 × CYL 열 또는 단순 리스트 (도수 조합이 많을 경우 리스트 권장). 수량 0 행은 저장 제외."
     },
-
     "profitCalculation": {
       "formula": "수익 = (order_items.lineTotal − order_items.unitCost × quantity) per 라인, SUM per 주문/기간",
       "margin": "수익률 = 수익 / lineTotal × 100",
-      "groupBy": ["주문별", "제품별", "도수별(variantId)", "가맹점별", "월별"],
+      "groupBy": [
+        "주문별",
+        "제품별",
+        "도수별(variantId)",
+        "가맹점별",
+        "월별"
+      ],
       "note": "unitCost 는 FIFO 로트 단가이므로 standardCost 와 다를 수 있음. 수익률 리포트는 항상 order_items.unitCost 기준 사용. 도수별 수익률 편차를 통해 인기 도수·재고 전략 수립 가능."
     },
-
     "migration": "0014 — inbound_shipments 테이블 신설 + inventory_lots 테이블 신설(shipmentId 포함) + inventory_movements.lot_id/unit_cost_snapshot + order_items.lot_id (FIFO 도수별 원가 추적, 확정 2026-05-22)",
-
     "uiTouchpoints": [
       "staff portal 입고 처리 (/warehouse/inbound) — 제품 선택 → 전표 헤더 → 도수별 수량 입력 → 확정",
       "staff portal 픽리스트 (/warehouse/picklist) — 피킹 시 도수(variantId) 단위 FIFO 로트 자동 차감",
       "admin portal 수익률 리포트 (/admin/profit-report) — 기간·가맹점·제품·도수 필터, FIFO 단가 기반",
       "admin portal 재고 현황 (/warehouse/inventory) — 도수별 로트 잔여 수량·입고가·입고일 열람"
     ],
-
     "lib": "src/lib/inventory-fifo.ts (구현 완료 2026-05-22)",
     "functions": [
       "createInboundShipment(tx, input) → { shipment, lots[] } — 전표 + 도수별 로트 + 재고 + movements 일괄 처리",
@@ -814,7 +1235,6 @@
       "step4_inventoryView": "⏳ 진행 예정 — /warehouse/inventory 도수별 로트 잔여 표시"
     }
   },
-
   "rbac": {
     "model": "frame-ops 패턴 채택 — permissions text[] (NULL = ROLE_DEFAULTS, 배열 = override). 확정 2026-05-19",
     "master": {
@@ -847,11 +1267,34 @@
       "C3": "role enum 확장 (store_manager/warehouse_manager) + Hierarchical scoped (사장 = 본인 매장 직원만 관리) — 예정"
     },
     "permissionKeys": {
-      "운영": ["dashboard_view", "orders_read", "orders_write", "settlement_read", "staff_read", "staff_manage", "staff_permissions"],
-      "상품": ["products_read", "products_write", "categories_write", "price_history_view", "price_history_delete"],
-      "가맹점": ["stores_read", "stores_write"],
-      "CMS·마케팅": ["home_sections_read", "home_sections_write", "home_analytics_view"],
-      "시스템": ["settings_write"]
+      "운영": [
+        "dashboard_view",
+        "orders_read",
+        "orders_write",
+        "settlement_read",
+        "staff_read",
+        "staff_manage",
+        "staff_permissions"
+      ],
+      "상품": [
+        "products_read",
+        "products_write",
+        "categories_write",
+        "price_history_view",
+        "price_history_delete"
+      ],
+      "가맹점": [
+        "stores_read",
+        "stores_write"
+      ],
+      "CMS·마케팅": [
+        "home_sections_read",
+        "home_sections_write",
+        "home_analytics_view"
+      ],
+      "시스템": [
+        "settings_write"
+      ]
     },
     "naming": "snake_case <domain>_<action> (frame-ops 동일)",
     "roleDefaults": {
@@ -870,32 +1313,65 @@
       "src/app/api/admin/staff/route.ts — POST 시 permissions 저장",
       "src/app/api/admin/staff/[id]/route.ts — PATCH 시 permissions 갱신"
     ],
-    "frameOpsAdoptions": ["권한 키 명명", "ROLE_DEFAULTS 코드 보관", "효과 권한 함수 시그니처", "메뉴 permission 필터", "longest-prefix route 매칭", "사용자 지정 토글 UI"],
+    "frameOpsAdoptions": [
+      "권한 키 명명",
+      "ROLE_DEFAULTS 코드 보관",
+      "효과 권한 함수 시그니처",
+      "메뉴 permission 필터",
+      "longest-prefix route 매칭",
+      "사용자 지정 토글 UI"
+    ],
     "frameOpsRejections": {
       "password_plain": "한국 개인정보보호법 + KISA 권장 위배. passwordHash 만 사용. 비밀번호 reset 으로 동일 운영 편의 달성.",
       "fo_staff_profiles 별도 테이블": "users 단일 테이블이 우리 도메인에 충분.",
       "fo_staff_store_scopes 다대다": "현재 spec 에 1:1 storeId 만 필요. 추후 도입 가능."
     }
   },
-
   "warehouse": {
-    "menu": ["대시보드", "주문 처리", "픽리스트", "출고 관리", "재고", "입고 (바코드 스캔)", "반품"],
+    "menu": [
+      "대시보드",
+      "주문 처리",
+      "픽리스트",
+      "출고 관리",
+      "재고",
+      "입고 (바코드 스캔)",
+      "반품"
+    ],
     "scanInbound": "src/app/warehouse/inbound/page.tsx"
   },
-
   "store": {
-    "menu": ["대시보드", "배송 중", "픽업 처리", "처리 이력", "매장 정보"],
+    "menu": [
+      "대시보드",
+      "배송 중",
+      "픽업 처리",
+      "처리 이력",
+      "매장 정보"
+    ],
     "scanPickup": "src/app/store/pickup/[id]/page.tsx"
   },
-
   "cms": {
-    "sections": ["hero (배너+CTA)", "product_grid (상품 그리드 — 카페24 카드)", "category_chips (필터 칩)", "banner_strip (띠)", "countdown (한정)", "brand_story (이미지+텍스트)"],
-    "curationModes": ["best (매출순)", "trending (7일 가중)", "new (최신)", "manual (관리자 지정 lensIds)"],
+    "sections": [
+      "hero (배너+CTA)",
+      "product_grid (상품 그리드 — 카페24 카드)",
+      "category_chips (필터 칩)",
+      "banner_strip (띠)",
+      "countdown (한정)",
+      "brand_story (이미지+텍스트)"
+    ],
+    "curationModes": [
+      "best (매출순)",
+      "trending (7일 가중)",
+      "new (최신)",
+      "manual (관리자 지정 lensIds)"
+    ],
     "cache": "Redis 5분 TTL",
-    "analytics": ["impression", "click", "conversion"],
+    "analytics": [
+      "impression",
+      "click",
+      "conversion"
+    ],
     "demoSection": "원데이(1D) 베스트 (manual, sample 3개 CHRISTIN-1DAY)"
   },
-
   "notifications": {
     "sse": "src/app/api/events/stream/route.ts (Redis Pub/Sub fallback to polling)",
     "bell": "src/components/layout/notification-bell.tsx",
@@ -905,34 +1381,34 @@
       "env": "NOTIFICATION_PROVIDER",
       "future": "solapi (Solapi SMS/카카오 알림톡)"
     },
-    "kakaoTemplates": ["ORDER_RECEIVED", "ORDER_SHIPPED", "PICKUP_READY", "PICKUP_COMPLETED"]
+    "kakaoTemplates": [
+      "ORDER_RECEIVED",
+      "ORDER_SHIPPED",
+      "PICKUP_READY",
+      "PICKUP_COMPLETED"
+    ]
   },
-
   "settlement": {
     "schedule": "월별 자동 (v_store_settlement 뷰)",
     "calculation": "(SUM(line_total) - SUM(discount)) * commission_rate / 100",
     "dashboard": "/admin/dashboard (recharts)"
   },
-
   "referral": {
     "rate": "3%",
     "trigger": "주문 완료 시",
     "table": "referral_rewards",
     "codeFormat": "FV{8자리 hex}"
   },
-
   "uploads": {
     "endpoint": "POST /api/admin/uploads",
     "adapter": "StorageAdapter (인터페이스, 현재 로컬 FS)",
     "future": "S3 / R2",
     "limits": "5MB, png/jpg/webp/gif/svg"
   },
-
   "i18n": {
     "primary": "ko-KR",
     "future": "en, zh-CN"
   },
-
   "todos": {
     "highPriority": [
       "결제 PG 실연동 (Toss/Nice/PortOne 어댑터)",
@@ -965,7 +1441,6 @@
       "다국어 (영문/중문)"
     ]
   },
-
   "scripts": {
     "dev": "next dev -p 3001",
     "build": "next build",
@@ -976,20 +1451,27 @@
     "db:import-jinys": "tsx scripts/import-jinys-stores.ts",
     "db:import-catalog": "tsx scripts/import-jinys-catalog.ts"
   },
-
   "jinysCatalog": {
     "purpose": "지니어스(지니스안경) 공급사 콘택트렌즈 바코드 정보 일괄 import (확정 2026-05-22)",
     "sourceDrive": "Google Drive '지니어스 콘택트렌즈 바코드 정보' (folder ID 17Mn0UAjAQMoQ8BjKqYU6THyMU_AP5dR5)",
-    "brands": ["아큐브(ACU)", "미광(MIK)", "클라렌O2O2(CO2)", "쿠퍼비전(COO)", "클라렌(CLA)", "알콘(ALC)", "바슈롬(BNL)"],
+    "brands": [
+      "아큐브(ACU)",
+      "미광(MIK)",
+      "클라렌O2O2(CO2)",
+      "쿠퍼비전(COO)",
+      "클라렌(CLA)",
+      "알콘(ALC)",
+      "바슈롬(BNL)"
+    ],
     "completed": {
-      "ACU 아큐브":      "41 제품 / 14,999 도수 / 16,819 바코드",
-      "MIK 미광":        "5 제품 / 147 도수 / 240 바코드",
-      "CO2 클라렌O2O2":  "8 제품 / 351 도수 / 0 바코드 (공급사 양식에 바코드 미포함)",
-      "COO 쿠퍼비전":    "13 제품 / 7,730 도수 / 7,730 바코드",
-      "CLA 클라렌":      "26 제품 / 1,002 도수 / 1,002 바코드",
-      "ALC 알콘":        "32 제품 / 13,926 도수 / 13,926 바코드",
-      "BNL 바슈롬":      "44 제품 / 5,998 도수 / 5,998 바코드",
-      "total":           "169 제품 / 44,153 도수 / 45,715 바코드 (2026-05-22)"
+      "ACU 아큐브": "41 제품 / 14,999 도수 / 16,819 바코드",
+      "MIK 미광": "5 제품 / 147 도수 / 240 바코드",
+      "CO2 클라렌O2O2": "8 제품 / 351 도수 / 0 바코드 (공급사 양식에 바코드 미포함)",
+      "COO 쿠퍼비전": "13 제품 / 7,730 도수 / 7,730 바코드",
+      "CLA 클라렌": "26 제품 / 1,002 도수 / 1,002 바코드",
+      "ALC 알콘": "32 제품 / 13,926 도수 / 13,926 바코드",
+      "BNL 바슈롬": "44 제품 / 5,998 도수 / 5,998 바코드",
+      "total": "169 제품 / 44,153 도수 / 45,715 바코드 (2026-05-22)"
     },
     "fixtureFormat": "scripts/fixtures/jinys-catalog/{brand}.json — 각 브랜드별 lenses[] + 도수별 variants[] + 1:N barcodes[]",
     "importScript": "scripts/import-jinys-catalog.ts (idempotent, bulk upsert)",
@@ -1007,12 +1489,26 @@
       "barcode": "lens_barcodes — 같은 도수에 GTIN-13 여러 개(재포장/리브랜드) 1:N 지원"
     },
     "fields": {
-      "filled": ["productCode", "brand", "name", "lensType", "replacementCycle", "piecesPerBox", "baseCurve (있는 경우)", "seriesCode", "udi_di(첫 바코드)"],
-      "placeholder": ["price=0 (admin 추후 설정)", "standardCost, recommendedRetailPrice 등 가격 정보 (사용자 입력 대기)"],
-      "notFilled": ["diameter, waterContent, material, mfdsPermitNo (식약처 별도 import 필요)"]
+      "filled": [
+        "productCode",
+        "brand",
+        "name",
+        "lensType",
+        "replacementCycle",
+        "piecesPerBox",
+        "baseCurve (있는 경우)",
+        "seriesCode",
+        "udi_di(첫 바코드)"
+      ],
+      "placeholder": [
+        "price=0 (admin 추후 설정)",
+        "standardCost, recommendedRetailPrice 등 가격 정보 (사용자 입력 대기)"
+      ],
+      "notFilled": [
+        "diameter, waterContent, material, mfdsPermitNo (식약처 별도 import 필요)"
+      ]
     }
   },
-
   "workflow": {
     "sandbox": {
       "path": "/home/user/funnyview-pickup",
@@ -1022,7 +1518,6 @@
     "deployment": "git push origin main → Vercel 자동 빌드 (vercel:build 가 migrate 자동 실행) → 2-4분 후 배포",
     "seeding": "수동 1회: DATABASE_URL=... npm run db:seed (idempotent)"
   },
-
   "knownIssues": {
     "fixed": [
       "Vercel 빌드 ESLint react/no-unescaped-entities (register page 작은따옴표)",
