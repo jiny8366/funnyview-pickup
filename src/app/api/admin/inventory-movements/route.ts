@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { desc, eq, inArray, sql } from 'drizzle-orm';
+import { desc, eq, inArray, isNull, sql } from 'drizzle-orm';
 import { db } from '@/db/client';
 import { inventoryMovements, lensVariants, lenses } from '@/db/schema';
 import { getCurrentUser } from '@/lib/auth/current-user';
@@ -44,6 +44,9 @@ export async function GET(req: Request) {
       .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
       .where(sql.join(
         [
+          // 제품 마스터(GET /api/admin/lenses)와 동일하게 소프트삭제 제품 제외 —
+          // 삭제된 제품(예: OLENS)의 과거 movements 가 내역에 남던 불일치 수정.
+          isNull(lenses.deletedAt),
           typeList.length > 0 ? inArray(inventoryMovements.movementType, typeList as never) : sql`TRUE`,
           q ? sql`(${lenses.name} ILIKE ${'%' + q + '%'} OR ${lensVariants.sku} ILIKE ${'%' + q + '%'})` : sql`TRUE`,
         ],
