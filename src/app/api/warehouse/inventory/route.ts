@@ -30,51 +30,20 @@ export async function GET(req: Request) {
     });
   }
 
-  // [임시 진단 — 재고 0건 #23] 테이블/조인 단계별 카운트. 원인 확정 후 제거.
-  if (url.searchParams.get('debug') === 'count') {
-    const a = await db.execute(sql`SELECT COUNT(*)::int AS c FROM inventory`);
-    const b = await db.execute(sql`SELECT COUNT(*)::int AS c FROM inventory i JOIN lens_variants v ON v.id = i.variant_id`);
-    const c = await db.execute(sql`SELECT COUNT(*)::int AS c FROM inventory i JOIN lens_variants v ON v.id = i.variant_id JOIN lenses l ON l.id = v.lens_id`);
-    const d = await db.execute(sql`SELECT COALESCE(SUM(quantity_on_hand),0)::int AS total, COALESCE(SUM(quantity_reserved),0)::int AS reserved FROM inventory`);
-    return NextResponse.json({ inventoryCount: a, joinVariants: b, joinLenses: c, sums: d });
-  }
-
-  // [임시 진단2 — drizzle 단계별] 어느 단계에서 0이 되는지 확정. 확인 후 제거.
-  if (url.searchParams.get('debug') === 'steps') {
-    const s1 = await db.select({ id: inventory.id }).from(inventory).limit(3);
-    const s2 = await db.select({ id: inventory.id }).from(inventory)
-      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId)).limit(3);
-    const s3 = await db.select({ id: inventory.id }).from(inventory)
-      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
-      .innerJoin(lenses, eq(lenses.id, lensVariants.lensId)).limit(3);
-    const lotSub = db
-      .select({
-        variantId: inventoryLots.variantId,
-        lotCount: sql<number>`COUNT(*)::int`.as('lot_count'),
-      })
-      .from(inventoryLots)
-      .innerJoin(inboundShipments, eq(inventoryLots.shipmentId, inboundShipments.id))
-      .where(sql`${inventoryLots.quantityRemaining} > 0 AND ${inboundShipments.status} = 'confirmed'`)
-      .groupBy(inventoryLots.variantId)
-      .as('lot_agg');
-    const s4 = await db.select({ id: inventory.id, lc: sql<number>`COALESCE(${lotSub.lotCount}, 0)` }).from(inventory)
-      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
-      .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
-      .leftJoin(lotSub, eq(lotSub.variantId, lensVariants.id)).limit(3);
-    const s5 = await db.select({ id: inventory.id }).from(inventory)
-      .innerJoin(lensVariants, eq(lensVariants.id, inventory.variantId))
-      .innerJoin(lenses, eq(lenses.id, lensVariants.lensId))
-      .where(sql.join([sql`TRUE`, sql`TRUE`], sql` AND `)).limit(3);
-    return NextResponse.json({ s1: s1.length, s2: s2.length, s3: s3.length, s4: s4.length, s5: s5.length });
-  }
-
   const onlyLow = url.searchParams.get('low') === '1';
   // 검색 조건: q=제품명/SKU, brand/type 은 콤마구분 복수 선택(칩 토글) 지원
   const q = url.searchParams.get('q')?.trim();
   const brandList = (url.searchParams.get('brand') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const typeList = (url.searchParams.get('type') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const cycleList = (url.searchParams.get('cycle') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
-  const packList = (url.searchParams.get('pack') ?? '').split(',').map((s) => Number(s.trim())).filter((n) => Number.isFinite(n));
+  // 주의: ''.split(',') = [''] 이고 Number('') = 0 이라 빈 파라미터가 [0] 이 되어
+  // pieces_per_box IN (0) 필터로 전체 0건이 되는 버그가 있었음 — 빈 문자열을 먼저 걸러낸다.
+  const packList = (url.searchParams.get('pack') ?? '')
+    .split(',')
+    .map((s) => s.trim())
+    .filter(Boolean)
+    .map(Number)
+    .filter((n) => Number.isFinite(n) && n > 0);
   const format = url.searchParams.get('format'); // 'csv' = 엑셀 다운로드
 
   // FIFO lot aggregates via correlated subqueries (confirmed lots only)
@@ -134,18 +103,6 @@ export async function GET(req: Request) {
     ))
     .orderBy(asc(lenses.brand), asc(lenses.name), asc(lensVariants.sphere));
 
-  // [임시 진단3 — #23] 본 쿼리의 생성 SQL 노출. 확인 후 제거.
-  if (url.searchParams.get('debug') === 'main') {
-    const built = (rowsQuery as unknown as { toSQL: () => { sql: string; params: unknown[] } }).toSQL();
-    let count = -1;
-    let err: string | null = null;
-    try {
-      count = (await rowsQuery).length;
-    } catch (e) {
-      err = (e as Error).message;
-    }
-    return NextResponse.json({ count, err, params: built.params, sql: built.sql });
-  }
   const rows = await rowsQuery;
 
   // 엑셀(CSV) 다운로드 — UTF-8 BOM 으로 한글 엑셀 호환
