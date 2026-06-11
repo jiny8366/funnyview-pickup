@@ -48,6 +48,8 @@ export async function middleware(req: NextRequest) {
 // 모든 path 에서 실행 (정적 자산 + 일부 공개 API 제외).
 export const config = {
   matcher: [
-    '/((?!_next/static|_next/image|_next/data|favicon\\.ico|icon\\.png|apple-icon\\.png|manifest\\.json|manifest\\.webmanifest|sw\\.js|icons/|brand/|og\\.png|uploads/|images/).*)',
+    // products/*.jpg 등 정적 제품이미지 파일은 전 포털(store/staff/admin)에서 그대로 서빙 —
+    // 확장자 기반이라 /products 페이지 라우트(포털 분리)는 영향 없음.
+    '/((?!_next/static|_next/image|_next/data|favicon\\.ico|icon\\.png|apple-icon\\.png|manifest\\.json|manifest\\.webmanifest|sw\\.js|icons/|brand/|og\\.png|uploads/|images/|products/.*\\.(?:jpg|jpeg|png|webp|gif|avif)).*)',
   ],
 };

@@ -135,7 +135,8 @@ const ALWAYS_ALLOWED = new Set([
 ]);
 
 // Vercel Cron 및 공통 정적 자원 — portal 무관 prefix 허용
-const ALWAYS_ALLOWED_PREFIX = ['/api/cron'];
+// /api/lens-image: 제품 이미지 플레이스홀더(SVG) — 발주/픽리스트 등 운영 포털 카드의 폴백(공개 무해)
+const ALWAYS_ALLOWED_PREFIX = ['/api/cron', '/api/lens-image'];
 
 // portal 별 정확 일치 (Set) + prefix 매칭 (array) 으로 분리 — 매 요청 O(1) ~ O(prefix수) 룩업
 const PORTAL_EXACT: Record<Portal, Set<string>> = {
