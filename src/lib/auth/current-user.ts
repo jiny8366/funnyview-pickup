@@ -11,6 +11,10 @@ export interface CurrentUser {
   phone: string | null;
   email: string | null;
   storeId: string | null;
+  /** store_staff 하위 역할: 'owner'(대표자) | 'optician'(안경사) | null. 계정관리 게이트용. */
+  storeRole: string | null;
+  /** 운영 계정 표시명. */
+  name: string | null;
   /** 마스터 사용자 (MASTER_USERNAMES 화이트리스트). 전권 + 변경 차단. */
   isMaster: boolean;
   /** users.permissions 의 raw 값 (NULL 가능). 권한 편집 UI 에서 사용. */
@@ -33,6 +37,8 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
       phone: users.phone,
       email: users.email,
       storeId: users.storeId,
+      storeRole: users.storeRole,
+      name: users.name,
       permissions: users.permissions,
     })
     .from(users)
@@ -63,6 +69,8 @@ export async function getCurrentUser(): Promise<CurrentUser | null> {
     phone: user.phone,
     email: user.email,
     storeId: user.storeId,
+    storeRole: user.storeRole,
+    name: user.name,
     isMaster: isMasterUser(user.username, user.phone),
     permissionsRaw: user.permissions,
     permissions: effectivePermissions(user.role, user.permissions, user.username, user.phone),

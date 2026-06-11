@@ -30,6 +30,9 @@ export const users = pgTable(
     passwordHash: text('password_hash'),
     role: userRoleEnum('role').notNull(),
     storeId: uuid('store_id'), // FK는 relations() 에서 선언 (순환 import 회피)
+    // store_staff 하위 역할: 'owner'(가맹점 대표자 — 계정관리 가능) | 'optician'(담당 안경사 — 업무만). 그 외 role 은 NULL.
+    storeRole: text('store_role'),
+    name: text('name'), // 운영 계정 표시명(담당 안경사 이름 등)
     permissions: text('permissions').array(), // NULL = role 기본값, 배열 = override
     isActive: boolean('is_active').default(true).notNull(),
     lastLoginAt: timestamp('last_login_at', { withTimezone: true }),
