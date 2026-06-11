@@ -14,6 +14,7 @@ import {
   IconSearch,
 } from '@/components/ui/icons';
 import { SkeletonCard } from '@/components/ui/skeleton';
+import { ProductFilterBar } from '@/components/product/product-filter-bar';
 
 interface LensRow {
   id: string;
@@ -223,6 +224,13 @@ export default function AdminProductsPage() {
     (activeFilter !== 'all' ? 1 : 0) +
     (priceFilter !== 'all' ? 1 : 0);
 
+  function toggleInSet<T>(set: Set<T>, val: T, setter: (s: Set<T>) => void) {
+    const s = new Set(set);
+    if (s.has(val)) s.delete(val);
+    else s.add(val);
+    setter(s);
+  }
+
   function clearFilters() {
     setBrands(new Set());
     setTypes(new Set());
@@ -288,26 +296,7 @@ export default function AdminProductsPage() {
       )}
 
       {/* 검색바 + 토글 */}
-      <div className="mb-3 flex flex-wrap items-center gap-2">
-        <div className="flex flex-1 items-center gap-2 rounded-xl border border-gray-200 bg-white px-3 py-2 min-w-[280px]">
-          <IconSearch size={18} className="text-gray-400" />
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            placeholder="브랜드, 제품명, 코드, 시리즈로 검색"
-            className="flex-1 bg-transparent text-sm outline-none placeholder:text-gray-400"
-          />
-          {q && (
-            <button
-              type="button"
-              onClick={() => setQ('')}
-              className="text-xs text-gray-400 hover:text-gray-600"
-            >
-              지우기
-            </button>
-          )}
-        </div>
-
+      <div className="mb-3 flex flex-wrap items-center justify-end gap-2">
         <button
           type="button"
           onClick={() => setShowFilters((v) => !v)}
@@ -352,66 +341,29 @@ export default function AdminProductsPage() {
       {/* 필터 패널 */}
       {showFilters && items && (
         <div className="mb-3 space-y-3 rounded-xl border border-gray-200 bg-white p-4">
-          <FilterRow label="브랜드">
-            {availableBrands.map((b) => (
-              <Chip
-                key={b}
-                active={brands.has(b)}
-                onClick={() => {
-                  const s = new Set(brands);
-                  s.has(b) ? s.delete(b) : s.add(b);
-                  setBrands(s);
-                }}
-              >
-                {toBrandEn(b)}
-              </Chip>
-            ))}
-          </FilterRow>
-          <FilterRow label="렌즈 타입">
-            {availableTypes.map((t) => (
-              <Chip
-                key={t}
-                active={types.has(t)}
-                onClick={() => {
-                  const s = new Set(types);
-                  s.has(t) ? s.delete(t) : s.add(t);
-                  setTypes(s);
-                }}
-              >
-                {LENS_TYPE_LABEL[t] ?? t}
-              </Chip>
-            ))}
-          </FilterRow>
-          <FilterRow label="교체 주기">
-            {availableCycles.map((c) => (
-              <Chip
-                key={c}
-                active={cycles.has(c)}
-                onClick={() => {
-                  const s = new Set(cycles);
-                  s.has(c) ? s.delete(c) : s.add(c);
-                  setCycles(s);
-                }}
-              >
-                {CYCLE_LABEL[c] ?? c}
-              </Chip>
-            ))}
-          </FilterRow>
-          <FilterRow label="팩 사이즈">
-            {availablePacks.map((p) => (
-              <Chip
-                key={p}
-                active={packs.has(p)}
-                onClick={() => {
-                  const s = new Set(packs);
-                  s.has(p) ? s.delete(p) : s.add(p);
-                  setPacks(s);
-                }}
-              >
-                {p}P
-              </Chip>
-            ))}
-          </FilterRow>
+          {/* 검색 + 브랜드/타입/주기/팩 칩 — 공용 ProductFilterBar */}
+          <ProductFilterBar
+            className="space-y-3"
+            facets={{
+              brands: availableBrands,
+              types: availableTypes.map((t) => ({
+                value: t,
+                label: LENS_TYPE_LABEL[t] ?? t,
+              })),
+              cycles: availableCycles,
+              packs: availablePacks,
+            }}
+            values={{ query: q, brands, types, cycles, packs }}
+            onQuery={setQ}
+            onToggleBrand={(b) => toggleInSet(brands, b, setBrands)}
+            onToggleType={(t) => toggleInSet(types, t, setTypes)}
+            onToggleCycle={(c) => toggleInSet(cycles, c, setCycles)}
+            onTogglePack={(p) => toggleInSet(packs, p, setPacks)}
+            searchPlaceholder="브랜드, 제품명, 코드, 시리즈로 검색"
+            brandLabel={toBrandEn}
+          />
+
+          {/* 활성/가격 — 어드민 전용(공용 바에 포함하지 않음) */}
           <div className="flex flex-wrap items-center gap-4 pt-1">
             <FilterRow label="활성" inline>
               {(['all', 'active', 'inactive'] as const).map((v) => (

@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { ProductFilterBar, cycleLabel } from '@/components/product/product-filter-bar';
 
 interface LensRow {
   id: string;
@@ -38,22 +39,6 @@ interface HistoryRow {
   changedByLabel: string | null;
 }
 
-// 교체주기 코드 → 한글 라벨 (어드민 제품마스터와 동일 표기)
-const CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이',
-  '2week': '2주',
-  '1month': '1개월',
-  '3month': '3개월',
-  '6month': '6개월',
-  '1year': '1년',
-  daily: '원데이',
-  biweekly: '2주',
-  monthly: '월간',
-  quarterly: '분기',
-  yearly: '장기',
-};
-const cycleLabel = (v: string) => CYCLE_LABEL[v] ?? v;
-
 const ACTION_LABEL: Record<string, string> = {
   set: '신규',
   update: '변경',
@@ -65,37 +50,6 @@ const inputCls =
 
 const fmtWon = (v: string | null | undefined) =>
   v == null || v === '' ? null : `${Number(v).toLocaleString('ko-KR')}원`;
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-2.5 py-1 text-xs transition ${
-        active ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2">
-      <div className="w-14 shrink-0 pt-1 text-xs font-medium text-gray-600">{label}</div>
-      <div className="flex flex-1 flex-wrap gap-1.5">{children}</div>
-    </div>
-  );
-}
 
 /**
  * 매장 × 제품 수수료율 오버라이드 + 변경이력.
@@ -354,42 +308,18 @@ export function StoreProductCommissions({ storeId }: { storeId: string }) {
         선택한 제품에만 적용되는 매장 공급가/할인율입니다(가장 구체적). 미설정 제품은 상속값(그룹×제품 → 매장 전체 → 그룹 전체)이 적용됩니다. 정산은 공급가 우선(있으면 공급가, 없으면 할인율).
       </p>
 
-      {/* 제품 검색 — 텍스트+칩 필터 */}
-      <div className="mb-3 space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="제품 검색 (브랜드/제품명/코드)"
-          className={inputCls}
+      {/* 제품 검색 — 공용 ProductFilterBar (검색 + 브랜드/교체주기/갯수 칩) */}
+      <div className="mb-3">
+        <ProductFilterBar
+          facets={{ brands: allBrands, cycles: allCycles, packs: allPacks }}
+          values={{ query, brands, cycles, packs }}
+          onQuery={setQuery}
+          onToggleBrand={(b) => toggle(brands, b, setBrands)}
+          onToggleCycle={(c) => toggle(cycles, c, setCycles)}
+          onTogglePack={(p) => toggle(packs, p, setPacks)}
+          showType={false}
+          searchPlaceholder="제품 검색 (브랜드/제품명/코드)"
         />
-        {allBrands.length > 0 && (
-          <FilterRow label="브랜드">
-            {allBrands.map((b) => (
-              <Chip key={b} active={brands.has(b)} onClick={() => toggle(brands, b, setBrands)}>
-                {b}
-              </Chip>
-            ))}
-          </FilterRow>
-        )}
-        {allCycles.length > 0 && (
-          <FilterRow label="교체주기">
-            {allCycles.map((c) => (
-              <Chip key={c} active={cycles.has(c)} onClick={() => toggle(cycles, c, setCycles)}>
-                {cycleLabel(c)}
-              </Chip>
-            ))}
-          </FilterRow>
-        )}
-        {allPacks.length > 0 && (
-          <FilterRow label="갯수">
-            {allPacks.map((p) => (
-              <Chip key={p} active={packs.has(p)} onClick={() => toggle(packs, p, setPacks)}>
-                {p}P
-              </Chip>
-            ))}
-          </FilterRow>
-        )}
       </div>
 
       {/* 검색 결과 리스트 (체크박스 + 전체선택) */}

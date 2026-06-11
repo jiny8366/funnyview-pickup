@@ -7,8 +7,8 @@ import { Input } from '@/components/ui/input';
 import {
   formatLensDisplayName,
   formatLensSpec,
-  formatPackQuantity,
 } from '@/lib/lens/format';
+import { ProductFilterBar } from '@/components/product/product-filter-bar';
 
 interface InvRow {
   inventoryId: string;
@@ -41,38 +41,11 @@ const TYPE_OPTIONS = [
   { value: 'color', label: '컬러' },
 ];
 
-// 교체주기 코드 → 한글 라벨 (어드민 제품마스터와 동일 표기)
-const CYCLE_LABEL: Record<string, string> = {
-  daily: '원데이',
-  biweekly: '2주',
-  monthly: '월간',
-  quarterly: '분기',
-  yearly: '장기',
-};
-const cycleLabel = (v: string) => CYCLE_LABEL[v] ?? v;
-
-/** 다른 페이지(제품 목록 등)와 동일한 필터 칩. */
-function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-2.5 py-1 text-xs transition ${
-        active ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function FilterRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2">
-      <div className="w-14 shrink-0 pt-1 text-xs font-medium text-gray-600">{label}</div>
-      <div className="flex flex-1 flex-wrap gap-1.5">{children}</div>
-    </div>
-  );
+function toggleInSet<T>(set: Set<T>, val: T, setter: (s: Set<T>) => void) {
+  const s = new Set(set);
+  if (s.has(val)) s.delete(val);
+  else s.add(val);
+  setter(s);
 }
 
 export default function WarehouseInventoryPage() {
@@ -184,14 +157,19 @@ function WarehouseInventoryInner() {
 
       {/* 검색 패널 */}
       <div className="space-y-2 rounded-2xl border border-gray-200 bg-white p-3 print:hidden">
-        <div className="flex flex-wrap items-center gap-2">
-          <input
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            onKeyDown={(e) => e.key === 'Enter' && load()}
-            placeholder="제품명 또는 SKU 검색"
-            className="h-9 w-64 rounded-lg border border-gray-200 px-3 text-sm"
-          />
+        {/* 검색 + 브랜드/타입/주기/갯수 칩 — 공용 ProductFilterBar */}
+        <ProductFilterBar
+          className="space-y-2"
+          facets={{ brands: allBrands, types: TYPE_OPTIONS, cycles: allCycles, packs: allPacks }}
+          values={{ query: q, brands, types, cycles, packs }}
+          onQuery={setQ}
+          onToggleBrand={(b) => toggleInSet(brands, b, setBrands)}
+          onToggleType={(t) => toggleInSet(types, t, setTypes)}
+          onToggleCycle={(c) => toggleInSet(cycles, c, setCycles)}
+          onTogglePack={(p) => toggleInSet(packs, p, setPacks)}
+          searchPlaceholder="제품명 또는 SKU 검색"
+        />
+        <div className="flex flex-wrap items-center gap-2 pt-1">
           <label className="inline-flex items-center gap-1.5 text-sm text-gray-700">
             <input type="checkbox" checked={lowOnly} onChange={(e) => setLowOnly(e.target.checked)} className="h-4 w-4" />
             저재고만
@@ -203,76 +181,6 @@ function WarehouseInventoryInner() {
             전체 보기
           </Button>
         </div>
-        {allBrands.length > 0 && (
-          <FilterRow label="브랜드">
-            {allBrands.map((b) => (
-              <Chip
-                key={b}
-                active={brands.has(b)}
-                onClick={() => {
-                  const s = new Set(brands);
-                  if (s.has(b)) s.delete(b);
-                  else s.add(b);
-                  setBrands(s);
-                }}
-              >
-                {b}
-              </Chip>
-            ))}
-          </FilterRow>
-        )}
-        <FilterRow label="렌즈 타입">
-          {TYPE_OPTIONS.map((t) => (
-            <Chip
-              key={t.value}
-              active={types.has(t.value)}
-              onClick={() => {
-                const s = new Set(types);
-                if (s.has(t.value)) s.delete(t.value);
-                else s.add(t.value);
-                setTypes(s);
-              }}
-            >
-              {t.label}
-            </Chip>
-          ))}
-        </FilterRow>
-        {allCycles.length > 0 && (
-          <FilterRow label="주기">
-            {allCycles.map((c) => (
-              <Chip
-                key={c}
-                active={cycles.has(c)}
-                onClick={() => {
-                  const s = new Set(cycles);
-                  if (s.has(c)) s.delete(c);
-                  else s.add(c);
-                  setCycles(s);
-                }}
-              >
-                {cycleLabel(c)}
-              </Chip>
-            ))}
-          </FilterRow>
-        )}
-        {allPacks.length > 0 && (
-          <FilterRow label="갯수">
-            {allPacks.map((p) => (
-              <Chip
-                key={p}
-                active={packs.has(p)}
-                onClick={() => {
-                  const s = new Set(packs);
-                  if (s.has(p)) s.delete(p);
-                  else s.add(p);
-                  setPacks(s);
-                }}
-              >
-                {p}P
-              </Chip>
-            ))}
-          </FilterRow>
-        )}
         {searched && rows && (
           <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-2">
             <span className="text-xs text-gray-500">{rows.length.toLocaleString()}개 도수(SKU)</span>

@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardBody, CardHeader, CardTitle } from '@/components/ui/card';
+import { ProductFilterBar, cycleLabel } from '@/components/product/product-filter-bar';
 
 interface StoreGroup {
   id: string;
@@ -52,52 +53,7 @@ interface GroupProductCommission {
 const gpcInputCls =
   'w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm placeholder-gray-400 focus:border-brand-500 focus:outline-none';
 
-// 교체주기 코드 → 한글 라벨
-const GPC_CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이',
-  '2week': '2주',
-  '1month': '1개월',
-  '3month': '3개월',
-  '6month': '6개월',
-  '1year': '1년',
-  daily: '원데이',
-  biweekly: '2주',
-  monthly: '월간',
-  quarterly: '분기',
-  yearly: '장기',
-};
-const gpcCycleLabel = (v: string) => GPC_CYCLE_LABEL[v] ?? v;
-
-function GpcChip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-2.5 py-1 text-xs transition ${
-        active ? 'bg-brand-600 text-white' : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function GpcFilterRow({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-start gap-2">
-      <div className="w-14 shrink-0 pt-1 text-xs font-medium text-gray-600">{label}</div>
-      <div className="flex flex-1 flex-wrap gap-1.5">{children}</div>
-    </div>
-  );
-}
+const gpcCycleLabel = cycleLabel;
 
 const EMPTY: FormState = { name: '', commissionRate: '', sortOrder: '0', memo: '' };
 
@@ -720,42 +676,18 @@ function GroupProductCommissions({
           그룹 전체율({groupOverallRate}%)보다 우선하는 제품별 그룹 공급가/할인율입니다. 매장 × 제품 오버라이드가 있으면 그쪽이 더 우선합니다. 정산은 공급가 우선(있으면 공급가, 없으면 할인율).
         </p>
 
-        {/* 검색 + 칩 필터 */}
-        <div className="mb-3 space-y-2 rounded-xl border border-gray-200 bg-gray-50 p-3">
-          <input
-            type="text"
-            value={query}
-            onChange={(e) => setQuery(e.target.value)}
-            placeholder="제품 검색 (브랜드/제품명/코드)"
-            className={gpcInputCls}
+        {/* 검색 + 칩 필터 — 공용 ProductFilterBar */}
+        <div className="mb-3">
+          <ProductFilterBar
+            facets={{ brands: allBrands, cycles: allCycles, packs: allPacks }}
+            values={{ query, brands, cycles, packs }}
+            onQuery={setQuery}
+            onToggleBrand={(b) => toggleChip(brands, b, setBrands)}
+            onToggleCycle={(c) => toggleChip(cycles, c, setCycles)}
+            onTogglePack={(p) => toggleChip(packs, p, setPacks)}
+            showType={false}
+            searchPlaceholder="제품 검색 (브랜드/제품명/코드)"
           />
-          {allBrands.length > 0 && (
-            <GpcFilterRow label="브랜드">
-              {allBrands.map((b) => (
-                <GpcChip key={b} active={brands.has(b)} onClick={() => toggleChip(brands, b, setBrands)}>
-                  {b}
-                </GpcChip>
-              ))}
-            </GpcFilterRow>
-          )}
-          {allCycles.length > 0 && (
-            <GpcFilterRow label="교체주기">
-              {allCycles.map((c) => (
-                <GpcChip key={c} active={cycles.has(c)} onClick={() => toggleChip(cycles, c, setCycles)}>
-                  {gpcCycleLabel(c)}
-                </GpcChip>
-              ))}
-            </GpcFilterRow>
-          )}
-          {allPacks.length > 0 && (
-            <GpcFilterRow label="갯수">
-              {allPacks.map((p) => (
-                <GpcChip key={p} active={packs.has(p)} onClick={() => toggleChip(packs, p, setPacks)}>
-                  {p}P
-                </GpcChip>
-              ))}
-            </GpcFilterRow>
-          )}
         </div>
 
         {/* 검색 결과 리스트 */}

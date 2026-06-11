@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { ProductFilterBar } from '@/components/product/product-filter-bar';
 
 interface CatalogItem {
   id: string;
@@ -28,9 +29,6 @@ const CYCLE_LABEL: Record<string, string> = {
   '1year': '연간',
 };
 
-const CYCLE_KEYS = ['1day', '2week', '1month', '3month', '6month', '1year'];
-const PACK_OPTIONS = [1, 5, 6, 10, 30];
-
 export function StoreOrderClient() {
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -55,6 +53,16 @@ export function StoreOrderClient() {
 
   const brands = useMemo(
     () => [...new Set(items.map((l) => l.brand))].sort(),
+    [items],
+  );
+
+  // 교체주기/갯수 칩 후보 — 로드된 카탈로그에서 유도
+  const cycleFacets = useMemo(
+    () => [...new Set(items.map((l) => l.replacementCycle))].sort(),
+    [items],
+  );
+  const packFacets = useMemo(
+    () => [...new Set(items.map((l) => l.piecesPerBox))].sort((a, b) => a - b),
     [items],
   );
 
@@ -179,64 +187,36 @@ export function StoreOrderClient() {
           </Link>
         </header>
 
-        {/* 검색 */}
-        <input
-          type="text"
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          placeholder="제품명, 브랜드, 제품코드, 컬러로 검색"
-          className="w-full rounded-lg border border-gray-300 bg-white px-4 py-2.5 text-sm text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:outline-none"
+        {/* 검색 + 칩 필터 — 공용 ProductFilterBar (단일선택 시맨틱 유지) */}
+        <ProductFilterBar
+          accent="amber"
+          facets={{ brands, cycles: cycleFacets, packs: packFacets }}
+          values={{
+            query,
+            brands: brand ? new Set([brand]) : new Set(),
+            cycles: cycle ? new Set([cycle]) : new Set(),
+            packs: pack != null ? new Set([pack]) : new Set(),
+          }}
+          onQuery={setQuery}
+          onToggleBrand={(b) => setBrand(brand === b ? '' : b)}
+          onToggleCycle={(c) => setCycle(cycle === c ? '' : c)}
+          onTogglePack={(p) => setPack(pack === p ? null : p)}
+          showType={false}
+          searchPlaceholder="제품명, 브랜드, 제품코드, 컬러로 검색"
+          onReset={
+            hasFilter
+              ? () => {
+                  setBrand('');
+                  setCycle('');
+                  setPack(null);
+                  setQuery('');
+                }
+              : undefined
+          }
         />
 
-        {/* 브랜드 칩 */}
-        {brands.length > 0 && (
-          <div className="flex flex-wrap gap-2">
-            <Chip active={brand === ''} onClick={() => setBrand('')}>
-              전체 브랜드
-            </Chip>
-            {brands.map((b) => (
-              <Chip key={b} active={brand === b} onClick={() => setBrand(brand === b ? '' : b)}>
-                {b}
-              </Chip>
-            ))}
-          </div>
-        )}
-
-        {/* 교체주기 칩 */}
-        <div className="flex flex-wrap gap-2">
-          <span className="self-center text-xs font-semibold text-gray-400">교체주기</span>
-          {CYCLE_KEYS.map((c) => (
-            <Chip key={c} active={cycle === c} onClick={() => setCycle(cycle === c ? '' : c)}>
-              {CYCLE_LABEL[c]}
-            </Chip>
-          ))}
-        </div>
-
-        {/* 갯수(매입) 칩 */}
-        <div className="flex flex-wrap gap-2">
-          <span className="self-center text-xs font-semibold text-gray-400">갯수</span>
-          {PACK_OPTIONS.map((p) => (
-            <Chip key={p} active={pack === p} onClick={() => setPack(pack === p ? null : p)}>
-              {p}매입
-            </Chip>
-          ))}
-        </div>
-
-        <div className="flex items-center justify-between text-xs text-gray-400">
+        <div className="text-xs text-gray-400">
           <span>{display.length}개 제품</span>
-          {hasFilter && (
-            <button
-              onClick={() => {
-                setBrand('');
-                setCycle('');
-                setPack(null);
-                setQuery('');
-              }}
-              className="underline"
-            >
-              필터 초기화
-            </button>
-          )}
         </div>
 
         {/* 제품 그리드 */}
@@ -400,29 +380,6 @@ function ProductCard({
         </button>
       </div>
     </div>
-  );
-}
-
-function Chip({
-  active,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-}) {
-  return (
-    <button
-      onClick={onClick}
-      className={`shrink-0 rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
-        active
-          ? 'border-amber-600 bg-amber-600 text-white'
-          : 'border-gray-300 text-gray-600 hover:border-gray-400'
-      }`}
-    >
-      {children}
-    </button>
   );
 }
 
