@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 
 interface Summary {
+  received: number; // 주문접수 — 픽업서비스가 팩킹확정한 주문(곧 배송됨)
   shipped: number;
   arrived: number;
   ready: number;
@@ -24,7 +25,8 @@ export default function StoreDashboardPage() {
 
   useEffect(() => {
     async function load() {
-      const [shipped, arrived, ready, completed] = await Promise.all([
+      const [received, shipped, arrived, ready, completed] = await Promise.all([
+        fetch('/api/store/orders?status=accepted,picking').then((r) => r.json()),
         fetch('/api/store/orders?status=shipped').then((r) => r.json()),
         fetch('/api/store/orders?status=arrived').then((r) => r.json()),
         fetch('/api/store/orders?status=ready').then((r) => r.json()),
@@ -35,6 +37,7 @@ export default function StoreDashboardPage() {
         o.completedAt ? new Date(o.completedAt).toDateString() === today : false,
       ).length;
       setSummary({
+        received: received.orders?.length ?? 0,
         shipped: shipped.orders?.length ?? 0,
         arrived: arrived.orders?.length ?? 0,
         ready: ready.orders?.length ?? 0,
@@ -62,7 +65,9 @@ export default function StoreDashboardPage() {
         </div>
       )}
 
-      <section className="grid grid-cols-2 gap-3 md:grid-cols-4">
+      <section className="grid grid-cols-2 gap-3 md:grid-cols-5">
+        {/* 주문접수 — 픽업서비스가 팩킹확정한 주문(곧 배송 시작) */}
+        <DashCard label="주문접수" value={summary?.received} href="/store/incoming" accent="text-blue-700" />
         <DashCard label="배송 중" value={summary?.shipped} href="/store/incoming" accent="text-emerald-700" />
         <DashCard label="입고 완료" value={summary?.arrived} href="/store/pickup" accent="text-amber-700" />
         <DashCard label="픽업 대기" value={summary?.ready} href="/store/pickup" accent="text-orange-700" />

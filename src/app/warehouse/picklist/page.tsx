@@ -80,6 +80,8 @@ export default function WarehousePicklistPage() {
   const [picklist, setPicklist] = useState<PicklistData | null>(null);
   const [pickedSkus, setPickedSkus] = useState<Set<string>>(new Set()); // 피킹 완료 체크
   const [shippedMsg, setShippedMsg] = useState<string | null>(null); // 검수→배송 후 복귀 확인
+  const [packMsg, setPackMsg] = useState<string | null>(null); // 팩킹확정 결과 안내
+  const [packing, setPacking] = useState(false);
   const allSelected = orders.length > 0 && selected.size === orders.length;
   function toggleAll() {
     setSelected(allSelected ? new Set() : new Set(orders.map((o) => o.id)));
@@ -102,10 +104,14 @@ export default function WarehousePicklistPage() {
     });
   }
 
-  useEffect(() => {
-    fetch('/api/warehouse/orders?status=accepted,picking')
+  // 주문처리 대상(신규 결제완료 포함)을 픽리스트에 바로 반영 — 별도 '주문처리' 단계 생략 (JINY 확정)
+  const loadOrders = () =>
+    fetch('/api/warehouse/orders?status=paid,accepted,picking')
       .then((r) => r.json())
       .then((j) => setOrders(j.orders ?? []));
+
+  useEffect(() => {
+    loadOrders();
   }, []);
 
   // 검수→배송 후 picklist 로 복귀 시 출고 확인 토스트 (URL ?shipped=주문번호)
@@ -134,6 +140,31 @@ export default function WarehousePicklistPage() {
 
   function printPage() {
     window.print();
+  }
+
+  // 팩킹확정 — 체크한 항목을 다음 단계(배송준비, picking)로 일괄 전이.
+  // markPicking 이 고객·픽업가맹점에 '주문접수' 알림을 자동 발송한다 (보드 #11).
+  const pendingSelected = orders.filter((o) => selected.has(o.id) && o.status !== 'picking');
+  async function confirmPacking() {
+    if (pendingSelected.length === 0 || packing) return;
+    setPacking(true);
+    try {
+      let ok = 0;
+      for (const o of pendingSelected) {
+        // paid/accepted → picking 직행 허용(ALLOWED_FROM) — 전이 1회로 충분
+        const r = await fetch(`/api/warehouse/orders/${o.id}/transition`, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ action: 'pick' }),
+        });
+        if (r.ok) ok++;
+      }
+      setPackMsg(`📦 ${ok}건 팩킹확정 — 고객·픽업가맹점에 '주문접수' 안내가 발송되었습니다.`);
+      setTimeout(() => setPackMsg(null), 6000);
+      await loadOrders();
+    } finally {
+      setPacking(false);
+    }
   }
 
   // 출고(배송)는 이제 패킹 검수 화면(/warehouse/packing/[id])에서 스캔 검수 후 진행한다.
@@ -166,6 +197,12 @@ export default function WarehousePicklistPage() {
           ← 주문 처리
         </Link>
       </div>
+      {packMsg && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-blue-200 bg-blue-50 px-4 py-2.5 text-sm text-blue-800 print:hidden">
+          <span>{packMsg}</span>
+          <button type="button" onClick={() => setPackMsg(null)} className="text-blue-600 hover:text-blue-800">✕</button>
+        </div>
+      )}
       {shippedMsg && (
         <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800 print:hidden">
           <span>✅ <b className="font-mono">{shippedMsg}</b> 출고(배송 중) 완료 — 다음 주문을 이어서 처리하세요.</span>
@@ -182,6 +219,10 @@ export default function WarehousePicklistPage() {
         <div className="flex flex-wrap gap-2">
           {!picklist ? (
             <>
+              {/* 체크 항목 일괄 팩킹확정 → 다음단계 + 주문접수 표시 (리스트 상단, JINY 확정) */}
+              <Button onClick={confirmPacking} disabled={pendingSelected.length === 0 || packing} className="bg-blue-600 hover:bg-blue-700">
+                {packing ? '확정 중…' : `📦 팩킹확정 (${pendingSelected.length})`}
+              </Button>
               <Button onClick={() => generate(false)} variant="secondary" disabled={selected.size === 0}>
                 👁 미리보기 ({selected.size})
               </Button>
@@ -269,7 +310,14 @@ export default function WarehousePicklistPage() {
                               }}
                             />
                           </td>
-                          <td className="px-3 py-2 font-mono text-xs">{o.orderNumber}</td>
+                          <td className="px-3 py-2 font-mono text-xs">
+                            {o.orderNumber}
+                            <span className={`ml-1.5 rounded px-1.5 py-0.5 font-sans text-[10px] font-semibold ${
+                              o.status === 'paid' ? 'bg-amber-50 text-amber-700' : o.status === 'accepted' ? 'bg-blue-50 text-blue-700' : 'bg-emerald-50 text-emerald-700'
+                            }`}>
+                              {o.status === 'paid' ? '신규' : o.status === 'accepted' ? '접수' : '배송준비'}
+                            </span>
+                          </td>
                           <td className="px-3 py-2">{o.customerName}</td>
                           <td className="px-3 py-2 text-gray-400">{o.storeName}</td>
                           <td className="px-3 py-2 text-right">{o.itemCount}</td>
