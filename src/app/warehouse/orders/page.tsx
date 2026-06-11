@@ -91,17 +91,13 @@ function WarehouseOrdersInner() {
     const q = statusFilter ? `?status=${statusFilter}` : '';
     const [res, poRes] = await Promise.all([
       fetch('/api/warehouse/orders' + q),
-      // 발주는 기본 화면(신규 처리 대기)에서만 함께 노출 — 상태필터 시 고객주문만
-      statusFilter ? Promise.resolve(null) : fetch('/api/warehouse/store-orders'),
+      // 가맹점 B2B 발주는 고객주문 상태필터와 무관한 별도 흐름 — 항상 노출(필터 걸려도 숨기지 않음)
+      fetch('/api/warehouse/store-orders'),
     ]);
     const json = await res.json();
     setOrders(json.orders ?? []);
-    if (poRes) {
-      const poJson = await poRes.json().catch(() => null);
-      setPos(poJson?.orders ?? []);
-    } else {
-      setPos([]);
-    }
+    const poJson = await poRes.json().catch(() => null);
+    setPos(poJson?.orders ?? []);
   }, [statusFilter]);
 
   useEffect(() => {
