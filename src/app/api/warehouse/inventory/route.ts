@@ -137,11 +137,12 @@ const adjustSchema = z.object({
 /**
  * 입고/재고조정.
  * 단순 모델: 변경량(delta)을 quantity_on_hand 에 가산 + inventory_movements 기록.
+ * 현재고 수정은 권한자(admin) 전용 (JINY) — staff 는 안전재고만(PATCH).
  */
 export async function POST(req: Request) {
   const user = await getCurrentUser();
-  if (!user || (user.role !== 'warehouse_staff' && user.role !== 'admin')) {
-    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  if (!user || user.role !== 'admin') {
+    return NextResponse.json({ error: 'FORBIDDEN', message: '현재고 수정은 관리자만 가능합니다.' }, { status: 403 });
   }
 
   const parsed = adjustSchema.safeParse(await req.json().catch(() => ({})));
@@ -189,4 +190,37 @@ export async function POST(req: Request) {
   });
 
   return NextResponse.json({ ok: true });
+}
+
+const levelsSchema = z.object({
+  variantId: z.string().uuid(),
+  onHand: z.number().int().min(0).optional(),
+  safetyStock: z.number().int().min(0).optional(),
+});
+
+/**
+ * 리스트 인라인 편집 (JINY — frame-ops 패턴 차용).
+ * - safetyStock: warehouse_staff·admin 모두 가능 (알람 기준값, FIFO 무관)
+ * - onHand(현재고 절대값): admin 전용 — 차이는 movements(adjust) 로 감사 기록
+ */
+export async function PATCH(req: Request) {
+  const user = await getCurrentUser();
+  if (!user || (user.role !== 'warehouse_staff' && user.role !== 'admin')) {
+    return NextResponse.json({ error: 'FORBIDDEN' }, { status: 403 });
+  }
+
+  const parsed = levelsSchema.safeParse(await req.json().catch(() => ({})));
+  if (!parsed.success || (parsed.data.onHand === undefined && parsed.data.safetyStock === undefined)) {
+    return NextResponse.json({ error: 'INVALID_INPUT' }, { status: 400 });
+  }
+  if (parsed.data.onHand !== undefined && user.role !== 'admin') {
+    return NextResponse.json(
+      { error: 'FORBIDDEN', message: '현재고 수정은 관리자만 가능합니다.' },
+      { status: 403 },
+    );
+  }
+
+  const { setInventoryLevels } = await import('@/lib/inventory-levels');
+  const r = await setInventoryLevels({ ...parsed.data, byUserId: user.id });
+  return NextResponse.json({ ok: true, ...r });
 }

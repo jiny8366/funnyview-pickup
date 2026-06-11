@@ -3,7 +3,7 @@
 import { Suspense, useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { InlineNumberCell } from '@/components/ui/inline-number-cell';
 import {
   formatLensDisplayName,
   formatLensSpec,
@@ -73,8 +73,42 @@ function WarehouseInventoryInner() {
   const [rows, setRows] = useState<InvRow[] | null>(null);
   const [loading, setLoading] = useState(false);
   const [searched, setSearched] = useState(false);
-  const [editing, setEditing] = useState<string | null>(null);
-  const [delta, setDelta] = useState('');
+  const [isAdmin, setIsAdmin] = useState(false); // 현재고 수정 권한 (JINY: 권한자만)
+  const [editErr, setEditErr] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetch('/api/auth/me')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((j) => setIsAdmin(j?.user?.role === 'admin'))
+      .catch(() => {});
+  }, []);
+
+  // 인라인 편집 저장 — 성공 시 행만 로컬 갱신 (리스트 재조회 없이 즉시 반영)
+  async function saveLevels(variantId: string, patch: { onHand?: number; safetyStock?: number }) {
+    setEditErr(null);
+    const res = await fetch('/api/warehouse/inventory', {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ variantId, ...patch }),
+    });
+    if (!res.ok) {
+      const j = await res.json().catch(() => null);
+      setEditErr(j?.message ?? '저장에 실패했습니다.');
+      return;
+    }
+    setRows((prev) =>
+      prev?.map((r) =>
+        r.variantId === variantId
+          ? {
+              ...r,
+              onHand: patch.onHand ?? r.onHand,
+              safetyStock: patch.safetyStock ?? r.safetyStock,
+              available: (patch.onHand ?? r.onHand) - r.reserved,
+            }
+          : r,
+      ) ?? null,
+    );
+  }
 
   const buildParams = useCallback(
     (forAll: boolean) => {
@@ -136,19 +170,6 @@ function WarehouseInventoryInner() {
     return '/api/warehouse/inventory?' + sp.toString();
   }
 
-  async function adjust(variantId: string) {
-    const n = Number(delta);
-    if (!Number.isInteger(n) || n === 0) return;
-    await fetch('/api/warehouse/inventory', {
-      method: 'POST',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify({ variantId, delta: n, note: n > 0 ? '입고' : '재고조정' }),
-    });
-    setEditing(null);
-    setDelta('');
-    load();
-  }
-
   return (
     <div className="space-y-4">
       <header className="flex items-center justify-between print:hidden">
@@ -201,6 +222,10 @@ function WarehouseInventoryInner() {
         )}
       </div>
 
+      {editErr && (
+        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600 print:hidden">{editErr}</p>
+      )}
+
       {/* 인쇄 머리글 (인쇄물에만 표시) */}
       <div className="hidden print:block">
         <h2 className="text-lg font-bold">재고 현황</h2>
@@ -223,12 +248,11 @@ function WarehouseInventoryInner() {
                 <th className="px-3 py-2 text-left">도수</th>
                 <th className="px-3 py-2 text-right">현재고 (팩)</th>
                 <th className="px-3 py-2 text-right">안전재고</th>
-                <th className="px-3 py-2 text-right print:hidden">조정</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading && (
-                <tr><td colSpan={5} className="px-3 py-6 text-center text-gray-400">불러오는 중...</td></tr>
+                <tr><td colSpan={4} className="px-3 py-6 text-center text-gray-400">불러오는 중...</td></tr>
               )}
               {!loading && rows?.map((r) => {
                 const productName = formatLensDisplayName(
@@ -249,37 +273,29 @@ function WarehouseInventoryInner() {
                       <div className="text-[10px] font-mono text-gray-400">{r.sku}</div>
                     </td>
                     <td className="px-3 py-2 text-xs text-gray-700">{formatLensSpec(r) || '—'}</td>
+                    {/* 현재고: 권한자(admin)만 클릭 편집 — 안전재고: 모두 클릭 편집 (JINY, frame-ops 패턴) */}
                     <td className={`px-3 py-2 text-right font-semibold ${r.isLow ? 'text-red-700' : ''}`}>
-                      {r.onHand}<span className="ml-0.5 text-[10px] font-normal text-gray-400">팩</span>
+                      <InlineNumberCell
+                        value={r.onHand}
+                        canEdit={isAdmin}
+                        onSave={(n) => saveLevels(r.variantId, { onHand: n })}
+                        title={isAdmin ? '클릭하여 현재고 수정 (관리자)' : '현재고 수정은 관리자만 가능합니다'}
+                      />
+                      <span className="ml-0.5 text-[10px] font-normal text-gray-400">팩</span>
                     </td>
-                    <td className="px-3 py-2 text-right text-xs text-gray-500">{r.safetyStock}</td>
-                    <td className="px-3 py-2 text-right print:hidden">
-                      {editing === r.variantId ? (
-                        <div className="flex items-center justify-end gap-1">
-                          <Input
-                            className="w-20"
-                            value={delta}
-                            onChange={(e) => setDelta(e.target.value.replace(/[^\-0-9]/g, ''))}
-                            inputMode="numeric"
-                          />
-                          <Button size="sm" onClick={() => adjust(r.variantId)}>
-                            적용
-                          </Button>
-                          <Button variant="ghost" size="sm" onClick={() => setEditing(null)}>
-                            취소
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button variant="secondary" size="sm" onClick={() => setEditing(r.variantId)}>
-                          변경
-                        </Button>
-                      )}
+                    <td className="px-3 py-2 text-right text-xs text-gray-500">
+                      <InlineNumberCell
+                        value={r.safetyStock}
+                        canEdit
+                        onSave={(n) => saveLevels(r.variantId, { safetyStock: n })}
+                        title="클릭하여 안전재고 수정"
+                      />
                     </td>
                   </tr>
                 );
               })}
               {!loading && rows && rows.length === 0 && (
-                <tr><td colSpan={5} className="px-3 py-10 text-center text-gray-400">조건에 맞는 재고가 없습니다</td></tr>
+                <tr><td colSpan={4} className="px-3 py-10 text-center text-gray-400">조건에 맞는 재고가 없습니다</td></tr>
               )}
             </tbody>
           </table>

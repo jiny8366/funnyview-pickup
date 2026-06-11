@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardBody, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { InlineNumberCell } from '@/components/ui/inline-number-cell';
 import { formatLensSpec } from '@/lib/lens/format';
 
 interface BarcodeRow {
@@ -74,6 +75,27 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
       );
       setError('변경 실패');
     }
+  }
+
+  // 현재고·안전재고 인라인 편집 (JINY — 리스트에서 선택 수정, frame-ops 패턴)
+  async function saveLevels(variantId: string, patch: { onHand?: number; safetyStock?: number }) {
+    setError(null);
+    const res = await fetch(`/api/admin/lenses/${lensId}/variants`, {
+      method: 'PATCH',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ variantId, ...patch }),
+    });
+    if (!res.ok) {
+      setError('재고 저장 실패');
+      return;
+    }
+    setVariants((prev) =>
+      prev?.map((v) =>
+        v.id === variantId
+          ? { ...v, onHand: patch.onHand ?? v.onHand, safetyStock: patch.safetyStock ?? v.safetyStock }
+          : v,
+      ) ?? null,
+    );
   }
 
   async function addBarcode(variantId: string) {
@@ -225,8 +247,23 @@ export function LensVariantsCard({ lensId }: { lensId: string }) {
                       {formatLensSpec(v) || '기본'}
                     </td>
                     <td className="px-3 py-2 font-mono text-xs text-gray-500">{v.sku}</td>
-                    <td className="px-3 py-2 text-right text-gray-700">{v.onHand}</td>
-                    <td className="px-3 py-2 text-right text-gray-500">{v.safetyStock}</td>
+                    {/* 현재고·안전재고 — 셀 클릭으로 즉시 수정 (admin 전용 화면) */}
+                    <td className="px-3 py-2 text-right text-gray-700">
+                      <InlineNumberCell
+                        value={v.onHand}
+                        canEdit
+                        onSave={(n) => saveLevels(v.id, { onHand: n })}
+                        title="클릭하여 현재고 수정"
+                      />
+                    </td>
+                    <td className="px-3 py-2 text-right text-gray-500">
+                      <InlineNumberCell
+                        value={v.safetyStock}
+                        canEdit
+                        onSave={(n) => saveLevels(v.id, { safetyStock: n })}
+                        title="클릭하여 안전재고 수정"
+                      />
+                    </td>
                     <td className="px-3 py-2 text-center">
                       <button
                         disabled={busy}

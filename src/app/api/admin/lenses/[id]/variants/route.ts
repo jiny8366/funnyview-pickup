@@ -57,7 +57,9 @@ export async function GET(
 
 /**
  * PATCH /api/admin/lenses/[id]/variants
- * body: { variantId, isActive?, priceOverride? }
+ * body: { variantId, isActive?, priceOverride?, onHand?, safetyStock? }
+ * onHand/safetyStock 은 제품정보 리스트 인라인 편집 (JINY — frame-ops 패턴).
+ * onHand 절대값 수정의 차이는 inventory_movements(adjust) 로 감사 기록.
  */
 export async function PATCH(
   req: Request,
@@ -69,6 +71,18 @@ export async function PATCH(
   const body = await req.json().catch(() => ({}));
   const variantId = typeof body.variantId === 'string' ? body.variantId : '';
   if (!variantId) return NextResponse.json({ error: 'MISSING_VARIANT_ID' }, { status: 400 });
+
+  // 재고 수준 인라인 편집 (onHand·safetyStock — 음수 불가 정수)
+  const onHand =
+    Number.isInteger(body.onHand) && body.onHand >= 0 ? (body.onHand as number) : undefined;
+  const safetyStock =
+    Number.isInteger(body.safetyStock) && body.safetyStock >= 0
+      ? (body.safetyStock as number)
+      : undefined;
+  if (onHand !== undefined || safetyStock !== undefined) {
+    const { setInventoryLevels } = await import('@/lib/inventory-levels');
+    await setInventoryLevels({ variantId, onHand, safetyStock, byUserId: user.id, note: '제품마스터 인라인 수정' });
+  }
 
   const set: Record<string, unknown> = { updatedAt: new Date() };
   if (typeof body.isActive === 'boolean') set.isActive = body.isActive;
