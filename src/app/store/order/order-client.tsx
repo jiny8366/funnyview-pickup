@@ -47,11 +47,11 @@ const CYCLE_LABEL: Record<string, string> = {
   '1year': '연간',
 };
 
-// 렌즈타입 코드 → 한글 라벨 (제품마스터와 동일 표기)
+// 렌즈타입 코드 → 한글 라벨 (제품마스터와 동일 표기, 멀티포컬 용어 통일 — JINY)
 const LENS_TYPE_LABEL: Record<string, string> = {
   spherical: '구면(투명)',
   toric: '난시(토릭)',
-  multifocal: '다초점',
+  multifocal: '멀티포컬',
   color: '컬러',
   circle: '서클',
 };

@@ -30,7 +30,8 @@ function fmtSph(s: string): string {
  * 토릭(toric): JINY 지시 — 구면(SPH)·난시(CYL)·난시축(AXIS) 3개를 화면 순서로 표시하되
  *              **순서 무관**하게 어느 항목을 먼저 골라도 제품 스펙(실제 variant 조합)에
  *              맞춰 나머지 드롭다운이 자동으로 좁혀진다(난시축이 주문요구와 맞는지 확인 후 주문).
- * 다초점(multifocal): SPH → ADD.
+ * 멀티포컬(multifocal): JINY 지시 — 가입도(ADD)는 제품 등급(HIGH/MID/MED 등)으로 구분되므로
+ *              선택 UI가 아니라 **범위 안내 텍스트**만 표시. 선택은 SPH 하나로 끝.
  *
  * customer 용 VariantSelector 와 분리한 B2B 전용 선택기.
  */
@@ -51,7 +52,6 @@ export function StoreVariantPicker({
   const [sph, setSph] = useState('');
   const [cyl, setCyl] = useState('');
   const [axis, setAxis] = useState('');
-  const [add, setAdd] = useState('');
   const [qty, setQty] = useState(1);
 
   // 제품이 바뀌면(variants 교체) 선택 초기화
@@ -59,7 +59,6 @@ export function StoreVariantPicker({
     setSph('');
     setCyl('');
     setAxis('');
-    setAdd('');
     setQty(1);
   }, [variants]);
 
@@ -111,11 +110,12 @@ export function StoreVariantPicker({
     if (isToric && axis && !axisOptionsToric.includes(axis)) setAxis('');
   }, [isToric, axis, axisOptionsToric]);
 
-  // ── 구면/다초점: SPH 우선 ─────────────────────────────
+  // ── 구면/멀티포컬: SPH 우선 ─────────────────────────────
   const sphOptions = useMemo(() => uniqSort(variants.map((v) => v.sphere), 'desc'), [variants]);
-  const addOptions = useMemo(
-    () => uniqSort(variants.filter((v) => v.sphere === sph && v.addPower != null).map((v) => v.addPower as string)),
-    [variants, sph],
+  // 멀티포컬 가입도 안내 — 제품 등급(HIGH/MID 등)으로 구분되므로 선택이 아닌 범위 표시 (JINY)
+  const addValues = useMemo(
+    () => uniqSort(variants.filter((v) => v.addPower != null).map((v) => v.addPower as string)),
+    [variants],
   );
 
   // 현재 선택 → variant 해석
@@ -129,8 +129,10 @@ export function StoreVariantPicker({
       );
     }
     if (isMulti) {
-      if (!sph || !add) return null;
-      return variants.find((v) => v.sphere === sph && v.addPower === add) ?? null;
+      // ADD 는 제품으로 구분 — SPH 만으로 해석 (동일 SPH 복수 시 재고 있는 것 우선)
+      if (!sph) return null;
+      const candidates = variants.filter((v) => v.sphere === sph);
+      return candidates.find((v) => v.available > 0) ?? candidates[0] ?? null;
     }
     if (!sph) return null;
     return (
@@ -138,7 +140,7 @@ export function StoreVariantPicker({
         (v) => v.sphere === sph && (v.cylinder == null || Number(v.cylinder) === 0),
       ) ?? null
     );
-  }, [variants, isToric, isMulti, cyl, axis, sph, add]);
+  }, [variants, isToric, isMulti, cyl, axis, sph]);
 
   const canConfirm = selected != null && qty >= 1;
 
@@ -211,10 +213,7 @@ export function StoreVariantPicker({
               <select
                 className={SELECT_CLASS}
                 value={sph}
-                onChange={(e) => {
-                  setSph(e.target.value);
-                  setAdd('');
-                }}
+                onChange={(e) => setSph(e.target.value)}
               >
                 <option value="" disabled>
                   구면도수 (SPH)
@@ -229,25 +228,17 @@ export function StoreVariantPicker({
                 })}
               </select>
 
-              {isMulti && (
-                <select
-                  className={SELECT_CLASS}
-                  value={add}
-                  disabled={!sph}
-                  onChange={(e) => setAdd(e.target.value)}
-                >
-                  <option value="" disabled>
-                    가입도 (ADD)
-                  </option>
-                  {addOptions.map((o) => {
-                    const ok = hasStock((v) => v.sphere === sph && v.addPower === o);
-                    return (
-                      <option key={o} value={o} disabled={!ok}>
-                        {o}{ok ? '' : ' (품절)'}
-                      </option>
-                    );
-                  })}
-                </select>
+              {/* 가입도(ADD)는 제품 등급(HIGH/MID/MED 등)으로 구분 — 선택이 아닌 범위 안내 (JINY) */}
+              {isMulti && addValues.length > 0 && (
+                <p className="rounded-xl bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+                  가입도 (ADD):{' '}
+                  <span className="font-semibold">
+                    {addValues.length === 1
+                      ? fmtSph(addValues[0])
+                      : `${fmtSph(addValues[0])} ~ ${fmtSph(addValues[addValues.length - 1])}`}
+                  </span>{' '}
+                  — 이 제품의 등급에 포함된 가입도입니다 (별도 선택 불필요)
+                </p>
               )}
             </>
           )}
