@@ -96,7 +96,9 @@ export default function PackingPage() {
       body: JSON.stringify({ action: 'ship', scanned: payload }),
     });
     setBusy(false);
-    if (res.ok) { router.push('/warehouse/shipments'); return; }
+    // 출고 성공 → 배송준비 큐(picklist)로 복귀해 다음 주문을 바로 이어 처리(출고분은 큐에서 사라짐).
+    // 출고관리(읽기전용)로 튕기면 건마다 수동 복귀라 볼륨 처리가 끊김.
+    if (res.ok) { router.push('/warehouse/picklist?shipped=' + encodeURIComponent(data.order.orderNumber)); return; }
     const j = await res.json().catch(() => ({}));
     setErr(`출고 실패: ${j.message ?? j.error ?? res.status}${res.status === 409 ? ' (서버 수량 재검증 불일치)' : ''}`);
   }

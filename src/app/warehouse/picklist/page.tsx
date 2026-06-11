@@ -78,6 +78,7 @@ export default function WarehousePicklistPage() {
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [picklist, setPicklist] = useState<PicklistData | null>(null);
   const [pickedSkus, setPickedSkus] = useState<Set<string>>(new Set()); // 피킹 완료 체크
+  const [shippedMsg, setShippedMsg] = useState<string | null>(null); // 검수→배송 후 복귀 확인
   const allSelected = orders.length > 0 && selected.size === orders.length;
   function toggleAll() {
     setSelected(allSelected ? new Set() : new Set(orders.map((o) => o.id)));
@@ -94,6 +95,17 @@ export default function WarehousePicklistPage() {
     fetch('/api/warehouse/orders?status=accepted,picking')
       .then((r) => r.json())
       .then((j) => setOrders(j.orders ?? []));
+  }, []);
+
+  // 검수→배송 후 picklist 로 복귀 시 출고 확인 토스트 (URL ?shipped=주문번호)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const s = new URLSearchParams(window.location.search).get('shipped');
+    if (!s) return;
+    setShippedMsg(s);
+    window.history.replaceState(null, '', '/warehouse/picklist');
+    const t = setTimeout(() => setShippedMsg(null), 4000);
+    return () => clearTimeout(t);
   }, []);
 
   async function generate(thenPrint = false) {
@@ -148,6 +160,12 @@ export default function WarehousePicklistPage() {
           ← 주문 처리
         </Link>
       </div>
+      {shippedMsg && (
+        <div className="flex items-center justify-between gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-2.5 text-sm text-emerald-800 print:hidden">
+          <span>✅ <b className="font-mono">{shippedMsg}</b> 출고(배송 중) 완료 — 다음 주문을 이어서 처리하세요.</span>
+          <button type="button" onClick={() => setShippedMsg(null)} className="text-emerald-600 hover:text-emerald-800">✕</button>
+        </div>
+      )}
       <header className="flex flex-col gap-3 print:hidden md:flex-row md:items-start md:justify-between">
         <div>
           <h1 className="text-2xl font-bold">배송준비중 — 픽리스트</h1>
