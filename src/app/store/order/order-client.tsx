@@ -364,7 +364,7 @@ export function StoreOrderClient() {
                 onChange={(e) => setNote(e.target.value)}
                 placeholder="요청사항 (선택)"
                 rows={2}
-                className="mt-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-amber-500 focus:outline-none"
+                className="mt-3 w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:outline-none"
               />
 
               {error && <p className="mt-2 text-xs text-red-500">{error}</p>}
