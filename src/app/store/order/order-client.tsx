@@ -45,6 +45,15 @@ const CYCLE_LABEL: Record<string, string> = {
   '1year': '연간',
 };
 
+// 렌즈타입 코드 → 한글 라벨 (제품마스터와 동일 표기)
+const LENS_TYPE_LABEL: Record<string, string> = {
+  spherical: '구면(투명)',
+  toric: '난시(토릭)',
+  multifocal: '다초점',
+  color: '컬러',
+  circle: '서클',
+};
+
 export function StoreOrderClient() {
   const [items, setItems] = useState<CatalogItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,6 +61,7 @@ export function StoreOrderClient() {
   const [brand, setBrand] = useState('');
   const [cycle, setCycle] = useState('');
   const [pack, setPack] = useState<number | null>(null);
+  const [lensType, setLensType] = useState('');
   // 보기 모드: 기본 이미지(그리드)
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
@@ -86,12 +96,21 @@ export function StoreOrderClient() {
     () => [...new Set(items.map((l) => l.piecesPerBox))].sort((a, b) => a - b),
     [items],
   );
+  // 렌즈타입 칩 후보 — 카탈로그에 존재하는 타입만
+  const typeFacets = useMemo(
+    () =>
+      [...new Set(items.map((l) => l.lensType))]
+        .filter(Boolean)
+        .map((t) => ({ value: t, label: LENS_TYPE_LABEL[t] ?? t })),
+    [items],
+  );
 
   const display = useMemo(() => {
     let list = items;
     if (brand) list = list.filter((l) => l.brand === brand);
     if (cycle) list = list.filter((l) => l.replacementCycle === cycle);
     if (pack != null) list = list.filter((l) => l.piecesPerBox === pack);
+    if (lensType) list = list.filter((l) => l.lensType === lensType);
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter(
@@ -103,7 +122,7 @@ export function StoreOrderClient() {
       );
     }
     return list;
-  }, [items, brand, cycle, pack, query]);
+  }, [items, brand, cycle, pack, lensType, query]);
 
   const cartLines = useMemo(
     () => Object.values(cart).map((l) => ({ ...l, lineTotal: l.supplyPrice * l.qty })),
@@ -184,7 +203,7 @@ export function StoreOrderClient() {
     }
   }
 
-  const hasFilter = Boolean(brand || cycle || pack != null || query.trim());
+  const hasFilter = Boolean(brand || lensType || cycle || pack != null || query.trim());
 
   if (done) {
     return (
@@ -234,23 +253,25 @@ export function StoreOrderClient() {
         {/* 검색 + 칩 필터 — 공용 ProductFilterBar (단일선택 시맨틱 유지) */}
         <ProductFilterBar
           accent="amber"
-          facets={{ brands, cycles: cycleFacets, packs: packFacets }}
+          facets={{ brands, types: typeFacets, cycles: cycleFacets, packs: packFacets }}
           values={{
             query,
             brands: brand ? new Set([brand]) : new Set(),
+            types: lensType ? new Set([lensType]) : new Set(),
             cycles: cycle ? new Set([cycle]) : new Set(),
             packs: pack != null ? new Set([pack]) : new Set(),
           }}
           onQuery={setQuery}
           onToggleBrand={(b) => setBrand(brand === b ? '' : b)}
+          onToggleType={(t) => setLensType(lensType === t ? '' : t)}
           onToggleCycle={(c) => setCycle(cycle === c ? '' : c)}
           onTogglePack={(p) => setPack(pack === p ? null : p)}
-          showType={false}
           searchPlaceholder="제품명, 브랜드, 제품코드, 컬러로 검색"
           onReset={
             hasFilter
               ? () => {
                   setBrand('');
+                  setLensType('');
                   setCycle('');
                   setPack(null);
                   setQuery('');
