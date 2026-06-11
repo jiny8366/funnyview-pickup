@@ -246,6 +246,13 @@
       "when": 1780500700000,
       "tag": "0034_commission_supply_price",
       "breakpoints": true
+    },
+    {
+      "idx": 35,
+      "version": "7",
+      "when": 1780500800000,
+      "tag": "0035_store_orders",
+      "breakpoints": true
     }
   ]
 }

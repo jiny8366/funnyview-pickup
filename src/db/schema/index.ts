@@ -7,6 +7,7 @@ export * from './enums';
 export * from './users';
 export * from './customers';
 export * from './stores';
+export * from './store-orders';
 export * from './brands';
 export * from './product-codes';
 export * from './lenses';

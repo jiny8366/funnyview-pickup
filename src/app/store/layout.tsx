@@ -3,6 +3,8 @@ import { getCurrentUser } from '@/lib/auth/current-user';
 
 const NAV = [
   { href: '/store', label: '대시보드' },
+  { href: '/store/order', label: '발주(주문)' },
+  { href: '/store/order/history', label: '내 발주 내역' },
   { href: '/store/incoming', label: '배송 중' },
   { href: '/store/pickup', label: '픽업 처리' },
   { href: '/store/history', label: '처리 이력' },

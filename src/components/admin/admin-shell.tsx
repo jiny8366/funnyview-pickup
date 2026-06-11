@@ -25,6 +25,7 @@ const SECTIONS: MenuSection[] = [
     items: [
       { href: '/admin/dashboard', label: '대시보드', icon: <IconChart size={16} />, permission: 'dashboard_view' },
       { href: '/admin/orders', label: '주문 관리', icon: <IconCart size={16} />, permission: 'orders_read' },
+      { href: '/admin/store-orders', label: '가맹점 발주', icon: <IconStore size={16} />, permission: 'orders_read' },
       { href: '/admin/urgent-purchases', label: '급매입 리스트', icon: <IconBox size={16} />, permission: 'orders_read' },
       { href: '/admin/settlement', label: '정산 / 매출', icon: <IconWallet size={16} />, permission: 'settlement_read' },
       { href: '/admin/staff', label: '계정 관리', icon: <IconUsers size={16} />, permission: 'staff_read' },
