@@ -41,6 +41,16 @@ const TYPE_OPTIONS = [
   { value: 'color', label: '컬러' },
 ];
 
+// 교체주기 코드 → 한글 라벨 (어드민 제품마스터와 동일 표기)
+const CYCLE_LABEL: Record<string, string> = {
+  daily: '원데이',
+  biweekly: '2주',
+  monthly: '월간',
+  quarterly: '분기',
+  yearly: '장기',
+};
+const cycleLabel = (v: string) => CYCLE_LABEL[v] ?? v;
+
 /** 다른 페이지(제품 목록 등)와 동일한 필터 칩. */
 function Chip({ active, onClick, children }: { active: boolean; onClick: () => void; children: React.ReactNode }) {
   return (
@@ -82,6 +92,10 @@ function WarehouseInventoryInner() {
   const [brands, setBrands] = useState<Set<string>>(new Set());
   const [types, setTypes] = useState<Set<string>>(new Set());
   const [allBrands, setAllBrands] = useState<string[]>([]);
+  const [cycles, setCycles] = useState<Set<string>>(new Set());
+  const [packs, setPacks] = useState<Set<number>>(new Set());
+  const [allCycles, setAllCycles] = useState<string[]>([]);
+  const [allPacks, setAllPacks] = useState<number[]>([]);
   const [lowOnly, setLowOnly] = useState(lowDeepLink);
   const [rows, setRows] = useState<InvRow[] | null>(null);
   const [loading, setLoading] = useState(false);
@@ -96,19 +110,29 @@ function WarehouseInventoryInner() {
         if (q.trim()) sp.set('q', q.trim());
         if (brands.size > 0) sp.set('brand', [...brands].join(','));
         if (types.size > 0) sp.set('type', [...types].join(','));
+        if (cycles.size > 0) sp.set('cycle', [...cycles].join(','));
+        if (packs.size > 0) sp.set('pack', [...packs].join(','));
         if (lowOnly) sp.set('low', '1');
       }
       return sp;
     },
-    [q, brands, types, lowOnly],
+    [q, brands, types, cycles, packs, lowOnly],
   );
 
   // 브랜드 칩 목록 (다른 페이지와 동일한 칩 토글 UX)
   useEffect(() => {
     fetch('/api/warehouse/inventory?facets=1')
       .then((r) => r.json())
-      .then((j) => setAllBrands(j.brands ?? []))
-      .catch(() => setAllBrands([]));
+      .then((j) => {
+        setAllBrands(j.brands ?? []);
+        setAllCycles(j.cycles ?? []);
+        setAllPacks(j.packs ?? []);
+      })
+      .catch(() => {
+        setAllBrands([]);
+        setAllCycles([]);
+        setAllPacks([]);
+      });
   }, []);
 
   const load = useCallback(
@@ -213,6 +237,42 @@ function WarehouseInventoryInner() {
             </Chip>
           ))}
         </FilterRow>
+        {allCycles.length > 0 && (
+          <FilterRow label="주기">
+            {allCycles.map((c) => (
+              <Chip
+                key={c}
+                active={cycles.has(c)}
+                onClick={() => {
+                  const s = new Set(cycles);
+                  if (s.has(c)) s.delete(c);
+                  else s.add(c);
+                  setCycles(s);
+                }}
+              >
+                {cycleLabel(c)}
+              </Chip>
+            ))}
+          </FilterRow>
+        )}
+        {allPacks.length > 0 && (
+          <FilterRow label="갯수">
+            {allPacks.map((p) => (
+              <Chip
+                key={p}
+                active={packs.has(p)}
+                onClick={() => {
+                  const s = new Set(packs);
+                  if (s.has(p)) s.delete(p);
+                  else s.add(p);
+                  setPacks(s);
+                }}
+              >
+                {p}P
+              </Chip>
+            ))}
+          </FilterRow>
+        )}
         {searched && rows && (
           <div className="flex flex-wrap items-center gap-2 border-t border-gray-100 pt-2">
             <span className="text-xs text-gray-500">{rows.length.toLocaleString()}개 도수(SKU)</span>
@@ -254,18 +314,13 @@ function WarehouseInventoryInner() {
                 <th className="px-3 py-2 text-left">제품 (브랜드 / 제품명 / 주기 / 팩수)</th>
                 <th className="px-3 py-2 text-left">도수</th>
                 <th className="px-3 py-2 text-right">현재고 (팩)</th>
-                <th className="px-3 py-2 text-right">예약</th>
-                <th className="px-3 py-2 text-right">가용</th>
-                <th className="px-3 py-2 text-right">안전</th>
-                <th className="px-3 py-2 text-right">로트</th>
-                <th className="px-3 py-2 text-right">평균단가</th>
-                <th className="px-3 py-2 text-right">최초입고일</th>
+                <th className="px-3 py-2 text-right">안전재고</th>
                 <th className="px-3 py-2 text-right print:hidden">조정</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-100">
               {loading && (
-                <tr><td colSpan={10} className="px-3 py-6 text-center text-gray-400">불러오는 중...</td></tr>
+                <tr><td colSpan={5} className="px-3 py-6 text-center text-gray-400">불러오는 중...</td></tr>
               )}
               {!loading && rows?.map((r) => {
                 const productName = formatLensDisplayName(
@@ -286,30 +341,10 @@ function WarehouseInventoryInner() {
                       <div className="text-[10px] font-mono text-gray-400">{r.sku}</div>
                     </td>
                     <td className="px-3 py-2 text-xs text-gray-700">{formatLensSpec(r) || '—'}</td>
-                    <td className="px-3 py-2 text-right">
-                      <div className="font-semibold">{r.onHand}</div>
-                      <div className="text-[10px] text-gray-400">
-                        ({(r.onHand * r.piecesPerBox).toLocaleString()}매)
-                      </div>
-                    </td>
-                    <td className="px-3 py-2 text-right text-gray-500">{r.reserved}</td>
                     <td className={`px-3 py-2 text-right font-semibold ${r.isLow ? 'text-red-700' : ''}`}>
-                      {r.available}
+                      {r.onHand}<span className="ml-0.5 text-[10px] font-normal text-gray-400">팩</span>
                     </td>
                     <td className="px-3 py-2 text-right text-xs text-gray-500">{r.safetyStock}</td>
-                    <td className="px-3 py-2 text-right text-xs">
-                      {r.lotCount > 0 ? (
-                        <span className="rounded-full bg-blue-100 px-1.5 py-0.5 text-blue-700">{r.lotCount}</span>
-                      ) : (
-                        <span className="text-gray-300">—</span>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-right text-xs text-gray-700">
-                      {r.weightedAvgCost > 0 ? r.weightedAvgCost.toLocaleString() + '원' : <span className="text-gray-300">—</span>}
-                    </td>
-                    <td className="px-3 py-2 text-right text-xs text-gray-500">
-                      {r.oldestInboundDate ?? <span className="text-gray-300">—</span>}
-                    </td>
                     <td className="px-3 py-2 text-right print:hidden">
                       {editing === r.variantId ? (
                         <div className="flex items-center justify-end gap-1">
@@ -336,7 +371,7 @@ function WarehouseInventoryInner() {
                 );
               })}
               {!loading && rows && rows.length === 0 && (
-                <tr><td colSpan={10} className="px-3 py-10 text-center text-gray-400">조건에 맞는 재고가 없습니다</td></tr>
+                <tr><td colSpan={5} className="px-3 py-10 text-center text-gray-400">조건에 맞는 재고가 없습니다</td></tr>
               )}
             </tbody>
           </table>

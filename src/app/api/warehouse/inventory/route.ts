@@ -15,14 +15,19 @@ export async function GET(req: Request) {
 
   const url = new URL(req.url);
 
-  // 필터 칩 구성용 브랜드 목록 (다른 페이지와 동일한 칩 토글 UX)
+  // 필터 칩 구성용 facet 목록 — 어드민 제품마스터와 동일한 검색조건(브랜드·주기·갯수)
   if (url.searchParams.get('facets') === '1') {
-    const brandRows = await db
-      .selectDistinct({ brand: lenses.brand })
-      .from(lenses)
-      .where(sql`${lenses.deletedAt} IS NULL`)
-      .orderBy(asc(lenses.brand));
-    return NextResponse.json({ brands: brandRows.map((b) => b.brand) });
+    const live = sql`${lenses.deletedAt} IS NULL`;
+    const [brandRows, cycleRows, packRows] = await Promise.all([
+      db.selectDistinct({ v: lenses.brand }).from(lenses).where(live).orderBy(asc(lenses.brand)),
+      db.selectDistinct({ v: lenses.replacementCycle }).from(lenses).where(live).orderBy(asc(lenses.replacementCycle)),
+      db.selectDistinct({ v: lenses.piecesPerBox }).from(lenses).where(live).orderBy(asc(lenses.piecesPerBox)),
+    ]);
+    return NextResponse.json({
+      brands: brandRows.map((b) => b.v),
+      cycles: cycleRows.map((r) => r.v),
+      packs: packRows.map((r) => r.v),
+    });
   }
 
   const onlyLow = url.searchParams.get('low') === '1';
@@ -30,6 +35,8 @@ export async function GET(req: Request) {
   const q = url.searchParams.get('q')?.trim();
   const brandList = (url.searchParams.get('brand') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
   const typeList = (url.searchParams.get('type') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const cycleList = (url.searchParams.get('cycle') ?? '').split(',').map((s) => s.trim()).filter(Boolean);
+  const packList = (url.searchParams.get('pack') ?? '').split(',').map((s) => Number(s.trim())).filter((n) => Number.isFinite(n));
   const format = url.searchParams.get('format'); // 'csv' = 엑셀 다운로드
 
   // FIFO lot aggregates via correlated subqueries (confirmed lots only)
@@ -82,6 +89,8 @@ export async function GET(req: Request) {
         q ? sql`(${lenses.name} ILIKE ${'%' + q + '%'} OR ${lensVariants.sku} ILIKE ${'%' + q + '%'})` : sql`TRUE`,
         brandList.length > 0 ? inArray(lenses.brand, brandList) : sql`TRUE`,
         typeList.length > 0 ? inArray(lenses.lensType, typeList as never) : sql`TRUE`,
+        cycleList.length > 0 ? inArray(lenses.replacementCycle, cycleList as never) : sql`TRUE`,
+        packList.length > 0 ? inArray(lenses.piecesPerBox, packList) : sql`TRUE`,
       ],
       sql` AND `,
     ))
@@ -89,11 +98,11 @@ export async function GET(req: Request) {
 
   // 엑셀(CSV) 다운로드 — UTF-8 BOM 으로 한글 엑셀 호환
   if (format === 'csv') {
-    const header = ['브랜드', '제품명', 'SKU', 'SPH', 'CYL', 'AXIS', 'ADD', '보유', '예약', '가용', '안전재고', '로트수', '평균원가', '최초입고일'];
+    const header = ['브랜드', '제품명', 'SKU', 'SPH', 'CYL', 'AXIS', 'ADD', '현재고(팩)', '안전재고'];
     const lines = rows.map((r) =>
       [
         r.brand, r.lensName, r.sku, r.sphere, r.cylinder ?? '', r.axis ?? '', r.addPower ?? '',
-        r.onHand, r.reserved, r.available, r.safetyStock, r.lotCount, r.weightedAvgCost, r.oldestInboundDate ?? '',
+        r.onHand, r.safetyStock,
       ]
         .map((v) => `"${String(v).replace(/"/g, '""')}"`)
         .join(','),
