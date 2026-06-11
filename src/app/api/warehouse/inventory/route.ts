@@ -30,6 +30,15 @@ export async function GET(req: Request) {
     });
   }
 
+  // [임시 진단 — 재고 0건 #23] 테이블/조인 단계별 카운트. 원인 확정 후 제거.
+  if (url.searchParams.get('debug') === 'count') {
+    const a = await db.execute(sql`SELECT COUNT(*)::int AS c FROM inventory`);
+    const b = await db.execute(sql`SELECT COUNT(*)::int AS c FROM inventory i JOIN lens_variants v ON v.id = i.variant_id`);
+    const c = await db.execute(sql`SELECT COUNT(*)::int AS c FROM inventory i JOIN lens_variants v ON v.id = i.variant_id JOIN lenses l ON l.id = v.lens_id`);
+    const d = await db.execute(sql`SELECT COALESCE(SUM(quantity_on_hand),0)::int AS total, COALESCE(SUM(quantity_reserved),0)::int AS reserved FROM inventory`);
+    return NextResponse.json({ inventoryCount: a, joinVariants: b, joinLenses: c, sums: d });
+  }
+
   const onlyLow = url.searchParams.get('low') === '1';
   // 검색 조건: q=제품명/SKU, brand/type 은 콤마구분 복수 선택(칩 토글) 지원
   const q = url.searchParams.get('q')?.trim();
