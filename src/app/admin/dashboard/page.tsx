@@ -55,6 +55,7 @@ const PIE_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b
 export default function AdminDashboardPage() {
   const [days, setDays] = useState(14);
   const [data, setData] = useState<DashboardData | null>(null);
+  const [storeQuery, setStoreQuery] = useState(''); // 가맹점 정산 검색
 
   useEffect(() => {
     fetch(`/api/admin/dashboard?days=${days}`)
@@ -166,33 +167,61 @@ export default function AdminDashboardPage() {
         </div>
       </section>
 
-      <section className="rounded-2xl border border-gray-200 bg-white p-4">
-        <h2 className="mb-3 text-sm font-semibold text-gray-700">가맹점 정산</h2>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead className="bg-gray-50 text-xs uppercase text-gray-500">
-              <tr>
-                <th className="px-3 py-2 text-left">가맹점</th>
-                <th className="px-3 py-2 text-right">주문</th>
-                <th className="px-3 py-2 text-right">순매출</th>
-                <th className="px-3 py-2 text-right">수수료율</th>
-                <th className="px-3 py-2 text-right">지급액</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {data.stores.map((s) => (
-                <tr key={s.storeId}>
-                  <td className="px-3 py-2 font-medium">{s.storeName}</td>
-                  <td className="px-3 py-2 text-right">{s.orderCount}건</td>
-                  <td className="px-3 py-2 text-right">{formatKRW(s.netRevenue)}</td>
-                  <td className="px-3 py-2 text-right text-gray-500">{s.commissionRate}%</td>
-                  <td className="px-3 py-2 text-right font-semibold text-brand-700">{formatKRW(s.commission)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </section>
+      {(() => {
+        const q = storeQuery.trim().toLowerCase();
+        const filtered = q
+          ? data.stores.filter((s) => s.storeName.toLowerCase().includes(q))
+          : data.stores;
+        return (
+          <section className="rounded-2xl border border-gray-200 bg-white p-4">
+            <div className="mb-3 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+              <h2 className="text-sm font-semibold text-gray-700">
+                가맹점 정산{' '}
+                <span className="text-xs font-normal text-gray-400">
+                  {q ? `검색 ${filtered.length} / 전체 ${data.stores.length}곳` : `전체 ${data.stores.length}곳`}
+                </span>
+              </h2>
+              <input
+                value={storeQuery}
+                onChange={(e) => setStoreQuery(e.target.value)}
+                placeholder="가맹점명 검색"
+                className="h-9 w-full rounded-lg border border-gray-300 px-3 text-sm sm:w-64"
+              />
+            </div>
+            <div className="overflow-x-auto">
+              <table className="w-full text-sm">
+                <thead className="bg-gray-50 text-xs uppercase text-gray-500">
+                  <tr>
+                    <th className="px-3 py-2 text-left">가맹점</th>
+                    <th className="px-3 py-2 text-right">주문</th>
+                    <th className="px-3 py-2 text-right">순매출</th>
+                    <th className="px-3 py-2 text-right">수수료율</th>
+                    <th className="px-3 py-2 text-right">지급액</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {filtered.map((s) => (
+                    <tr key={s.storeId} className="hover:bg-gray-50">
+                      <td className="px-3 py-2 font-medium">{s.storeName}</td>
+                      <td className="px-3 py-2 text-right">{s.orderCount}건</td>
+                      <td className="px-3 py-2 text-right">{formatKRW(s.netRevenue)}</td>
+                      <td className="px-3 py-2 text-right text-gray-500">{s.commissionRate}%</td>
+                      <td className="px-3 py-2 text-right font-semibold text-brand-700">{formatKRW(s.commission)}</td>
+                    </tr>
+                  ))}
+                  {filtered.length === 0 && (
+                    <tr>
+                      <td colSpan={5} className="px-3 py-8 text-center text-gray-400">
+                        검색 결과가 없습니다
+                      </td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </section>
+        );
+      })()}
 
       <section className="rounded-2xl border border-gray-200 bg-white p-4">
         <h2 className="mb-3 text-sm font-semibold text-gray-700">추천인 리워드</h2>
