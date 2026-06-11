@@ -35,7 +35,7 @@ export async function GET(
       priceOverride: lensVariants.priceOverride,
       isActive: lensVariants.isActive,
       onHand: sql<number>`COALESCE(${inventory.quantityOnHand}, 0)`,
-      reserved: sql<number>`COALESCE(${inventory.quantityReserved}, 0)`,
+      safetyStock: sql<number>`COALESCE(${inventory.safetyStock}, 0)`,
       barcodes: sql<string>`COALESCE(
         (SELECT json_agg(json_build_object(
           'id', b.id,
