@@ -1,10 +1,11 @@
+import { ConversionHelp } from '@/components/prescription/conversion-help';
 import { PrescriptionManager } from '@/components/prescription/prescription-manager';
 
 export const dynamic = 'force-dynamic';
 
 export default function CustomerPrescriptionsPage() {
   return (
-    <div className="space-y-6">
+    <div className="animate-fade-in space-y-6">
       <section>
         <h1 className="text-2xl font-bold">내 시력정보</h1>
         <p className="mt-2 text-gray-500">
@@ -16,6 +17,8 @@ export default function CustomerPrescriptionsPage() {
         canEdit
         recommendEndpoint="/api/customer/recommend"
       />
+      {/* 안경↔콘택트 변환 가정 안내 (작업 #1) */}
+      <ConversionHelp />
     </div>
   );
 }

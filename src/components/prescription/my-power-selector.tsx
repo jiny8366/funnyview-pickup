@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { ConversionHelp } from '@/components/prescription/conversion-help';
 import { RecommendModal } from '@/components/prescription/recommend-modal';
 import { formatDiopter, glassesToContactToric, roundQuarter } from '@/lib/prescription/convert';
 
@@ -231,6 +232,8 @@ export function MyPowerSelector({
       </button>
 
       {msg && <p className="mt-1.5 text-xs text-gray-500">{msg}</p>}
+      {/* 안경→콘택트 변환 가정 안내 (작업 #1) */}
+      <ConversionHelp className="mt-1.5" />
       {needLogin && (
         <p className="mt-1.5 text-xs text-gray-500">
           저장된 도수를 쓰려면{' '}
