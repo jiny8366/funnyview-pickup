@@ -97,23 +97,50 @@ export async function recommendLenses(
 
   if (rows.length === 0) return [];
 
-  // 도수 커버 필터 — 해당 sphere 의 variant 가 있는 제품만
+  // 도수 커버 필터 — 해당 sphere 의 variant 가 있는 제품만.
+  // 멀티포컬은 추가로 "고객 ADD(가입도)를 적용할 수 있는 스펙" 인지까지 본다.
   const ids = rows.map((r) => r.id);
   const variantRows = await db
-    .select({ lensId: lensVariants.lensId, sphere: lensVariants.sphere })
+    .select({
+      lensId: lensVariants.lensId,
+      sphere: lensVariants.sphere,
+      addPower: lensVariants.addPower,
+    })
     .from(lensVariants)
     .where(and(inArray(lensVariants.lensId, ids), eq(lensVariants.isActive, true)));
   const sphereByLens = new Map<string, Set<string>>();
+  // 제품 × (목표 sphere 에서 제공되는 가입도 ADD 목록) — 멀티포컬 ADD 매칭용
+  const addAtSphereByLens = new Map<string, number[]>();
+  const targetSphere = round2(dose.sphere);
   for (const v of variantRows) {
     if (!sphereByLens.has(v.lensId)) sphereByLens.set(v.lensId, new Set());
     sphereByLens.get(v.lensId)!.add(v.sphere);
+    if (v.sphere === targetSphere && v.addPower != null) {
+      if (!addAtSphereByLens.has(v.lensId)) addAtSphereByLens.set(v.lensId, []);
+      addAtSphereByLens.get(v.lensId)!.push(Number(v.addPower));
+    }
   }
-  const targetSphere = round2(dose.sphere);
-  // variant 정보가 아예 없는 제품은 도수 미상으로 통과(배제하지 않음)
+
+  // ADD(가입도) 적용 기준: 멀티포컬은 처방 근거리 가입도에 맞는 옵션을 골라야 함.
+  // 실제 피팅은 가장 가까운 제공 ADD 로 라운딩하므로, 목표 sphere 에서 ±0.75D 이내의
+  // ADD 옵션을 1개라도 제공하는 제품만 "ADD 적용 가능"으로 본다(임상 허용범위).
+  const ADD_TOLERANCE = 0.75;
+  function multifocalCoversAdd(lensId: string, add: number): boolean {
+    const adds = addAtSphereByLens.get(lensId);
+    if (!adds || adds.length === 0) return false; // 목표 sphere 에 ADD 옵션이 없으면 적용 불가
+    return adds.some((a) => Math.abs(a - add) <= ADD_TOLERANCE);
+  }
+
+  // variant 정보가 아예 없는 제품은 도수 미상으로 통과(배제하지 않음).
   const covered = rows.filter((r) => {
     const set = sphereByLens.get(r.id);
-    if (!set || set.size === 0) return true;
-    return set.has(targetSphere);
+    if (!set || set.size === 0) return true; // 도수 데이터 미상 → 통과
+    if (!set.has(targetSphere)) return false; // 구면 미커버 → 제외
+    // 멀티포컬 + 처방 ADD 있음 → 해당 sphere 에서 ADD 적용 가능한 제품만
+    if (r.lensType === 'multifocal' && dose.addPower != null) {
+      return multifocalCoversAdd(r.id, dose.addPower);
+    }
+    return true;
   });
 
   const longWear = (lifestyle.hoursPerDay ?? 0) >= 9;
@@ -191,6 +218,23 @@ export async function recommendLenses(
     if (f.has('moisture') && hydrating) {
       score += 3;
       reasons.push('수분감');
+    }
+
+    // 멀티포컬 우선 — 처방에 ADD(가입도)가 있으면 다초점 제품을 상위로.
+    // (기존엔 가산이 없어 구면이 상위를 차지해 '멀티포컬 추천'이 실제로 안 나오던 버그)
+    // covered 단계에서 ADD 적용 가능한 다초점만 남았으므로, 가장 가까운 제공 ADD 를 근거로 표기.
+    if (dose.addPower != null && r.lensType === 'multifocal') {
+      const adds = addAtSphereByLens.get(r.id) ?? [];
+      const best =
+        adds.length > 0
+          ? adds.reduce((p, c) =>
+              Math.abs(c - dose.addPower!) < Math.abs(p - dose.addPower!) ? c : p,
+            )
+          : null;
+      score += 6;
+      reasons.unshift(
+        best != null ? `다초점 — 가입도 ADD +${best.toFixed(2)} 적용 가능` : '다초점(돋보기)',
+      );
     }
 
     if (r.isNew) score += 0.5;
