@@ -1,4 +1,10 @@
+import type { Metadata } from 'next';
 import { RoleHeader } from '@/components/layout/role-header';
+
+// 포털별 브라우저 탭 제목 — 호스트(링크)에 맞춰 표시 (JINY 지시)
+export const metadata: Metadata = {
+  title: { absolute: '픽업관리', template: '%s | 픽업관리' },
+};
 
 const NAV = [
   { href: '/warehouse', label: '대시보드' },
