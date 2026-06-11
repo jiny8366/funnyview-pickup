@@ -1,5 +1,5 @@
 /**
- * Funnyview Pickup — DB 스키마 단일 진입점.
+ * 퍼니뷰 예약시스템 — DB 스키마 단일 진입점.
  * Drizzle Kit 은 drizzle.config.ts 의 schema 글롭으로 모든 파일을 인식하지만,
  * 애플리케이션 import 는 본 파일을 경유하면 충돌 없이 일관 사용 가능.
  */
