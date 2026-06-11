@@ -182,7 +182,7 @@ export default function PurchasingPage() {
       });
       return next;
     });
-    setMsg(`${items.length}개 도수를 발주리스트에 추가했습니다. 발주할 품목을 체크하세요.`);
+    setMsg(`${items.length}개 도수를 발주리스트에 반영했습니다 (수량 0) — 수량 입력 후 체크하여 발주하세요.`);
     setTimeout(() => setMsg(null), 4000);
   }
 
@@ -739,9 +739,9 @@ function OrderDetailModal({
 
 
 /**
- * 도수표 모달 (JINY) — 제품의 도수(variant)를 표로 펼치고 셀에 수량을 입력해
- * '적용'하면 발주리스트에 들어간다 (수동발주).
- * 구면/컬러: SPH 목록 · 토릭: SPH × (CYL·AX) · 멀티포컬: SPH × ADD.
+ * 도수 리스트 모달 (JINY) — 제품의 도수를 리스트로 띄우고 체크해서
+ * '발주리스트에 반영'(수량 0) — 수량은 발주리스트에서 확정한다 (수동발주).
+ * 토릭은 우측 상단 난시도수(CYL)·축(AX) 셀렉트로 좁혀 검색.
  */
 function DoseGridModal({
   product,
@@ -753,8 +753,8 @@ function DoseGridModal({
   onApply: (items: { cand: Candidate; quantity: number }[]) => void;
 }) {
   const [variants, setVariants] = useState<Candidate[] | null>(null);
-  const [input, setInput] = useState<Map<string, number>>(new Map());
-  // 난시(토릭) 검색 보조 — 우측 상단 CYL·AX 셀렉트로 그리드를 좁힘 (JINY, 발주 화면과 동일 UX)
+  const [picked, setPicked] = useState<Set<string>>(new Set());
+  // 난시(토릭) 검색 보조 — 우측 상단 CYL·AX 셀렉트로 리스트를 좁힘 (JINY, 발주 화면과 동일 UX)
   const [fCyl, setFCyl] = useState('');
   const [fAxis, setFAxis] = useState('');
 
@@ -780,31 +780,19 @@ function DoseGridModal({
     [variants, fCyl],
   );
 
-  // 피벗: 행 = SPH(내림차순), 열 = 토릭 'CYL·AX' | 멀티포컬 'ADD' | 그 외 단일
-  // 토릭은 우측 상단 CYL·AX 셀렉트로 열을 좁혀 검색 (JINY)
-  const grid = useMemo(() => {
+  // 도수 리스트 (JINY) — 체크해서 발주리스트에 반영. 토릭은 CYL·AX 셀렉트로 좁힘.
+  const filtered = useMemo(() => {
     if (!variants) return null;
-    const filtered = variants.filter(
-      (v) => (!fCyl || v.cylinder === fCyl) && (!fAxis || String(v.axis) === fAxis),
-    );
-    const colKey = (v: Candidate) => {
-      if (v.cylinder) return `CYL ${v.cylinder}${v.axis !== null ? ` · AX ${v.axis}` : ''}`;
-      if (v.addPower) return `ADD ${v.addPower}`;
-      return '수량';
-    };
-    const cols = [...new Set(filtered.map(colKey))].sort();
-    const rows = [...new Set(filtered.map((v) => v.sphere))].sort((a, b) => Number(b) - Number(a));
-    const cell = new Map<string, Candidate>();
-    filtered.forEach((v) => cell.set(`${v.sphere}|${colKey(v)}`, v));
-    return { cols, rows, cell };
+    return variants
+      .filter((v) => (!fCyl || v.cylinder === fCyl) && (!fAxis || String(v.axis) === fAxis))
+      .sort((a, b) => Number(b.sphere) - Number(a.sphere));
   }, [variants, fCyl, fAxis]);
 
-  const entered = useMemo(() => {
+  const pickedItems = useMemo(() => {
     if (!variants) return [];
-    return variants
-      .map((v) => ({ cand: v, quantity: input.get(v.variantId) ?? 0 }))
-      .filter((i) => i.quantity > 0);
-  }, [variants, input]);
+    // 발주리스트에는 수량 0 으로 반영 — 수량은 발주리스트에서 확정 (JINY)
+    return variants.filter((v) => picked.has(v.variantId)).map((v) => ({ cand: v, quantity: 0 }));
+  }, [variants, picked]);
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4" onClick={onClose}>
@@ -816,7 +804,7 @@ function DoseGridModal({
           <div>
             <h2 className="text-base font-bold text-gray-900">도수표 — {product.brand} {product.name}</h2>
             <p className="mt-0.5 text-xs text-gray-500">
-              발주할 도수 칸에 수량을 입력하고 적용하세요. 칸 아래 회색 숫자는 현재 가용재고입니다.
+              발주할 도수를 체크하고 반영하세요 — 수량은 발주리스트에서 입력·확정합니다.
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -854,51 +842,58 @@ function DoseGridModal({
         </header>
 
         <div className="flex-1 overflow-auto px-5 py-3">
-          {!grid ? (
+          {!filtered ? (
             <p className="py-8 text-center text-sm text-gray-400">도수 불러오는 중...</p>
-          ) : grid.rows.length === 0 ? (
-            <p className="py-8 text-center text-sm text-gray-400">활성 도수가 없습니다.</p>
+          ) : filtered.length === 0 ? (
+            <p className="py-8 text-center text-sm text-gray-400">조건에 맞는 도수가 없습니다.</p>
           ) : (
-            <table className="text-xs">
-              <thead>
+            <table className="w-full text-xs">
+              <thead className="text-left text-[11px] uppercase text-gray-400">
                 <tr>
-                  <th className="sticky left-0 bg-white px-2 py-1.5 text-left text-[11px] uppercase text-gray-400">SPH</th>
-                  {grid.cols.map((c) => (
-                    <th key={c} className="px-2 py-1.5 text-center text-[11px] text-gray-500 whitespace-nowrap">{c}</th>
-                  ))}
+                  <th className="w-8 px-2 py-1.5">
+                    <input
+                      type="checkbox"
+                      checked={filtered.length > 0 && filtered.every((v) => picked.has(v.variantId))}
+                      onChange={(e) =>
+                        setPicked((prev) => {
+                          const next = new Set(prev);
+                          filtered.forEach((v) => (e.target.checked ? next.add(v.variantId) : next.delete(v.variantId)));
+                          return next;
+                        })
+                      }
+                    />
+                  </th>
+                  <th className="px-2 py-1.5">도수</th>
+                  <th className="px-2 py-1.5 text-right">가용재고</th>
+                  <th className="px-2 py-1.5 text-right">안전재고</th>
+                  <th className="px-2 py-1.5 text-right">최근 매입가</th>
                 </tr>
               </thead>
-              <tbody>
-                {grid.rows.map((r) => (
-                  <tr key={r} className="border-t border-gray-50">
-                    <td className="sticky left-0 bg-white px-2 py-1 font-medium text-gray-800 whitespace-nowrap">
-                      {Number(r) > 0 ? `+${r}` : r}
+              <tbody className="divide-y divide-gray-50">
+                {filtered.map((v) => (
+                  <tr
+                    key={v.variantId}
+                    onClick={() =>
+                      setPicked((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(v.variantId)) next.delete(v.variantId);
+                        else next.add(v.variantId);
+                        return next;
+                      })
+                    }
+                    className={`cursor-pointer ${picked.has(v.variantId) ? 'bg-amber-50/60' : 'hover:bg-gray-50'}`}
+                  >
+                    <td className="px-2 py-1.5">
+                      <input type="checkbox" checked={picked.has(v.variantId)} readOnly />
                     </td>
-                    {grid.cols.map((c) => {
-                      const v = grid.cell.get(`${r}|${c}`);
-                      if (!v) return <td key={c} className="px-2 py-1 text-center text-gray-200">·</td>;
-                      return (
-                        <td key={c} className="px-1 py-1 text-center">
-                          <input
-                            type="number"
-                            min={0}
-                            value={input.get(v.variantId) || ''}
-                            placeholder="0"
-                            onChange={(e) =>
-                              setInput((prev) => {
-                                const next = new Map(prev);
-                                const n = Math.max(0, Number(e.target.value) || 0);
-                                if (n === 0) next.delete(v.variantId);
-                                else next.set(v.variantId, n);
-                                return next;
-                              })
-                            }
-                            className="w-14 rounded border border-gray-200 px-1 py-0.5 text-center focus:border-amber-500 focus:outline-none"
-                          />
-                          <div className="mt-0.5 text-[9px] text-gray-300">{v.available}</div>
-                        </td>
-                      );
-                    })}
+                    <td className="px-2 py-1.5 font-medium text-gray-800">
+                      {doseLabel({ sphere: v.sphere, cylinder: v.cylinder, axis: v.axis, addPower: v.addPower })}
+                    </td>
+                    <td className="px-2 py-1.5 text-right text-gray-600">{v.available}</td>
+                    <td className="px-2 py-1.5 text-right text-gray-400">{v.safetyStock}</td>
+                    <td className="px-2 py-1.5 text-right text-gray-600">
+                      {(v.lastCost > 0 ? v.lastCost : v.standardCost).toLocaleString()}원
+                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -907,16 +902,14 @@ function DoseGridModal({
         </div>
 
         <footer className="flex items-center justify-between border-t border-gray-100 px-5 py-3">
-          <span className="text-xs text-gray-500">
-            입력 {entered.length}개 도수 · 합계 {entered.reduce((s2, i) => s2 + i.quantity, 0)}팩
-          </span>
+          <span className="text-xs text-gray-500">선택 {pickedItems.length}개 도수 — 수량은 발주리스트에서 입력</span>
           <button
             type="button"
-            disabled={entered.length === 0}
-            onClick={() => onApply(entered)}
+            disabled={pickedItems.length === 0}
+            onClick={() => onApply(pickedItems)}
             className="press rounded-lg bg-gray-900 px-4 py-2 text-xs font-bold text-white hover:bg-black disabled:opacity-50"
           >
-            ✅ 적용 — 발주리스트에 추가
+            ✅ 발주리스트에 반영 (수량 0)
           </button>
         </footer>
       </div>
