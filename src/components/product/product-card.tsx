@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useState } from 'react';
+import { CYCLE_LABEL } from '@/lib/lens/format';
 
 export interface ProductCardData {
   id: string;
@@ -19,15 +20,6 @@ export interface ProductCardData {
   isNew?: boolean;
   variantCount?: number;
 }
-
-const CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이',
-  '2week': '2주',
-  '1month': '한달',
-  '3month': '3개월',
-  '6month': '6개월',
-  '1year': '1년',
-};
 
 export function ProductCard({ product, href }: { product: ProductCardData; href?: string }) {
   const [liked, setLiked] = useState(false);

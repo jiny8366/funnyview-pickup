@@ -8,6 +8,7 @@ import { VariantSelector } from '@/components/product/variant-selector';
 import { ProductContent } from '@/components/product/product-content';
 import { SiteHeader } from '@/components/layout/site-header';
 import { addItem } from '@/lib/cart/store';
+import { CYCLE_LABEL, LENS_TYPE_LABEL } from '@/lib/lens/format';
 
 interface Variant {
   variantId: string;
@@ -57,23 +58,6 @@ interface Product {
   variants: Variant[];
   siblings: Sibling[];
 }
-
-const CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이',
-  '2week': '2주교체',
-  '1month': '1개월',
-  '3month': '3개월',
-  '6month': '6개월',
-  '1year': '연간',
-};
-
-const LENS_TYPE_LABEL: Record<string, string> = {
-  spherical: '구면 (근시/원시)',
-  toric: '난시 (토릭)',
-  multifocal: '다초점',
-  color: '컬러렌즈',
-  circle: '서클렌즈',
-};
 
 export default function ProductDetailPage() {
   const params = useParams<{ productCode: string }>();

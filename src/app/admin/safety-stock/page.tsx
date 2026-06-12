@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { InlineNumberCell } from '@/components/ui/inline-number-cell';
 import { ProductFilterBar } from '@/components/product/product-filter-bar';
+import { CYCLE_LABEL } from '@/lib/lens/format';
 
 interface Row {
   variantId: string;
@@ -38,10 +39,6 @@ interface Params {
   leadTimeDays: number;
   windowDays: number;
 }
-
-const CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이', '2week': '2주', '1month': '1개월', '3month': '3개월', '6month': '6개월', '1year': '연간',
-};
 
 const TYPE_OPTIONS = [
   { value: 'spherical', label: '구면(투명)' },

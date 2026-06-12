@@ -15,6 +15,7 @@ import {
 } from '@/components/ui/icons';
 import { SkeletonCard } from '@/components/ui/skeleton';
 import { ProductFilterBar } from '@/components/product/product-filter-bar';
+import { CYCLE_LABEL, LENS_TYPE_LABEL } from '@/lib/lens/format';
 
 interface LensRow {
   id: string;
@@ -32,24 +33,7 @@ interface LensRow {
   createdAt: string;
 }
 
-const LENS_TYPE_LABEL: Record<string, string> = {
-  spherical: '구면',
-  toric: '토릭',
-  multifocal: '멀티포컬',
-  color: '컬러',
-  circle: '써클',
-};
-
-const CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이',
-  '2week': '2주',
-  '1month': '1개월',
-  '3month': '3개월',
-  '6month': '6개월',
-  '1year': '1년',
-};
-
-type SortKey = 'brand' | 'name' | 'productCode' | 'price' | 'createdAt';
+type SortKey ='brand' | 'name' | 'productCode' | 'price' | 'createdAt';
 type SortDir = 'asc' | 'desc';
 type ViewMode = 'table' | 'card';
 

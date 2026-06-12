@@ -1,26 +1,10 @@
 'use client';
 
 import React from 'react';
+import { CYCLE_LABEL, cycleLabel } from '@/lib/lens/format';
 
-/**
- * 교체주기 코드 → 한글 라벨.
- * warehouse/inventory · store-product-commissions · 어드민 제품마스터에서 쓰던
- * 매핑들을 통합 (1day/2week/... 신규 코드 + daily/biweekly/... 레거시 코드 모두 지원).
- */
-export const CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이',
-  '2week': '2주',
-  '1month': '1개월',
-  '3month': '3개월',
-  '6month': '6개월',
-  '1year': '1년',
-  daily: '원데이',
-  biweekly: '2주',
-  monthly: '월간',
-  quarterly: '분기',
-  yearly: '장기',
-};
-export const cycleLabel = (v: string) => CYCLE_LABEL[v] ?? v;
+// 교체주기 라벨은 단일 표준 소스에서 재export (기존 importer 호환 유지, 드리프트 방지)
+export { CYCLE_LABEL, cycleLabel };
 
 export interface ProductFilterFacets {
   brands: string[];

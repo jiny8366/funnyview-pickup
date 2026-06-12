@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { ProductFilterBar } from '@/components/product/product-filter-bar';
 import { ProductMedia } from '@/components/product/product-media';
 import { StoreVariantPicker, powerLabel, type PickerVariant } from './variant-picker';
+import { CYCLE_LABEL, LENS_TYPE_LABEL } from '@/lib/lens/format';
 
 interface CatalogItem {
   id: string;
@@ -37,24 +38,6 @@ interface CartLine {
   addPower: string | null;
   qty: number;
 }
-
-const CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이',
-  '2week': '2주교체',
-  '1month': '1개월',
-  '3month': '3개월',
-  '6month': '6개월',
-  '1year': '연간',
-};
-
-// 렌즈타입 코드 → 한글 라벨 (제품마스터와 동일 표기, 멀티포컬 용어 통일 — JINY)
-const LENS_TYPE_LABEL: Record<string, string> = {
-  spherical: '구면(투명)',
-  toric: '난시(토릭)',
-  multifocal: '멀티포컬',
-  color: '컬러',
-  circle: '서클',
-};
 
 export function StoreOrderClient() {
   const [items, setItems] = useState<CatalogItem[]>([]);

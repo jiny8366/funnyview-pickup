@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { ImagePicker } from '@/components/admin/image-picker';
 import { Input } from '@/components/ui/input';
 import type { SectionKind } from '@/lib/home/section-config';
+import { CYCLE_LABEL, LENS_TYPE_LABEL } from '@/lib/lens/format';
 
 interface FieldProps {
   label: string;
@@ -214,22 +215,6 @@ function HeroEditor({ config, onChange }: SectionEditorProps) {
 // ─────────────────────────────────────────────────────
 // Product Grid
 // ─────────────────────────────────────────────────────
-const LENS_TYPE_LABEL: Record<string, string> = {
-  spherical: '일반',
-  toric: '난시',
-  multifocal: '다초점',
-  color: '컬러',
-  circle: '써클',
-};
-const CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이',
-  '2week': '2주',
-  '1month': '1개월',
-  '3month': '3개월',
-  '6month': '6개월',
-  '1year': '1년',
-};
-
 interface LensListItem {
   id: string;
   brand: string;

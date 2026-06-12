@@ -31,22 +31,39 @@ export interface VariantDisplayInfo {
   addPower: string | number | null;
 }
 
-const CYCLE_LABEL: Record<string, string> = {
+/**
+ * 콘택트렌즈 표시 라벨 — 단일 표준 소스 (전 화면·DB 공통).
+ * 업계 표준 표기(제조/유통사·질병관리청·렌즈협회 공통): 제품 마스터 기준.
+ *   렌즈타입: 구면 / 토릭 / 멀티포컬 / 컬러 / 써클
+ *   교체주기: 원데이 / 2주 / 1개월 / 3개월 / 6개월 / 1년
+ * 어느 화면도 라벨을 재정의하지 말고 여기서 import 할 것 (드리프트 방지).
+ */
+export const CYCLE_LABEL: Record<string, string> = {
   '1day': '원데이',
   '2week': '2주',
   '1month': '1개월',
   '3month': '3개월',
   '6month': '6개월',
   '1year': '1년',
+  // 레거시 코드 별칭(과거 데이터 호환) — 표준 표기로 매핑
+  daily: '원데이',
+  biweekly: '2주',
+  monthly: '1개월',
+  quarterly: '3개월',
+  yearly: '1년',
 };
 
-const LENS_TYPE_LABEL: Record<string, string> = {
-  spherical: '일반',
-  toric: '난시',
-  multifocal: '다초점',
+export const LENS_TYPE_LABEL: Record<string, string> = {
+  spherical: '구면',
+  toric: '토릭',
+  multifocal: '멀티포컬',
   color: '컬러',
   circle: '써클',
 };
+
+/** 코드 → 표준 라벨 (없으면 코드 그대로). */
+export const cycleLabel = (v: string): string => CYCLE_LABEL[v] ?? v;
+export const lensTypeLabel = (v: string): string => LENS_TYPE_LABEL[v] ?? v;
 
 /**
  * 도수값 (numeric 컬럼) → 표시 문자열.

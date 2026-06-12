@@ -15,10 +15,11 @@ export const genderEnum = pgEnum('gender', ['male', 'female', 'other']);
 export const eyeSideEnum = pgEnum('eye_side', ['left', 'right', 'both']);
 
 // 렌즈 유형
+// 표준 표시 라벨은 src/lib/lens/format.ts (LENS_TYPE_LABEL) 단일 소스.
 export const lensTypeEnum = pgEnum('lens_type', [
-  'spherical', // 일반
-  'toric', // 난시
-  'multifocal', // 다초점
+  'spherical', // 구면
+  'toric', // 토릭
+  'multifocal', // 멀티포컬
   'color', // 컬러
   'circle', // 써클
 ]);

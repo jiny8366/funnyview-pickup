@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { formatDiopter } from '@/lib/prescription/convert';
+import { CYCLE_LABEL } from '@/lib/lens/format';
 
 export interface RecommendDose {
   sphere: number;
@@ -46,14 +47,6 @@ const HOUR_OPTIONS = [
   { v: 13, l: 'OVER' },
 ];
 
-const CYCLE_LABEL: Record<string, string> = {
-  '1day': '원데이',
-  '2week': '2주',
-  '1month': '1개월',
-  '3month': '3개월',
-  '6month': '6개월',
-  '1year': '연간',
-};
 const TYPE_LABEL: Record<string, string> = {
   spherical: '구면',
   toric: '난시',
