@@ -77,7 +77,7 @@ export function StoresTable({ rows }: { rows: StoreRow[] }) {
         </span>
       </div>
 
-      <div className="overflow-hidden rounded-2xl border border-gray-200 bg-white">
+      <div className="overflow-x-auto rounded-2xl border border-gray-200 bg-white">
         <table className="min-w-full divide-y divide-gray-100 text-sm">
           <thead className="bg-gray-50">
             <tr>
@@ -105,7 +105,11 @@ export function StoresTable({ rows }: { rows: StoreRow[] }) {
                       {s.name}
                     </Link>
                   </Td>
-                  <Td className="text-gray-600">{s.addressLine1 ?? '—'}</Td>
+                  <Td className="text-gray-600">
+                    <span className="block max-w-[260px] truncate" title={s.addressLine1 ?? undefined}>
+                      {s.addressLine1 ?? '—'}
+                    </span>
+                  </Td>
                   <Td className="font-mono text-xs text-gray-600">{s.phone ?? '—'}</Td>
                   <Td className="text-gray-600">
                     {s.groupName ? (
@@ -159,7 +163,7 @@ function Th({
   return (
     <th
       onClick={onClick}
-      className={`px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 ${
+      className={`whitespace-nowrap px-4 py-2.5 text-left text-[11px] font-semibold uppercase tracking-wider text-gray-500 ${
         sortable ? 'cursor-pointer select-none hover:text-gray-800' : ''
       } ${className ?? ''}`}
     >
@@ -178,7 +182,7 @@ function Td({
   colSpan?: number;
 }) {
   return (
-    <td colSpan={colSpan} className={`px-4 py-3 ${className ?? ''}`}>
+    <td colSpan={colSpan} className={`whitespace-nowrap px-4 py-3 ${className ?? ''}`}>
       {children}
     </td>
   );
