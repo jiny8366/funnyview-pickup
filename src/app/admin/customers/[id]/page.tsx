@@ -8,20 +8,9 @@ import { PrescriptionManager } from '@/components/prescription/prescription-mana
 import { PageHeader, PageWrap } from '@/components/admin/page-header';
 import { Button } from '@/components/ui/button';
 import { requirePermissionOrRedirect, userHasPermissionOrIsMaster } from '@/lib/auth/guards';
+import { ORDER_STATUS_LABEL, type OrderStatus } from '@/types/order';
 
 export const dynamic = 'force-dynamic';
-
-const ORDER_STATUS_LABEL: Record<string, string> = {
-  pending: '결제대기',
-  paid: '결제완료',
-  accepted: '접수',
-  picking: '피킹',
-  shipped: '출고',
-  arrived: '도착',
-  ready: '픽업대기',
-  completed: '완료',
-  cancelled: '취소',
-};
 
 export default async function AdminCustomerDetailPage({
   params,
@@ -124,7 +113,7 @@ export default async function AdminCustomerDetailPage({
                         {o.total.toLocaleString()}원
                       </p>
                       <span className="text-[11px] text-gray-500">
-                        {ORDER_STATUS_LABEL[o.status] ?? o.status}
+                        {ORDER_STATUS_LABEL[o.status as OrderStatus] ?? o.status}
                       </span>
                     </div>
                   </li>

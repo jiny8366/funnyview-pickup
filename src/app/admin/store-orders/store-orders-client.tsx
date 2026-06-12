@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
+import { poStatusMeta } from '@/lib/orders/po-status';
 
 interface OrderRow {
   id: string;
@@ -14,14 +15,6 @@ interface OrderRow {
   storeCode: string | null;
   itemCount: number;
 }
-
-const STATUS_LABEL: Record<string, { label: string; cls: string }> = {
-  placed: { label: '발주접수', cls: 'bg-blue-100 text-blue-700' },
-  confirmed: { label: '주문접수', cls: 'bg-amber-100 text-amber-700' },
-  shipped: { label: '배송중', cls: 'bg-emerald-100 text-emerald-700' },
-  received: { label: '입고완료', cls: 'bg-green-100 text-green-700' },
-  cancelled: { label: '취소', cls: 'bg-gray-200 text-gray-600' },
-};
 
 // 상태별 가능한 다음 액션
 const NEXT_ACTIONS: Record<string, { status: string; label: string; danger?: boolean }[]> = {
@@ -124,7 +117,7 @@ export function AdminStoreOrdersClient() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {orders.map((o) => {
-                const s = STATUS_LABEL[o.status] ?? { label: o.status, cls: 'bg-gray-100 text-gray-600' };
+                const s = poStatusMeta(o.status);
                 const actions = NEXT_ACTIONS[o.status] ?? [];
                 return (
                   <tr key={o.id} className="bg-white align-top">

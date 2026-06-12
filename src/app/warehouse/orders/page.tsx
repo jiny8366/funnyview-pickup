@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { StatusBadge } from '@/components/ui/badge';
 import { formatKRW } from '@/lib/utils/format';
 import type { OrderStatus } from '@/types/order';
+import { PO_STATUS_LABEL } from '@/lib/orders/po-status';
 
 interface OrderRow {
   id: string;
@@ -33,15 +34,6 @@ interface PoRow {
   storeName: string;
   itemCount: number;
 }
-
-// 상태 라벨 체계 (JINY): 가맹점 발주=발주접수 → 업체 접수=주문접수 → 배송=배송중
-const PO_STATUS_LABEL: Record<PoRow['status'], string> = {
-  placed: '발주접수',
-  confirmed: '주문접수',
-  shipped: '배송중',
-  received: '입고완료',
-  cancelled: '취소',
-};
 
 /** 발주 행의 다음 처리 액션 (placed→confirmed→shipped) */
 function poNextAction(status: PoRow['status']): { to: PoRow['status']; label: string } | null {
