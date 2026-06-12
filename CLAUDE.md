@@ -134,7 +134,6 @@ npm run build
 npm run db:generate          # 스키마 변경 → 마이그레이션 SQL
 npm run db:migrate           # 마이그레이션 적용
 npm run db:seed              # 시드 (idempotent)
-npm run db:import-jinys      # 지니스안경 매장 import (~/jinys-pages 필요)
 
 # 배포
 git push origin main         # → Vercel 자동 빌드 (2-4분)

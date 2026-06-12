@@ -7,7 +7,6 @@ import { Button } from '@/components/ui/button';
 import { EmptyState } from '@/components/ui/empty-state';
 import { IconPlus, IconStore } from '@/components/ui/icons';
 import { requirePermissionOrRedirect } from '@/lib/auth/guards';
-import { JinysImportButton } from '@/components/admin/jinys-import-button';
 import { StoresTable } from '@/components/admin/stores-table';
 
 export const dynamic = 'force-dynamic';
@@ -35,14 +34,11 @@ export default async function AdminStoresPage() {
         title="픽업가맹점"
         description="픽업 서비스 가맹점을 등록하고 운영 정보를 관리합니다."
         actions={
-          <div className="flex gap-2">
-            <JinysImportButton />
-            <Link href="/admin/stores/new">
-              <Button className="gap-1.5">
-                <IconPlus size={16} /> 가맹점 추가
-              </Button>
-            </Link>
-          </div>
+          <Link href="/admin/stores/new">
+            <Button className="gap-1.5">
+              <IconPlus size={16} /> 가맹점 추가
+            </Button>
+          </Link>
         }
       />
 

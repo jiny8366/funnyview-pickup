@@ -5,9 +5,8 @@
 set -euo pipefail
 
 if [ "${RUN_DB_MIGRATE:-0}" = "1" ]; then
-  echo "▶ DB 단계 실행 (RUN_DB_MIGRATE=1): drizzle-kit migrate + import-jinys-on-build"
+  echo "▶ DB 단계 실행 (RUN_DB_MIGRATE=1): drizzle-kit migrate"
   drizzle-kit migrate
-  tsx scripts/import-jinys-on-build.ts
 else
   echo "▶ DB 단계 생략 (Neon 전송 절감). 스키마 반영이 필요하면 RUN_DB_MIGRATE=1 로 배포하세요."
 fi
