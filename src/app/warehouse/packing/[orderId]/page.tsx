@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useParams, useRouter } from 'next/navigation';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 interface Item {
@@ -165,8 +166,12 @@ export default function PackingPage() {
       </header>
 
       {wrongStatus && (
-        <div className="rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
-          현재 상태 <b>{order.status}</b> — 패킹 검수는 <b>picking(패킹중)</b> 단계에서 진행합니다.
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-lg bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          <span>현재 상태 <b>{order.status}</b> — 패킹 검수는 <b>picking(패킹중)</b> 단계에서 진행합니다.</span>
+          <span className="flex gap-2">
+            <Link href="/warehouse/picklist" className="rounded border border-amber-300 bg-white px-2 py-1 font-medium text-amber-800 hover:bg-amber-100">← 배송준비중</Link>
+            <Link href="/warehouse/orders" className="rounded border border-amber-300 bg-white px-2 py-1 font-medium text-amber-800 hover:bg-amber-100">주문 처리</Link>
+          </span>
         </div>
       )}
 

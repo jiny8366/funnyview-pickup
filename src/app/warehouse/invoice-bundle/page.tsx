@@ -50,7 +50,21 @@ function BundleInner() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [sp]);
 
-  if (err) return <div className="p-6 text-sm text-red-600">{err}</div>;
+  if (err)
+    return (
+      <div className="space-y-3 p-6 text-sm">
+        <p className="text-red-600">{err}</p>
+        {isChild && (
+          <button
+            type="button"
+            onClick={() => window.close()}
+            className="rounded-lg bg-blue-600 px-4 py-1.5 text-xs font-semibold text-white hover:bg-blue-700"
+          >
+            ✕ 창 닫기 (검수 화면으로)
+          </button>
+        )}
+      </div>
+    );
   if (!data) return <div className="p-6 text-sm text-gray-400">불러오는 중…</div>;
 
   const { issuer } = data;
