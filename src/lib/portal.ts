@@ -100,6 +100,9 @@ const PORTAL_ALLOWED: Record<Portal, string[]> = {
     '/api/push',
     '/api/events',
     '/api/orders', // 주문별 알림이력(/api/orders/[id]/notifications) 등 — 라우트별 역할검사 별도 존재 (보드 #9)
+    // admin 주문관리(/admin/orders)·정산이 warehouse API 를 재사용(admin 역할 허용). 라우트별 role 검사 별도 존재.
+    // 누락 시 admin 호스트에서 /api/warehouse/* 가 307 로 차단돼 화면이 데이터를 못 불러옴(알림벨 사고 클래스).
+    '/api/warehouse',
   ],
   staff: [
     '/warehouse',
