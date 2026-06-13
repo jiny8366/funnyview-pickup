@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import {
   Bar,
   BarChart,
@@ -55,14 +55,35 @@ const PIE_COLORS = ['#2563eb', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b
 export default function AdminDashboardPage() {
   const [days, setDays] = useState(14);
   const [data, setData] = useState<DashboardData | null>(null);
+  const [loadError, setLoadError] = useState(false); // 로드 실패 시 무한 "불러오는 중" 방지
   const [storeQuery, setStoreQuery] = useState(''); // 가맹점 정산 검색
 
-  useEffect(() => {
+  const loadDashboard = useCallback(() => {
+    setLoadError(false);
     fetch(`/api/admin/dashboard?days=${days}`)
-      .then((r) => r.json())
+      .then((r) => (r.ok ? r.json() : Promise.reject(r.status)))
       .then(setData)
-      .catch(() => setData(null));
+      .catch(() => setLoadError(true));
   }, [days]);
+
+  useEffect(() => {
+    loadDashboard();
+  }, [loadDashboard]);
+
+  if (loadError) {
+    return (
+      <div className="flex flex-col items-center gap-3 py-16 text-sm text-gray-500">
+        <span>대시보드 데이터를 불러오지 못했습니다.</span>
+        <button
+          type="button"
+          onClick={loadDashboard}
+          className="rounded-lg border border-gray-300 bg-white px-4 py-2 font-medium text-gray-700 hover:bg-gray-50"
+        >
+          다시 시도
+        </button>
+      </div>
+    );
+  }
 
   if (!data) {
     return <div className="text-sm text-gray-400">불러오는 중...</div>;
