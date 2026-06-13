@@ -6,11 +6,16 @@ import { SectionRenderer } from '@/components/home/section-renderer';
 import { TrendingKeywords } from '@/components/home/trending-keywords';
 import { SiteHeader } from '@/components/layout/site-header';
 import { loadActiveSections } from '@/lib/home/load-sections';
+import { loadBusinessInfo } from '@/lib/business/load-business-info';
+import type { BusinessInfo } from '@/db/schema';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Home() {
-  const sections = await loadActiveSections().catch(() => []);
+  const [sections, business] = await Promise.all([
+    loadActiveSections().catch(() => []),
+    loadBusinessInfo(),
+  ]);
 
   return (
     <main className="animate-fade-in min-h-screen bg-white pb-safe">
@@ -36,7 +41,7 @@ export default async function Home() {
         <BottomCta />
       </div>
 
-      <Footer />
+      <Footer business={business} />
     </main>
   );
 }
@@ -226,8 +231,9 @@ function BottomCta() {
 }
 
 /* ─────────────────────── 푸터 (사업자정보) ─────────────────────── */
-// ⚠️ 법정 표기 정보 — 실제 값으로 교체 필요(전자상거래법 의무 표기). JINY 제공 시 갱신.
-const COMPANY_INFO = {
+// 법정 표기(전자상거래법 의무)는 business_info(DB, admin 설정)가 단일 출처.
+// DB 값이 비어있을 때만 아래 폴백을 사용(미입력 필드는 '준비 중'으로 안전 표기).
+const COMPANY_FALLBACK = {
   name: '(주)퍼니뷰',
   ceo: '준비 중',
   bizNo: '준비 중', // 사업자등록번호
@@ -239,7 +245,18 @@ const COMPANY_INFO = {
   hours: '평일 10:00–17:00 · 점심 12:00–13:00 · 주말·공휴일 휴무',
 };
 
-function Footer() {
+function Footer({ business }: { business: BusinessInfo | null }) {
+  const COMPANY_INFO = {
+    name: business?.companyName || COMPANY_FALLBACK.name,
+    ceo: business?.ceo || COMPANY_FALLBACK.ceo,
+    bizNo: business?.bizNo || COMPANY_FALLBACK.bizNo,
+    mailOrder: business?.mailOrderNo || COMPANY_FALLBACK.mailOrder,
+    privacyOfficer: business?.privacyOfficer || COMPANY_FALLBACK.privacyOfficer,
+    address: business?.address || COMPANY_FALLBACK.address,
+    tel: business?.phone || COMPANY_FALLBACK.tel,
+    email: business?.email || COMPANY_FALLBACK.email,
+    hours: COMPANY_FALLBACK.hours,
+  };
   const cols = [
     {
       title: '쇼핑',

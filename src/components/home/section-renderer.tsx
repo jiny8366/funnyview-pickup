@@ -334,6 +334,9 @@ function CountdownRender({ section }: { section: Section }) {
   const m = Math.floor((diff % 3_600_000) / 60_000);
   const s = Math.floor((diff % 60_000) / 1000);
 
+  // 만료(endsAt 경과)된 카운트다운은 깨진 00:00:00 대신 노출하지 않는다 — 프로모 종료 후 자동 숨김.
+  if (c.endsAt && diff <= 0) return null;
+
   return (
     <section
       ref={ref}
