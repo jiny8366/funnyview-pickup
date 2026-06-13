@@ -535,6 +535,15 @@ export default function CustomerOrderPage() {
     hasDoseToOrder &&
     !submitting;
 
+  // 버튼 비활성 사유 안내 (M3 E2E 확정 — 왜 못 누르는지 표시). 흐름 순서대로 가장 먼저 빠진 단계.
+  const disabledReason = useMemo(() => {
+    if (!hasDoseToOrder) return '도수를 입력하고 제품을 선택하세요';
+    if (!resolved) return '제품(도수)을 선택하세요';
+    if (!resolvedInStock) return '선택한 도수의 재고가 부족합니다';
+    if (!storeId) return '픽업가맹점을 선택하세요';
+    return null;
+  }, [hasDoseToOrder, resolved, resolvedInStock, storeId]);
+
   async function onSubmit() {
     if (!canSubmit || !resolved) return;
     setSubmitting(true);
@@ -1344,7 +1353,11 @@ export default function CustomerOrderPage() {
             {submitting ? '주문 중...' : '주문하기'}
           </Button>
         </div>
-        {error && <p className="mt-2 text-sm text-red-600">{error}</p>}
+        {disabledReason ? (
+          <p className="mt-2 text-xs text-amber-600">⚠ {disabledReason}</p>
+        ) : error ? (
+          <p className="mt-2 text-sm text-red-600">{error}</p>
+        ) : null}
       </section>
 
       {/* 도수 관리 모달 */}
