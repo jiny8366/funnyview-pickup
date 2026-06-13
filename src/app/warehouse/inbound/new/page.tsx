@@ -45,6 +45,7 @@ interface PoItem {
   sphere: string | null;
   cylinder: string | null;
   axis: number | null;
+  addPower: string | null; // 멀티포컬 가입도(ADD) — 구면/난시는 null
   quantity: number;
   unitCost: number;
 }
@@ -61,6 +62,7 @@ function composePoName(it: PoItem): string {
     it.sphere ? `SPH ${it.sphere}` : '',
     it.cylinder ? `CYL ${it.cylinder}` : '',
     it.axis != null ? `AX ${it.axis}` : '',
+    it.addPower ? `ADD ${it.addPower}` : '',
   ]
     .filter(Boolean)
     .join(' ');
